@@ -1,0 +1,13 @@
+﻿src/app/(main)/explore/[styleSlug]/[routineSlug]/learn/page.tsx(105,114): error TS18048: 'routine' is possibly 'undefined'.
+src/app/(main)/explore/[styleSlug]/[routineSlug]/page.tsx(51,114): error TS18048: 'routine' is possibly 'undefined'.
+src/app/(main)/explore/[styleSlug]/[routineSlug]/practice-check/page.tsx(21,35): error TS2774: This condition will always return true since this function is always defined. Did you mean to call it instead?
+src/app/api/choreos/[id]/route.ts(17,20): error TS2339: Property 'style_slug' does not exist on type 'Routine'.
+src/app/api/choreos/[id]/route.ts(98,32): error TS2339: Property 'slug' does not exist on type '{ slug: any; }[]'.
+src/app/api/choreos/route.ts(15,22): error TS2339: Property 'style_slug' does not exist on type 'Routine'.
+src/app/api/choreos/route.ts(16,26): error TS2339: Property 'style_slug' does not exist on type 'Routine'.
+src/app/api/choreos/route.ts(17,26): error TS2339: Property 'style_slug' does not exist on type 'Routine'.
+src/app/api/choreos/route.ts(100,32): error TS2339: Property 'slug' does not exist on type '{ slug: any; name: any; }[]'.
+src/app/api/choreos/route.ts(101,36): error TS2339: Property 'slug' does not exist on type '{ slug: any; name: any; }[]'.
+src/app/api/choreos/route.ts(102,36): error TS2339: Property 'name' does not exist on type '{ slug: any; name: any; }[]'.
+src/app/api/choreos/route.ts(102,62): error TS2339: Property 'slug' does not exist on type '{ slug: any; name: any; }[]'.
+src/app/api/choreos/route.ts(105,40): error TS2339: Property 'full_name' does not exist on type '{ full_name: any; }[]'.

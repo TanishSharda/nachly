@@ -1,0 +1,202 @@
+/* Base Structural Components */
+/* Sidebar Navigation */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  padding: var(--spacing-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+  z-index: 50;
+  border-right: 1px solid var(--border-glass);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  flex: 1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link:hover {
+  color: var(--text-main);
+  background: var(--bg-surface-hover);
+  transform: translateX(4px) scale(1.05);
+}
+
+.nav-link.active {
+  color: var(--text-main);
+  background: var(--bg-surface-hover);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* Base Card Class */
+.card {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  transition: transform 0.1s ease, box-shadow var(--transition-smooth);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.card:hover {
+  /* Lift and enhance shadow */
+  box-shadow: var(--shadow-lg), 0 20px 40px -10px rgba(0,0,0,0.6);
+  border-color: var(--border-light);
+  z-index: 10;
+}
+
+/* The actual content wrapper inside the card to receive 3D rotation */
+.card-content {
+  transform: translateZ(30px);
+  transition: transform var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--text-dark);
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-glass);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.btn-icon:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Floating Webcam Bubble */
+.webcam-bubble {
+  position: absolute;
+  bottom: var(--spacing-8);
+  right: var(--spacing-8);
+  width: 240px;
+  aspect-ratio: 16/9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--primary-glow);
+  z-index: 100;
+  transition: transform var(--transition-bounce), border-color var(--transition-smooth);
+}
+
+.webcam-bubble:hover {
+  transform: scale(1.05) translateY(-5px);
+  border-color: var(--secondary);
+}
+
+/* AI Feedback Panel */
+.ai-panel {
+  position: absolute;
+  top: var(--spacing-6);
+  right: var(--spacing-6);
+  width: 320px;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  z-index: 90;
+}
+
+.ai-pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  width: 40px;
+  height: 40px;
+  background: var(--secondary);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 20px var(--secondary-glow);
+  animation: bgPulse 2s infinite;
+}

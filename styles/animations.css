@@ -1,0 +1,75 @@
+/* Animations & Visual Effects */
+
+/* Float animation for decorative elements */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Pulsing glow */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px var(--primary-glow); }
+  50% { box-shadow: 0 0 25px var(--primary-glow), 0 0 5px var(--primary); }
+  100% { box-shadow: 0 0 10px var(--primary-glow); }
+}
+
+.animate-glow {
+  animation: pulseGlow 3s infinite;
+}
+
+/* Slide in from bottom */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.6s var(--transition-bounce) forwards;
+}
+
+/* Slide in from right (for AI panel) */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.5s var(--transition-bounce) forwards;
+}
+
+/* Page Transition Fade */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.screen-enter {
+  animation: fadeIn 0.4s var(--transition-smooth) forwards;
+}
+
+/* Text Gradient Effect */
+.text-gradient {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+.text-gradient-red-dark {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--tertiary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

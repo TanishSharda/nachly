@@ -1,0 +1,123 @@
+:root {
+  /* Colors */
+  --bg-dark: #0E0E0E;
+  --bg-surface: rgba(28, 27, 27, 0.6);
+  --bg-surface-hover: rgba(40, 40, 40, 0.8);
+  --bg-glass: rgba(14, 14, 14, 0.4);
+  
+  --primary: #D3C4B8; /* Champagne Gold */
+  --primary-glow: rgba(211, 196, 184, 0.2);
+  
+  --secondary: #E7E5E5; /* Off-white */
+  --secondary-glow: rgba(231, 229, 229, 0.2);
+  
+  --tertiary: #1C1B1B; /* Warm Charcoal */
+  
+  --text-main: #FFFFFF;
+  --text-muted: #8A8D9F;
+  --text-dark: #12121A;
+  
+  --border-glass: rgba(211, 196, 184, 0.05);
+  --border-light: rgba(211, 196, 184, 0.1);
+  --border-glow: rgba(211, 196, 184, 0.15);
+
+  /* Typography */
+  --font-family: 'Outfit', 'Inter', sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 20px var(--primary-glow);
+  --shadow-glow-white: 0 0 20px var(--secondary-glow);
+  
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease-out;
+  --transition-smooth: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* App feels like a native full-screen app */
+  min-height: 100vh;
+}
+
+/* Background Animated Gradient Layer */
+.bg-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(211, 196, 184, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(231, 229, 229, 0.08), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(28, 27, 27, 0.1), transparent 40%);
+  filter: blur(80px);
+  animation: bgPulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.1) translate(2%, -2%); }
+  100% { transform: scale(1) translate(-2%, 2%); }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+}
+
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+::selection {
+  background: var(--primary);
+  color: #fff;
+}

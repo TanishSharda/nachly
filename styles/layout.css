@@ -1,0 +1,115 @@
+/* Layout and Screens */
+
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 260px; /* offset sidebar */
+  padding: var(--spacing-8);
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+/* Custom Scrollbar */
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+.main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.main-content::-webkit-scrollbar-thumb {
+  background: var(--bg-surface-hover);
+  border-radius: var(--radius-full);
+}
+
+/* Screen visibility */
+.screen {
+  display: none;
+  min-height: 100%;
+  flex-direction: column;
+  gap: var(--spacing-8);
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* Dashboard Layout */
+.grid-dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--spacing-6);
+}
+
+.dash-hero {
+  grid-column: span 12;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--spacing-8);
+  border-radius: var(--radius-xl);
+  background: 
+    linear-gradient(to top, rgba(0,0,0,0.8), transparent),
+    url('https://images.unsplash.com/photo-1547153760-18fc86324498?q=80&w=1200') center/cover;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, var(--primary-glow) 0%, transparent 100%);
+  mix-blend-mode: overlay;
+}
+
+.dash-stat {
+  grid-column: span 3;
+}
+
+.dash-recent {
+  grid-column: span 8;
+}
+
+.dash-ai-coach {
+  grid-column: span 4;
+}
+
+/* Typography styles inside layout */
+h1 {
+  font-size: var(--text-5xl);
+  font-weight: 800;
+  letter-spacing: -1px;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  transform-origin: left center;
+}
+h2 {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  transform-origin: left center;
+}
+h3 {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  transform-origin: left center;
+}
+p {
+  color: var(--text-muted);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  transform-origin: left center;
+}
+
+h1:hover, h2:hover, h3:hover, p:hover {
+  transform: scale(1.03);
+}

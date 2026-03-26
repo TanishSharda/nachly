@@ -1,0 +1,47 @@
+{
+  "name": "Naachly — Learn Dance with AI",
+  "short_name": "Naachly",
+  "description": "India's first AI-powered dance academy. Learn Bollywood, Hip Hop, Kathak & Bhangra with real-time AI feedback.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#061532",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/brand-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "entertainment", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Explore Styles",
+      "short_name": "Explore",
+      "url": "/explore",
+      "icons": [{ "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Practice Bijuria",
+      "short_name": "Practice",
+      "url": "/explore/bollywood/bijuria",
+      "icons": [{ "src": "/brand-logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
