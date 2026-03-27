@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Inter, Manrope } from "next/font/google";
+import { Inter, Manrope, Plus_Jakarta_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/utils/constants";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
@@ -7,6 +7,12 @@ import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-manrope",
+  display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
   display: "swap",
 });
 
@@ -66,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${playfair.variable} ${inter.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${plusJakarta.variable} ${playfair.variable} ${inter.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>

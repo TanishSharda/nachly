@@ -6,7 +6,9 @@
   :root {
     --background: #0E0E0E;
     --foreground: #E7E5E5;
-    --accent: #D3C4B8;
+    --gold: #D3C4B8;
+    --silk: #E7E5E5;
+    --obsidian: #0E0E0E;
     --secondary-surface: #1C1B1B;
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
@@ -22,7 +24,7 @@
   body {
     color: var(--foreground);
     background: var(--background);
-    font-family: var(--font-manrope), sans-serif;
+    font-family: var(--font-plus-jakarta), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -127,5 +129,31 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .marketing-grain {
+    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    filter: contrast(150%) brightness(100%);
+    mix-blend-mode: overlay;
+  }
+
+  .font-display {
+    font-family: var(--font-manrope), sans-serif;
+  }
+
+  .text-gold {
+    color: var(--gold);
+  }
+
+  .text-silk {
+    color: var(--silk);
+  }
+
+  .bg-obsidian {
+    background-color: var(--obsidian);
+  }
+
+  .section-padding {
+    @apply max-w-7xl mx-auto px-6 sm:px-12;
   }
 }

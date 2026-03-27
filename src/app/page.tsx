@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import BrandLogo from "@/components/shared/BrandLogo";
 import { SITE_NAME } from "@/lib/utils/constants";
 
@@ -25,28 +26,22 @@ const Ico = ({ d, size = 22, stroke = "currentColor", fill = "none" }: { d: stri
   </svg>
 );
 
-const IcoScroll = () => <Ico d="M12 2v20M5 5l7-3 7 3M5 19l7 3 7-3" />;
-const IcoPose = () => <Ico d="M12 2a3 3 0 100 6 3 3 0 000-6zM12 8v6m-4 4l4-4 4 4m-8 0v2m8-2v2" />;
-const IcoRecord = () => (
-  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+const IcoScroll = ({ size }: { size?: number }) => <Ico d="M12 2v20M5 5l7-3 7 3M5 19l7 3 7-3" size={size} />;
+const IcoPose = ({ size }: { size?: number }) => <Ico d="M12 2a3 3 0 100 6 3 3 0 000-6zM12 8v6m-4 4l4-4 4 4m-8 0v2m8-2v2" size={size} />;
+const IcoRecord = ({ size = 22 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
     <circle cx="12" cy="12" r="4" fill="currentColor" />
   </svg>
 );
-const IcoRemix = () => <Ico d="M16 3h5v5M4 20L20.5 3.5M21 16v5h-5M3 4l16.5 16.5" />;
-const IcoLearn = () => <Ico d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />;
-const IcoShare = () => <Ico d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />;
-const IcoHeart = () => <Ico d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />;
-const IcoComment = () => <Ico d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />;
-const IcoBookmark = () => <Ico d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />;
-const IcoDollar = () => <Ico d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />;
-const IcoChart = () => <Ico d="M18 20V10M12 20V4M6 20v-6" />;
-const IcoFilm = () => <Ico d="M22 12H2M7 2v20M17 2v20" />;
-const IcoStar = () => <Ico d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />;
-const IcoCamera = () => <Ico d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 13a4 4 0 100-8 4 4 0 000 8z" />;
-const IcoBot = () => <Ico d="M12 8V4M8 4h8M12 4v4M8 12h8v8H8v-8z" />;
-const IcoDownload = () => <Ico d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />;
-const IcoCloud = () => <Ico d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" />;
+const IcoRemix = ({ size }: { size?: number }) => <Ico d="M16 3h5v5M4 20L20.5 3.5M21 16v5h-5M3 4l16.5 16.5" size={size} />;
+const IcoLearn = ({ size }: { size?: number }) => <Ico d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" size={size} />;
+const IcoShare = ({ size }: { size?: number }) => <Ico d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" size={size} />;
+const IcoHeart = ({ size }: { size?: number }) => <Ico d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" size={size} />;
+const IcoComment = ({ size }: { size?: number }) => <Ico d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" size={size} />;
+const IcoBookmark = ({ size }: { size?: number }) => <Ico d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" size={size} />;
+
+
 
 const sectionReveal = {
   hidden: { opacity: 0, y: 40 },
@@ -73,10 +68,8 @@ const FEATURES = [
 ];
 
 const STYLES = [
-  { title: "Hip Hop", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAIEcnEM2eCS_sFYJGvCwmzKh5nWr1Q-tOiG0x4FSf0R9hmeXDbpsanBCwye57oSFXQ7orbQDOAK70A7tBddrK5HkQFLwqDiDBgZA1BzqVYIO2V97tPbwiLsebfLTx8XAcIUd1QpIsndAGA-F6eNjLDY5NA6a7qR750rPsU-rfQJBU2h-EIRddQrFQx_py9zppX-uCDKNe9FZdzMOwXRZAQfi2psSHCK9ondyROvD3nfRcula6_XNiCN7YtXpJwoMuow4O82jdMV5o" },
-  { title: "Bhangra", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-YjNeCFLrEjotwfhopVWWvibIHaNvu4ng7sRSGrRJFioFq2fS6e-wTwoMOgRRusqtCqwj94Mo6_tvef4R-VzetzapCUGFA3asGqk840YnB-6NQ6puLIjSyUMmP8U7LCMxaTk9XGn2tE5RT3UGrhT9DzslI_TmkW-s7wmTfCDxfBNSmS8u2oBOT_PnZcEU_VexirlIJX5-Ix26R5g1ZyxOY3u5WYyw8FECKzykk1RKKLOvJ68lDr2N-ROG_g7ZD7-u1a4prl5KZu8" },
-  { title: "Kathak", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLONXs-2nVM3fQr3HtVuzkjCTHtZvZy_dUBVOhU36YTa9mDtKbOwpkTldKB91DvPB12otv-ASiJ27d5LLoL-Hnue9TjAHeK52bVJXnDeI-A2r99teiZVRVt3jWRvYqF2dKvpSnESfcMuUKvfac43R1SGycrqpRPL1ENklm1Ms2444nhMOEulWBnch90rb4J2kjGM1kKJZrdwP9YZv5Iv3dRjuYuld2rhSlAxQmuAjbl_xoKqTpDt8RMpLoNAHhTO8AhD-E5zNZGto" },
   { title: "Bollywood", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCjWNf-BUZuFqpm-E2XJuHyMidLtRlwTJHpTKO2YVzLCAA1sdwDzCkxT7YO40Ny2wq2mR831No9PQWWGSvUyfr23JPxQ61P6fAri73hDAHM96UoqTKGMA4i_rbEJoLMxioyv2eQheQFTGkLh3IimSO8rblpAyZGGOOmI_M5E6t56t32XyqUcK6hSAV9tdr9qM6bMQ80pefl5KySwhSmkIR11_AfatJCUJRrhp8vY60KtxpqJ9T4EBpje9HzrmsTu_T1khvWt1VhRhA" },
+  { title: "Grove", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCvq5kYoGjy8xQDmhLCFaUT8x7XKSq9W0JXW37gUzgC8rSMPnX8rT4hgII4J0GOFTjc8aAoCXQPYeKQxZmZ6gw6HNQzElvhUgiseOTEbbfa2d_Nch0tBw4_hNcPDBWzouB1s9RbchLwV7Eqa0_QlQXrNFsG6S9qcwpvEA4ox9K10ipsPNOUQl0X_gUWAqJ4JcuEO5pmzZh_QLE52xOCmO0bn56didNdMVQmyN6ctP7rEwrv4MGXf7L6x48JeIACBmI13aqGWMwYfm8" },
 ];
 
 const SCROLL_STEPS = [
@@ -114,11 +107,24 @@ const AnimatedHeadline = ({ text, accent }: { text: string; accent?: string }) =
   );
 };
 
-const MotionButton = ({ href, label, primary = false, className = "" }: { href: string; label: string; primary?: boolean; className?: string }) => {
+const MotionButton = ({ 
+  href, 
+  label, 
+  primary = false, 
+  className = "", 
+  onClick 
+}: { 
+  href: string; 
+  label: string; 
+  primary?: boolean; 
+  className?: string;
+  onClick?: (e: React.MouseEvent) => void;
+}) => {
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className="relative">
       <Link
         href={href}
+        onClick={onClick}
         className={`relative inline-flex items-center overflow-hidden rounded-full px-10 py-4 text-[13px] font-semibold uppercase tracking-[0.2em] transition-all duration-500 ${
           primary
             ? "bg-gold text-obsidian shadow-[0_10px_40px_rgba(211,196,184,0.15)] hover:shadow-[0_15px_60px_rgba(211,196,184,0.25)]"
@@ -160,7 +166,9 @@ function CursorGlow() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [seconds, setSeconds] = useState(1);
+  const [isEntering, setIsEntering] = useState(false);
   const { scrollY } = useScroll();
   const blobY = useTransform(scrollY, [0, 1300], [0, -120]);
   const parallaxY = useTransform(scrollY, [0, 1500], [0, -80]);
@@ -170,10 +178,63 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, []);
 
+  // Background Prefetch for Flow Feed
+  useEffect(() => {
+    async function prefetchFlow() {
+      try {
+        const response = await fetch("/api/choreos?tier=official");
+        if (response.ok) {
+          const payload = await response.json();
+          if (Array.isArray(payload?.choreos)) {
+            window.sessionStorage.setItem("nachly_flow_feed_cache_v1", JSON.stringify(payload.choreos));
+          }
+        }
+      } catch (e) {
+        console.warn("Background prefetch failed:", e);
+      }
+    }
+    prefetchFlow();
+  }, []);
+
+  const handleStartDancing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsEntering(true);
+    // Allow animation to play and data to settle
+    setTimeout(() => {
+      router.push("/scroll");
+    }, 1200);
+  }, [router]);
+
   const timerLabel = useMemo(() => `00:${String(seconds).padStart(2, "0")}`, [seconds]);
 
   return (
     <main className="relative min-h-screen overflow-x-clip bg-obsidian text-[#E7E5E5] selection:bg-gold/30 selection:text-gold">
+      <AnimatePresence>
+        {isEntering && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-obsidian"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center gap-6"
+            >
+              <BrandLogo size={60} className="shadow-[0_0_50px_rgba(211,196,184,0.2)]" />
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-[11px] font-medium tracking-[0.5em] uppercase text-gold animate-pulse">
+                  Entering Academy
+                </p>
+                <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <CursorGlow />
       <div className="pointer-events-none fixed inset-0 -z-10 opacity-[0.03] marketing-grain" />
 
@@ -195,13 +256,12 @@ export default function HomePage() {
         <nav className="mb-12 hidden items-center justify-between rounded-full border border-white/5 bg-obsidian-100/40 px-8 py-4 backdrop-blur-3xl md:flex shadow-2xl">
           <div className="flex items-center gap-3">
             <BrandLogo size={24} />
-            <p className="text-[11px] font-medium tracking-[0.3em] uppercase text-gold">Naachly</p>
+            <p className="text-[11px] font-medium tracking-[0.3em] uppercase text-gold">Nachly</p>
           </div>
           <div className="flex items-center gap-8 text-[10px] uppercase tracking-[0.2em] font-medium text-[#E7E5E5]/40">
             <a href="#scroll-feature" className="hover:text-gold transition-colors">Start Dancing</a>
             <a href="#features" className="hover:text-gold transition-colors">How it Works</a>
             <a href="#styles" className="hover:text-gold transition-colors">Dance Styles</a>
-            <a href="#choreographers" className="hover:text-gold transition-colors">Teachers</a>
           </div>
           <div className="flex items-center gap-4">
             <MotionButton href="/login" label="Log In" />
@@ -226,7 +286,7 @@ export default function HomePage() {
             </p>
 
             <div className="mt-12 flex flex-wrap gap-5">
-              <MotionButton href="/scroll" label="Start Dancing" primary />
+              <MotionButton href="/scroll" label="Start Dancing" onClick={handleStartDancing} primary />
               <MotionButton href="/explore" label="Find Styles" />
             </div>
 
@@ -235,7 +295,7 @@ export default function HomePage() {
                 { label: "High-Quality Dance Feed", color: "bg-gold/15 text-gold", icon: "✧" },
                 { label: "Smart AI Body Tracking", color: "bg-white/5 text-white/40", icon: <IcoPose /> },
                 { label: "Automated Practice Videos", color: "bg-white/5 text-white/40", icon: <IcoShare /> },
-              ].map((item, idx) => (
+              ].map((item) => (
                 <motion.div key={item.label} variants={staggerChild} whileHover={{ x: 8 }} className="flex items-center gap-4 group">
                   <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/5 bg-obsidian-100/40 text-[13px] transition-all duration-500 group-hover:border-gold/20 group-hover:bg-gold/5 ${item.color}`}>
                     {item.icon}
@@ -312,7 +372,7 @@ export default function HomePage() {
           </div>
 
           <motion.div variants={staggerParent} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {SCROLL_STEPS.map((step, idx) => (
+            {SCROLL_STEPS.map((step) => (
               <motion.div key={step.num} variants={staggerChild} whileHover={{ y: -10 }} className="p-8 rounded-3xl bg-obsidian-100/50 border border-white/5 hover:border-gold/20 transition-all duration-500 group">
                 <div className="text-4xl font-extralight text-gold/20 mb-6 group-hover:text-gold transition-colors duration-700">{step.num}</div>
                 <h3 className="text-lg font-light tracking-widest uppercase text-gold/80 mb-3">{step.title}</h3>
@@ -322,7 +382,7 @@ export default function HomePage() {
           </motion.div>
 
           <div className="mt-16 text-center">
-            <MotionButton href="/scroll" label="Start Dancing Now" primary className="px-12" />
+            <MotionButton href="/scroll" label="Start Dancing Now" onClick={handleStartDancing} primary className="px-12" />
           </div>
         </div>
       </RevealSection>
@@ -400,44 +460,12 @@ export default function HomePage() {
         </div>
       </RevealSection>
 
-      {/* ── MASTERS CTA ── */}
-      <RevealSection className="section-padding py-32" >
-        <div className="rounded-[40px] border border-gold/10 bg-obsidian-100/50 p-10 sm:p-20 relative overflow-hidden" id="choreographers">
-           <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold/3 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2" />
-          <div className="grid items-center gap-16 lg:grid-cols-2 relative z-10">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-semibold mb-3">Teacher Program</p>
-              <h2 className="font-display text-5xl font-extralight leading-tight text-[#E7E5E5]">Become a Dance <span className="text-gold">Teacher.</span></h2>
-              <p className="mt-8 text-[15px] font-light text-[#E7E5E5]/50 leading-relaxed tracking-wide">
-                We are looking for amazing choreographers to join our platform. Join our teacher program to share your dance styles with students around the world.
-              </p>
-              <div className="mt-12">
-                <MotionButton href="/apply-choreographer" label="Join as a Teacher" primary />
-              </div>
-            </div>
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerParent} className="grid grid-cols-2 gap-6">
-              {[
-                { key: "f", icon: <IcoFilm />, label: "Broadcast" },
-                { key: "st", icon: <IcoStar />, label: "Certification" },
-                { key: "sc", icon: <IcoScroll />, label: "Global Reach" },
-                { key: "ps", icon: <IcoPose />, label: "AI Translation" },
-              ].map((item) => (
-                <motion.div key={item.key} variants={staggerChild} whileHover={{ y: -5 }} className="flex flex-col items-center justify-center gap-4 rounded-[32px] bg-white/[0.03] border border-white/5 py-10 px-6 group cursor-default">
-                  <span className="text-gold/40 group-hover:text-gold transition-colors duration-500 scale-125">{item.icon}</span>
-                  <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-[#E7E5E5]/40 group-hover:text-[#E7E5E5] transition-colors">{item.label}</span>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-      </RevealSection>
-
       {/* ── FINAL CTA ── */}
       <RevealSection className="section-padding pb-40 pt-20 text-center">
         <p className="text-[10px] uppercase tracking-[0.4em] text-gold font-semibold mb-6">Start Dancing</p>
         <h2 className="font-display text-6xl font-extralight tracking-tighter text-[#E7E5E5] sm:text-7xl">Make Your <span className="text-gold italic">Mark.</span></h2>
         <div className="mt-16 flex flex-wrap items-center justify-center gap-6">
-          <MotionButton href="/scroll" label="Start Now" primary className="px-12" />
+          <MotionButton href="/scroll" label="Start Now" onClick={handleStartDancing} primary className="px-12" />
           <MotionButton href="/explore" label="Find Styles" className="px-12" />
         </div>
       </RevealSection>
@@ -472,13 +500,12 @@ export default function HomePage() {
             <div>
                <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/60">Help</p>
               <div className="flex flex-col gap-4 text-[13px] font-light text-[#E7E5E5]/40">
-                <Link href="/apply-choreographer" className="hover:text-gold transition-colors">Teach with Us</Link>
                 <Link href="/legal" className="hover:text-gold transition-colors">Legal Terms</Link>
               </div>
             </div>
           </div>
           <div className="mt-20 pt-8 border-t border-white/5 flex flex-wrap justify-between items-center gap-4">
-             <p className="text-[10px] uppercase tracking-widest text-[#E7E5E5]/20">© 2026 Naachly Academy. All Rights Reserved.</p>
+             <p className="text-[10px] uppercase tracking-widest text-[#E7E5E5]/20">© 2026 Nachly Academy. All Rights Reserved.</p>
              <div className="flex gap-8 text-[10px] uppercase tracking-widest text-[#E7E5E5]/20">
                 <span className="hover:text-gold cursor-pointer transition-colors">Privacy</span>
                 <span className="hover:text-gold cursor-pointer transition-colors">Terms</span>
