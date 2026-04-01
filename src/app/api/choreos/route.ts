@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
 import { MOCK_ROUTINES, getMockSteps, getRoutineVideoUrl } from "@/lib/mock-data";
 
+function pickPreferredVideoUrl(entries, routineId) {
+  const sorted = [...(entries || [])]
+    .filter((entry) => Boolean(entry?.video_url))
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  if (!sorted.length) {
+    return getRoutineVideoUrl(routineId) || "";
+  }
+
+  const normalized = sorted.map((entry) => ({
+    ...entry,
+    url: String(entry.video_url || ""),
+  }));
+
+  const optimizedMp4 = normalized.find((entry) => entry.url.includes(".optimized.mp4"));
+  if (optimizedMp4) return optimizedMp4.url;
+
+  const anyMp4 = normalized.find((entry) => entry.url.toLowerCase().includes(".mp4"));
+  if (anyMp4) return anyMp4.url;
+
+  return normalized[0]?.url || getRoutineVideoUrl(routineId) || "";
+}
+
 function buildMockChoreos(tierFilter?: string | null) {
   return Object.values(MOCK_ROUTINES)
     .flat()
@@ -78,9 +101,7 @@ export async function GET(request: Request) {
   }
 
   const choreos = (data || []).map((row) => {
-    const video = [...(row.routine_videos || [])]
-      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .find((entry) => entry.video_url)?.video_url || "";
+    const video = pickPreferredVideoUrl(row.routine_videos || [], row.id);
 
     const moves = [...(row.routine_steps || [])]
       .sort((a, b) => (a.step_number || 0) - (b.step_number || 0))

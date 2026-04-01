@@ -97,6 +97,8 @@ export default function FlowPage() {
   const [engagementMap, setEngagementMap] = useState({});
   const [savedMap, setSavedMap] = useState({});
   const [uiMessage, setUiMessage] = useState("");
+  const [masterMuted, setMasterMuted] = useState(true);
+  const [masterVolume, setMasterVolume] = useState(1);
   const feedRef = useRef(null);
   const videoRefs = useRef([]);
   const sectionRefs = useRef([]);
@@ -269,12 +271,18 @@ export default function FlowPage() {
 
       if (idx === activeIndex) {
         // High priority playback
+        video.muted = masterMuted;
+        video.defaultMuted = masterMuted;
+        video.volume = masterMuted ? 0 : masterVolume;
         video.play().catch(() => { });
       } else {
+        video.muted = true;
+        video.defaultMuted = true;
+        video.volume = 0;
         video.pause();
       }
     });
-  }, [activeIndex, loadedMap, choreos]);
+  }, [activeIndex, loadedMap, choreos, masterMuted, masterVolume]);
 
 
   useEffect(() => {
@@ -495,8 +503,8 @@ export default function FlowPage() {
             }}
             poster={videoAsset.poster || undefined}
             playsInline
-            muted
-            defaultMuted
+            muted={index !== activeIndex || masterMuted}
+            defaultMuted={index !== activeIndex || masterMuted}
             loop
             autoPlay
             preload={getVideoPreload(index, activeIndex)}
@@ -518,9 +526,9 @@ export default function FlowPage() {
           >
             {shouldAttachVideoSrc(index, activeIndex) ? (
               <>
-                {videoAsset.webm ? <source src={videoAsset.webm} type="video/webm" /> : null}
                 {videoAsset.mp4 ? <source src={videoAsset.mp4} type="video/mp4" /> : null}
                 {videoAsset.fallbackMp4 ? <source src={videoAsset.fallbackMp4} type="video/mp4" /> : null}
+                {videoAsset.webm ? <source src={videoAsset.webm} type="video/webm" /> : null}
               </>
             ) : null}
           </video>
@@ -613,6 +621,23 @@ export default function FlowPage() {
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
       </Link>
+
+      <button
+        type="button"
+        onClick={() => {
+          setMasterMuted((prev) => !prev);
+          const activeVideo = videoRefs.current[activeIndex];
+          if (activeVideo) {
+            activeVideo.muted = !masterMuted;
+            activeVideo.defaultMuted = !masterMuted;
+            activeVideo.volume = !masterMuted ? 0 : masterVolume;
+            activeVideo.play().catch(() => {});
+          }
+        }}
+        className="fixed right-6 top-6 z-40 rounded-full bg-black/40 border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-white backdrop-blur-md hover:bg-black/60 transition-all"
+      >
+        {masterMuted ? "Sound Off" : "Sound On"}
+      </button>
 
       {uiMessage ? (
         <div className="fixed left-1/2 top-6 z-40 -translate-x-1/2 rounded-full bg-gold/10 border border-gold/20 px-6 py-2 text-[11px] uppercase tracking-widest text-gold backdrop-blur-md">
