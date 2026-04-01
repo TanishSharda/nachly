@@ -19,7 +19,7 @@ function getClientAnonKey() {
 
 function getFlowLearnHref(item) {
   if (!item?.id) return "/explore";
-  return `/learn/${item.id}?mode=stepwise`;
+  return `/learn/${item.id}`;
 }
 
 function shouldAttachVideoSrc(index, activeIndex) {
