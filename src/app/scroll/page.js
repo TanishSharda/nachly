@@ -97,8 +97,27 @@ export default function FlowPage() {
   const [engagementMap, setEngagementMap] = useState({});
   const [savedMap, setSavedMap] = useState({});
   const [uiMessage, setUiMessage] = useState("");
+  const feedRef = useRef(null);
   const videoRefs = useRef([]);
   const sectionRefs = useRef([]);
+  const touchStartYRef = useRef(null);
+  const lastGestureAtRef = useRef(0);
+
+  const GESTURE_COOLDOWN_MS = 420;
+  const WHEEL_THRESHOLD = 28;
+  const SWIPE_THRESHOLD = 42;
+
+  const navigateToIndex = useCallback((nextIndex) => {
+    if (!choreos.length) return;
+    const bounded = Math.max(0, Math.min(choreos.length - 1, nextIndex));
+    if (bounded === activeIndex) return;
+
+    setActiveIndex(bounded);
+    const section = sectionRefs.current[bounded];
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeIndex, choreos.length]);
 
   useEffect(() => {
     if (!uiMessage) return;
@@ -175,21 +194,74 @@ export default function FlowPage() {
         if (!Number.isNaN(idx)) setActiveIndex(idx);
       },
       {
+        root: feedRef.current,
         threshold: 0.7,
         rootMargin: "0px"
       }
     );
 
-    videoRefs.current.forEach((video, index) => {
-      const container = video?.closest("section");
-      if (container) {
-        container.setAttribute("data-index", String(index));
-        observer.observe(container);
+    sectionRefs.current.forEach((section, index) => {
+      if (section) {
+        section.setAttribute("data-index", String(index));
+        observer.observe(section);
       }
     });
 
     return () => observer.disconnect();
   }, [choreos]);
+
+  const handleWheel = useCallback((event) => {
+    if (!choreos.length) return;
+    const deltaY = event.deltaY || 0;
+    if (Math.abs(deltaY) < WHEEL_THRESHOLD) return;
+
+    const now = Date.now();
+    if (now - lastGestureAtRef.current < GESTURE_COOLDOWN_MS) return;
+    lastGestureAtRef.current = now;
+
+    if (deltaY > 0) {
+      navigateToIndex(activeIndex + 1);
+    } else {
+      navigateToIndex(activeIndex - 1);
+    }
+  }, [activeIndex, choreos.length, navigateToIndex]);
+
+  const handleTouchStart = useCallback((event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    touchStartYRef.current = touch.clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((event) => {
+    if (!choreos.length) return;
+    const startY = touchStartYRef.current;
+    touchStartYRef.current = null;
+    if (typeof startY !== "number") return;
+
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+    const deltaY = startY - touch.clientY;
+    if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
+
+    const now = Date.now();
+    if (now - lastGestureAtRef.current < GESTURE_COOLDOWN_MS) return;
+    lastGestureAtRef.current = now;
+
+    if (deltaY > 0) {
+      navigateToIndex(activeIndex + 1);
+    } else {
+      navigateToIndex(activeIndex - 1);
+    }
+  }, [activeIndex, choreos.length, navigateToIndex]);
+
+  const handleKeyDown = useCallback((event) => {
+    if (event.key === "ArrowDown" || event.key === "PageDown") {
+      navigateToIndex(activeIndex + 1);
+    }
+    if (event.key === "ArrowUp" || event.key === "PageUp") {
+      navigateToIndex(activeIndex - 1);
+    }
+  }, [activeIndex, navigateToIndex]);
 
   useEffect(() => {
     videoRefs.current.forEach((video, idx) => {
@@ -395,6 +467,7 @@ export default function FlowPage() {
       return (
         <section
           key={item.id}
+          data-index={index}
           ref={(node) => {
             sectionRefs.current[index] = node;
           }}
@@ -526,7 +599,13 @@ export default function FlowPage() {
 
   return (
     <main
-      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-black text-[#E7E5E5] transition-opacity duration-700 ease-in-out scroll-smooth no-scrollbar"
+      ref={feedRef}
+      tabIndex={0}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onKeyDown={handleKeyDown}
+      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-black text-[#E7E5E5] transition-opacity duration-700 ease-in-out scroll-smooth no-scrollbar touch-pan-y"
     >
       <Link
         href="/explore"
