@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
 import { MOCK_ROUTINES, getMockSteps, getRoutineVideoUrl } from "@/lib/mock-data";
 
+function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_order?: number | null }>, routineId: string) {
+  const sorted = [...(entries || [])]
+    .filter((entry) => Boolean(entry?.video_url))
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  if (!sorted.length) {
+    return getRoutineVideoUrl(routineId) || "";
+  }
+
+  const normalized = sorted.map((entry) => ({
+    ...entry,
+    url: String(entry.video_url || ""),
+  }));
+
+  const optimizedMp4 = normalized.find((entry) => entry.url.includes(".optimized.mp4"));
+  if (optimizedMp4) return optimizedMp4.url;
+
+  const anyMp4 = normalized.find((entry) => entry.url.toLowerCase().includes(".mp4"));
+  if (anyMp4) return anyMp4.url;
+
+  return normalized[0]?.url || getRoutineVideoUrl(routineId) || "";
+}
+
 function buildMockChoreoById(id: string) {
   const routine = Object.values(MOCK_ROUTINES)
     .flat()
@@ -76,9 +99,7 @@ export async function GET(_: Request, context: { params: { id: string } }) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const dbVideo = [...(row.routine_videos || [])]
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-    .find((entry) => entry.video_url)?.video_url || "";
+  const dbVideo = pickPreferredVideoUrl(row.routine_videos || [], row.id);
   const video = dbVideo || getRoutineVideoUrl(row.id) || "";
 
   const moves = [...(row.routine_steps || [])]

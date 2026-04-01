@@ -835,6 +835,9 @@ export default function RecordPage() {
       recordingRef.current = true;
 
       if (instructorRef.current) {
+        instructorRef.current.muted = false;
+        instructorRef.current.defaultMuted = false;
+        instructorRef.current.volume = 1;
         instructorRef.current.currentTime = 0;
         instructorRef.current.play().catch(() => {});
       }

@@ -108,5 +108,5 @@ export default function LearnPage() {
     );
   }
 
-  return <LearnModePlayer choreo={choreo} backHref="/scroll" practiceHref={`/record/${choreo.id}`} />;
+  return <LearnModePlayer choreo={choreo} backHref="/scroll" practiceHref={`/record/${choreo.id}?mode=remix`} />;
 }

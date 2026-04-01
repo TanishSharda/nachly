@@ -295,7 +295,7 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
                 {loopEnabled ? "Loop On" : "Loop Off"}
               </button>
 
-              <Link href={practiceHref || `/record/${choreo?.id || ""}`} className="rounded-lg border border-nred-400/50 bg-nred-500/20 px-3 py-2 text-sm text-nred-200 hover:bg-nred-500/30">
+              <Link href={practiceHref || `/record/${choreo?.id || ""}?mode=remix`} className="rounded-lg border border-nred-400/50 bg-nred-500/20 px-3 py-2 text-sm text-nred-200 hover:bg-nred-500/30">
                 Practice with Camera
               </Link>
             </div>
