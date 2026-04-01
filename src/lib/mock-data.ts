@@ -73,10 +73,28 @@ const BIJURIA_ROUTINE: Routine = {
   updated_at: new Date().toISOString(),
 };
 
+const ONE_NIGHT_ROUTINE: Routine = {
+  id: "routine-bollywood-one-night",
+  style_id: "style-2",
+  choreographer_id: "choreographer-1",
+  title: "One Night",
+  slug: "one-night",
+  description:
+    "A high-energy Bollywood combo with strong accents, dramatic arms, and stage-ready transitions. Great for building confidence and performance texture.",
+  difficulty: "intermediate",
+  duration_seconds: 58,
+  thumbnail_url: null,
+  is_published: true,
+  is_approved: true,
+  sort_order: 1,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
 // Only real routines — dummy routines removed
 export const MOCK_ROUTINES: Record<string, Routine[]> = {
   "hip-hop": [],
-  bollywood: [BIJURIA_ROUTINE],
+  bollywood: [BIJURIA_ROUTINE, ONE_NIGHT_ROUTINE],
   kathak: [],
   bhangra: [],
 };
@@ -115,6 +133,7 @@ export function getMockSteps(routineId: string, durationOverride?: number): Rout
 // Map of routine IDs to their real video files (in public/videos/)
 const ROUTINE_VIDEOS: Record<string, string> = {
   "routine-bollywood-bijuria": "/videos/bijuria.mp4",
+  "routine-bollywood-one-night": "/videos/one-night.mp4",
 };
 
 export function getMockVideos(routineId: string): RoutineVideo[] {

@@ -110,5 +110,15 @@ export async function GET(request: Request) {
     };
   });
 
+  if (tierFilter === "official") {
+    const officialFallback = buildMockChoreos("official");
+    const existingIds = new Set(choreos.map((item) => item.id));
+    for (const item of officialFallback) {
+      if (!existingIds.has(item.id)) {
+        choreos.push(item);
+      }
+    }
+  }
+
   return NextResponse.json({ choreos });
 }
