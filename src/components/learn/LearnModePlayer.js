@@ -36,10 +36,11 @@ function getLearnVideoSources(videoUrl) {
     ? cleanUrl.slice(0, -".optimized.mp4".length)
     : cleanUrl.slice(0, -4);
 
+  // Prefer MP4 first in Learn Mode to maximize audio compatibility.
   return [
-    { src: `${base}.webm`, type: "video/webm" },
     { src: `${base}.optimized.mp4`, type: "video/mp4" },
     { src: cleanUrl, type: "video/mp4" },
+    { src: `${base}.webm`, type: "video/webm" },
   ];
 }
 
@@ -55,9 +56,18 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
   const [loopStart, setLoopStart] = useState(0);
   const [loopEnd, setLoopEnd] = useState(0);
   const [videoError, setVideoError] = useState("");
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
   const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = muted;
+    video.volume = volume;
+  }, [muted, volume]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -242,6 +252,13 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
                 {isPlaying ? "Pause" : "Play"}
               </button>
               <button type="button" onClick={() => skipBy(SEEK_STEP_SECONDS)} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">+10s</button>
+              <button
+                type="button"
+                onClick={() => setMuted((prev) => !prev)}
+                className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10"
+              >
+                {muted ? "Unmute" : "Mute"}
+              </button>
               <button type="button" onClick={toggleFullscreen} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Fullscreen</button>
             </div>
 
@@ -256,6 +273,21 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
                   <option key={option} value={option}>{option}x</option>
                 ))}
               </select>
+
+              <label className="text-xs uppercase tracking-widest text-white/50">Volume</label>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={volume}
+                onChange={(event) => {
+                  const next = Number(event.target.value || 0);
+                  setVolume(next);
+                  if (next > 0 && muted) setMuted(false);
+                }}
+                className="h-2 w-24 cursor-pointer accent-[#D3C4B8]"
+              />
 
               <button type="button" onClick={markLoopStart} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Set Loop A</button>
               <button type="button" onClick={markLoopEnd} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Set Loop B</button>
