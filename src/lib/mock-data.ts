@@ -132,8 +132,8 @@ export function getMockSteps(routineId: string, durationOverride?: number): Rout
 
 // Map of routine IDs to their real video files (in public/videos/)
 const ROUTINE_VIDEOS: Record<string, string> = {
-  "routine-bollywood-bijuria": "/videos/bijuria.mp4",
-  "routine-bollywood-one-night": "/videos/one-night.mp4",
+  "routine-bollywood-bijuria": "/videos/bijuria.optimized.mp4",
+  "routine-bollywood-one-night": "/videos/one-night.optimized.mp4",
 };
 
 export function getMockVideos(routineId: string): RoutineVideo[] {

@@ -76,9 +76,10 @@ export async function GET(_: Request, context: { params: { id: string } }) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const video = [...(row.routine_videos || [])]
+  const dbVideo = [...(row.routine_videos || [])]
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
     .find((entry) => entry.video_url)?.video_url || "";
+  const video = dbVideo || getRoutineVideoUrl(row.id) || "";
 
   const moves = [...(row.routine_steps || [])]
     .sort((a, b) => (a.step_number || 0) - (b.step_number || 0))

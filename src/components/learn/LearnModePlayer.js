@@ -22,6 +22,27 @@ function formatTime(seconds) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
+function getLearnVideoSources(videoUrl) {
+  if (!videoUrl || typeof videoUrl !== "string") return [];
+
+  const cleanUrl = videoUrl.split("?")[0];
+  const isLocalMp4 = cleanUrl.startsWith("/videos/") && cleanUrl.endsWith(".mp4");
+
+  if (!isLocalMp4) {
+    return [{ src: videoUrl, type: "video/mp4" }];
+  }
+
+  const base = cleanUrl.endsWith(".optimized.mp4")
+    ? cleanUrl.slice(0, -".optimized.mp4".length)
+    : cleanUrl.slice(0, -4);
+
+  return [
+    { src: `${base}.webm`, type: "video/webm" },
+    { src: `${base}.optimized.mp4`, type: "video/mp4" },
+    { src: cleanUrl, type: "video/mp4" },
+  ];
+}
+
 export default function LearnModePlayer({ choreo, backHref = "/scroll", practiceHref }) {
   const videoRef = useRef(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -33,8 +54,10 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [loopStart, setLoopStart] = useState(0);
   const [loopEnd, setLoopEnd] = useState(0);
+  const [videoError, setVideoError] = useState("");
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
+  const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -56,6 +79,7 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     };
 
     const onLoadedMetadata = () => {
+      setVideoError("");
       setDuration(video.duration || 0);
       setVideoReady(true);
 
@@ -72,17 +96,20 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
+    const onError = () => setVideoError("Video unavailable for this routine right now.");
 
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("loadedmetadata", onLoadedMetadata);
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
+    video.addEventListener("error", onError);
 
     return () => {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
+      video.removeEventListener("error", onError);
     };
   }, [loopEnabled, loopEnd, loopStart, resumeKey]);
 
@@ -167,10 +194,19 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
         <section className="relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
           <video
             ref={videoRef}
-            src={choreo?.video || ""}
             playsInline
             className="h-full w-full bg-black object-contain"
-          />
+          >
+            {videoSources.map((source) => (
+              <source key={source.src} src={source.src} type={source.type} />
+            ))}
+          </video>
+
+          {videoError ? (
+            <div className="absolute inset-0 grid place-items-center bg-black/70 px-6 text-center text-sm text-red-200">
+              {videoError}
+            </div>
+          ) : null}
 
           <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-gold/30 bg-black/50 px-3 py-1 text-xs text-gold">
             AI Hint: {HINTS[hintIndex]}
