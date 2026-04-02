@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
-const FLOW_CACHE_KEY = "nachly_flow_feed_cache_v1";
+const FLOW_CACHE_KEY = "nachly_flow_feed_cache_v2";
 
 function getClientAnonKey() {
   if (typeof window === "undefined") return "anon";
@@ -54,10 +54,15 @@ function getOptimizedVideoAsset(videoUrl) {
     };
   }
 
-  const base = cleanUrl.slice(0, -4);
+  const optimizedSuffix = ".optimized.mp4";
+  const isOptimizedMp4 = cleanUrl.endsWith(optimizedSuffix);
+  const base = isOptimizedMp4
+    ? cleanUrl.slice(0, -optimizedSuffix.length)
+    : cleanUrl.slice(0, -4);
+
   return {
     webm: `${base}.webm`,
-    mp4: `${base}.optimized.mp4`,
+    mp4: isOptimizedMp4 ? cleanUrl : `${base}.optimized.mp4`,
     fallbackMp4: videoUrl,
     poster: `${base}.poster.jpg`,
   };
@@ -97,7 +102,7 @@ export default function FlowPage() {
   const [engagementMap, setEngagementMap] = useState({});
   const [savedMap, setSavedMap] = useState({});
   const [uiMessage, setUiMessage] = useState("");
-  const [masterMuted, setMasterMuted] = useState(true);
+  const [masterMuted, setMasterMuted] = useState(false);
   const [masterVolume, setMasterVolume] = useState(1);
   const feedRef = useRef(null);
   const videoRefs = useRef([]);
