@@ -1,3 +1,3 @@
-import FlowPage from "../scroll/page";
+import FlowPage from "./FlowFeedClient";
 
 export default FlowPage;
