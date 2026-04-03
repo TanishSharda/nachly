@@ -25,32 +25,54 @@ function pickPreferredVideoUrl(entries, routineId) {
   return normalized[0]?.url || getRoutineVideoUrl(routineId) || "";
 }
 
+function resolveStyleSlug(routineId: string): string {
+  for (const [styleSlug, routines] of Object.entries(MOCK_ROUTINES)) {
+    if (routines.some((r) => r.id === routineId)) {
+      return styleSlug;
+    }
+  }
+  return "unknown";
+}
+
+function resolveStyleName(slug: string): string {
+  const names: Record<string, string> = {
+    "hip-hop": "Hip Hop",
+    bollywood: "Bollywood",
+    kathak: "Kathak",
+    bhangra: "Bhangra",
+  };
+  return names[slug] || slug;
+}
+
 function buildMockChoreos(tierFilter?: string | null) {
   return Object.values(MOCK_ROUTINES)
     .flat()
     .filter((routine) => routine.is_published && routine.is_approved)
-    .map((routine) => ({
-      id: routine.id,
-      title: routine.title || "Untitled Choreo",
-      routineSlug: routine.slug || null,
-      video: getRoutineVideoUrl(routine.id) || "",
-      caption: routine.description || "",
-      style: routine.style_slug || "unknown",
-      styleSlug: routine.style_slug || "unknown",
-      styleName: routine.style_slug || "Style",
-      difficulty: routine.difficulty || "intermediate",
-      choreographerId: routine.choreographer_id || null,
-      choreographerName: "Official Choreographer",
-      tier: "official",
-      score: null,
-      tags: [],
-      moves: getMockSteps(routine.id, routine.duration_seconds).map((step) => ({
-        id: step.id || String(step.step_number),
-        name: step.label || `Move ${step.step_number || ""}`,
-        start: Number(step.start_time || 0),
-        end: Number(step.end_time || 0),
-      })),
-    }))
+    .map((routine) => {
+      const styleSlug = resolveStyleSlug(routine.id);
+      return {
+        id: routine.id,
+        title: routine.title || "Untitled Choreo",
+        routineSlug: routine.slug || null,
+        video: getRoutineVideoUrl(routine.id) || "",
+        caption: routine.description || "",
+        style: styleSlug,
+        styleSlug,
+        styleName: resolveStyleName(styleSlug),
+        difficulty: routine.difficulty || "intermediate",
+        choreographerId: routine.choreographer_id || null,
+        choreographerName: "Official Choreographer",
+        tier: "official",
+        score: null,
+        tags: [],
+        moves: getMockSteps(routine.id, routine.duration_seconds).map((step) => ({
+          id: step.id || String(step.step_number),
+          name: step.label || `Move ${step.step_number || ""}`,
+          start: Number(step.start_time || 0),
+          end: Number(step.end_time || 0),
+        })),
+      };
+    })
     .filter((item) => (tierFilter ? item.tier === tierFilter : true));
 }
 
