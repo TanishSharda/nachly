@@ -130,8 +130,12 @@ export interface Purchase {
   user_id: string;
   style_id: string;
   amount_inr: number;
-  status: "pending" | "completed" | "refunded";
+  status: "pending" | "completed" | "refunded" | "failed";
   payment_ref: string | null;
+  order_id?: string | null;
+  payment_id?: string | null;
+  payment_provider?: string | null;
+  payment_payload?: Record<string, unknown> | null;
   created_at: string;
   // Joined
   style?: DanceStyle;

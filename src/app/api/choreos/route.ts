@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
-import { MOCK_ROUTINES, getMockSteps, getRoutineVideoUrl } from "@/lib/mock-data";
+import { MOCK_ROUTINES, MOCK_STYLES, getMockSteps, getRoutineVideoUrl } from "@/lib/mock-data";
 
 function pickPreferredVideoUrl(entries, routineId) {
   const sorted = [...(entries || [])]
@@ -44,6 +44,10 @@ function resolveStyleName(slug: string): string {
   return names[slug] || slug;
 }
 
+function resolveStylePrice(slug: string): number {
+  return MOCK_STYLES.find((style) => style.slug === slug)?.price_inr ?? 29900;
+}
+
 function buildMockChoreos(tierFilter?: string | null) {
   return Object.values(MOCK_ROUTINES)
     .flat()
@@ -59,6 +63,7 @@ function buildMockChoreos(tierFilter?: string | null) {
         style: styleSlug,
         styleSlug,
         styleName: resolveStyleName(styleSlug),
+        stylePriceInr: resolveStylePrice(styleSlug),
         difficulty: routine.difficulty || "intermediate",
         choreographerId: routine.choreographer_id || null,
         choreographerName: "Official Choreographer",
@@ -101,7 +106,7 @@ export async function GET(request: Request) {
   let query = db
     .from("routines")
     .select(
-      "id,title,slug,description,caption,difficulty,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,choreographer_id,profiles(full_name),dance_styles(slug,name),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)"
+      "id,title,slug,description,caption,difficulty,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,choreographer_id,profiles(full_name),dance_styles(slug,name,price_inr),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)"
     )
     .eq("is_published", true)
     .eq("is_approved", true)
@@ -143,6 +148,7 @@ export async function GET(request: Request) {
       style: row.dance_styles?.slug || "unknown",
       styleSlug: row.dance_styles?.slug || "unknown",
       styleName: row.dance_styles?.name || row.dance_styles?.slug || "Style",
+      stylePriceInr: row.dance_styles?.price_inr ?? null,
       difficulty: row.difficulty || "intermediate",
       choreographerId: row.choreographer_id || null,
       choreographerName: row.profiles?.full_name || "Official Choreographer",

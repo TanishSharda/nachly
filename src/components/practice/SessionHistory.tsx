@@ -1,12 +1,9 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  getRecentSessions,
-  getAverageScores,
-  getStreak,
-  type SessionRecord,
-} from "@/lib/ai/session-storage";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { getRecentSessions, getStreak, type SessionRecord } from "@/lib/ai/session-storage";
 
 interface SessionHistoryProps {
   onClose: () => void;
@@ -22,13 +19,98 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function computeAverages(records: SessionRecord[]) {
+  if (records.length === 0) {
+    return { accuracy: 0, consistency: 0, completion: 0 };
+  }
+
+  const sum = records.reduce(
+    (acc, record) => ({
+      accuracy: acc.accuracy + record.accuracy,
+      consistency: acc.consistency + record.consistency,
+      completion: acc.completion + record.completion,
+    }),
+    { accuracy: 0, consistency: 0, completion: 0 }
+  );
+
+  return {
+    accuracy: Math.round(sum.accuracy / records.length),
+    consistency: Math.round(sum.consistency / records.length),
+    completion: Math.round(sum.completion / records.length),
+  };
+}
+
+function computeStreakCount(records: SessionRecord[]): number {
+  const dateSet = new Set(
+    records
+      .map((record) => record.date)
+      .filter(Boolean)
+      .map((date) => date.split("T")[0])
+  );
+
+  if (dateSet.size === 0) return 0;
+
+  let count = 0;
+  const cursor = new Date();
+  while (true) {
+    const key = cursor.toISOString().split("T")[0];
+    if (!dateSet.has(key)) break;
+    count += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return count;
+}
+
 /**
  * Modal showing past session scores, streak, and progress.
  */
 export default function SessionHistory({ onClose }: SessionHistoryProps) {
-  const sessions = getRecentSessions(10);
-  const averages = getAverageScores();
-  const streak = getStreak();
+  const [remoteSessions, setRemoteSessions] = useState<SessionRecord[] | null>(null);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadRemoteSessions() {
+      if (!isSupabaseConfigured()) return;
+
+      setRemoteLoading(true);
+
+      try {
+        const response = await fetch("/api/practice-sessions?limit=10", { cache: "no-store" });
+        if (!mounted) return;
+        if (response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          const list = Array.isArray(payload?.sessions) ? payload.sessions : [];
+          setRemoteSessions(list);
+          return;
+        }
+
+        if (response.status === 401 || response.status === 503) {
+          setRemoteSessions(null);
+        }
+      } catch {
+        if (mounted) setRemoteSessions(null);
+      } finally {
+        if (mounted) setRemoteLoading(false);
+      }
+    }
+
+    void loadRemoteSessions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const localSessions = getRecentSessions(10);
+  const sessions = remoteSessions !== null ? remoteSessions : localSessions;
+  const averages = useMemo(() => computeAverages(sessions), [sessions]);
+  const streakCount = useMemo(() => {
+    if (remoteSessions !== null) return computeStreakCount(sessions);
+    return getStreak().count;
+  }, [remoteSessions, sessions]);
+  const showRemoteLoading = remoteLoading && remoteSessions === null && localSessions.length === 0;
 
   return (
     <motion.div
@@ -72,7 +154,7 @@ export default function SessionHistory({ onClose }: SessionHistoryProps) {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white/5 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-nred-500">
-              {streak.count}
+              {streakCount}
             </div>
             <div className="text-[10px] text-zinc-400 mt-1">🔥 Streak</div>
           </div>
@@ -91,7 +173,13 @@ export default function SessionHistory({ onClose }: SessionHistoryProps) {
         </div>
 
         {/* Session list */}
-        {sessions.length === 0 ? (
+        {showRemoteLoading ? (
+          <div className="text-center py-8">
+            <p className="text-zinc-400 text-sm">
+              Loading your history...
+            </p>
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-zinc-400 text-sm">
               No practice sessions yet.

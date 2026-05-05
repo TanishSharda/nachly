@@ -82,7 +82,7 @@ export default function CalibrationScreen({
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#A3E635"
+                    stroke="#D3C4B8"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   >
@@ -98,7 +98,7 @@ export default function CalibrationScreen({
           {/* Body outline guide */}
           {cameraReady && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-32 h-56 border-2 border-dashed border-nred-500/40 rounded-[32px]" />
+              <div className="w-32 h-56 border-2 border-dashed border-amber-300/35 rounded-[32px]" />
             </div>
           )}
         </div>
@@ -108,9 +108,9 @@ export default function CalibrationScreen({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-3 bg-nred-500/10 border border-nred-500/20 rounded-xl px-4 py-2.5"
+            className="mb-3 bg-amber-300/10 border border-amber-300/20 rounded-xl px-4 py-2.5"
           >
-            <p className="text-xs text-nred-400 font-medium">
+            <p className="text-xs text-amber-200 font-medium">
               Camera ready. Stand with arms out (T-pose) for best calibration.
             </p>
           </motion.div>

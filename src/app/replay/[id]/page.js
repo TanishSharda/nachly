@@ -6,10 +6,10 @@ import { useParams } from "next/navigation";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
 function getClientUserId() {
-  if (typeof window === "undefined") return "anon";
-  return window.localStorage.getItem("naachly_user_id") || "anon";
+  return getOrCreateGuestId();
 }
 
 function formatAttemptLabel(attempt, index) {

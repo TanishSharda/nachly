@@ -16,12 +16,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center font-body font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
+          "inline-flex items-center justify-center font-body font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#f4f1ec] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
           {
-            "bg-gold text-obsidian hover:bg-[#C2B3A7] focus:ring-gold/30 shadow-[0_4px_20px_rgba(211,196,184,0.15)] hover:shadow-[0_8px_30px_rgba(211,196,184,0.25)]": variant === "primary",
-            "bg-white/5 text-[#E7E5E5] border border-white/5 hover:bg-white/10 focus:ring-white/20 backdrop-blur-md": variant === "secondary",
-            "text-gold hover:bg-gold/5 focus:ring-gold/10": variant === "ghost",
-            "border border-gold/20 text-gold hover:bg-gold hover:text-obsidian focus:ring-gold/20": variant === "outline",
+            "bg-gradient-to-r from-[#7a5c3a] to-[#8f6c45] text-[#f8f5ef] border border-[#6c513236] hover:brightness-105 focus:ring-[#7a5c3a]/30 shadow-[0_18px_38px_-24px_rgba(58,42,26,0.85)]": variant === "primary",
+            "bg-[#ffffffb3] text-[#2d241a] border border-[#6c513220] hover:bg-[#fff7ed] focus:ring-[#6c513220] backdrop-blur-md": variant === "secondary",
+            "text-[#7a5c3a] hover:bg-[#7a5c3a12] focus:ring-[#7a5c3a1f]": variant === "ghost",
+            "border border-[#6c513238] text-[#7a5c3a] hover:bg-[#7a5c3a] hover:text-[#f8f5ef] focus:ring-[#7a5c3a22]": variant === "outline",
           },
           {
             "text-sm px-4 py-2 gap-1.5": size === "sm",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -19,17 +18,8 @@ import { db, storage } from "@/lib/firebase";
 import { compareWithTemporalTolerance } from "@/lib/ai/pose-engine";
 import { extractAdaptiveAngles } from "@/lib/ai/partial-body";
 import { createClient, isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
-
-function getLegacyClientUserId() {
-  if (typeof window === "undefined") return "anon";
-  const key = "naachly_user_id";
-  const existing = window.localStorage.getItem(key);
-  if (existing) return existing;
-  const created = `user_${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(key, created);
-  return created;
-}
 
 async function fetchLegacyChoreoById(id) {
   const byDocId = await getDoc(doc(db, "choreos", id));
@@ -95,7 +85,7 @@ async function loadVideo(videoEl, src) {
   });
 }
 
-async function generateMergedVideo({ instructorSrc, userBlob, score }) {
+async function generateMergedVideo({ instructorSrc, userBlob }) {
   const drawRoundedRect = (ctx, x, y, w, h, r) => {
     const radius = Math.min(r, w / 2, h / 2);
     ctx.beginPath();
@@ -177,7 +167,25 @@ async function generateMergedVideo({ instructorSrc, userBlob, score }) {
     throw new Error("Canvas context unavailable");
   }
 
-  const stream = canvas.captureStream(30);
+  const canvasStream = canvas.captureStream(30);
+  const stream = new MediaStream();
+  canvasStream.getVideoTracks().forEach((track) => stream.addTrack(track));
+
+  // Preserve instructor soundtrack in the exported remix when the browser exposes media-element audio tracks.
+  try {
+    const instructorStream =
+      typeof instructor.captureStream === "function"
+        ? instructor.captureStream()
+        : typeof instructor.mozCaptureStream === "function"
+          ? instructor.mozCaptureStream()
+          : null;
+    const instructorAudioTrack = instructorStream?.getAudioTracks?.()[0];
+    if (instructorAudioTrack) {
+      stream.addTrack(instructorAudioTrack);
+    }
+  } catch {
+    // Non-blocking: some browsers disallow audio capture for specific sources.
+  }
   const mimeType = getSupportedMimeType() || "video/webm";
   const chunks = [];
   const recorder = new MediaRecorder(stream, { mimeType });
@@ -211,14 +219,6 @@ async function generateMergedVideo({ instructorSrc, userBlob, score }) {
     const instructorTag = { x: cardX + 14, y: cardY + 14, w: 138, h: 34 };
     const youTag = { x: cardX + 14, y: splitY + 10, w: 70, h: 32 };
     const brandTag = { x: cardX + cardW / 2 - 103, y: splitY - 26, w: 206, h: 52 };
-
-    const rankTag = { x: cardX + cardW - 122, y: splitY + 104, w: 106, h: 38 };
-    const scoreTag = { x: cardX + cardW - 202, y: splitY + 152, w: 186, h: 44 };
-    const xpTag = { x: cardX + cardW - 166, y: splitY + 206, w: 150, h: 44 };
-
-    const safeScore = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0;
-    const rank = "S";
-    const xp = 150;
 
     const paint = () => {
       const elapsed = (performance.now() - started) / 1000;
@@ -404,6 +404,7 @@ export default function RecordPage() {
   const searchParams = useSearchParams();
   const id = params?.id;
   const isRemixMode = searchParams?.get("mode") === "remix";
+  const isAiPracticeEntry = searchParams?.get("entry") === "ai-practice";
   const [choreo, setChoreo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -411,7 +412,6 @@ export default function RecordPage() {
   const [cameraReady, setCameraReady] = useState(false);
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [score, setScore] = useState(null);
   const [mergedUrl, setMergedUrl] = useState("");
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState("");
   const [instructorReady, setInstructorReady] = useState(false);
@@ -440,7 +440,7 @@ export default function RecordPage() {
   const startInFlightRef = useRef(false);
   const recordingStartedAtRef = useRef(0);
 
-  const canScroll = mergedUrl || score !== null;
+  const canScroll = Boolean(mergedUrl);
 
   useEffect(() => {
     let mounted = true;
@@ -728,9 +728,6 @@ export default function RecordPage() {
   const showCenteredStart = !recording && !processing && !mergedUrl && countdown === 0;
   const showAiSetupOverlay = isRemixMode && aiStatus === "loading" && !recording && !processing;
   const showCenteredResultActions = Boolean(mergedUrl) && !recording && !processing;
-  const displayScore = Number.isFinite(score) ? Math.max(0, Math.min(100, Number(score))) : 95;
-  const rankLabel = displayScore >= 92 ? "S" : displayScore >= 84 ? "A" : displayScore >= 74 ? "B" : "C";
-  const earnedXp = Math.max(60, Math.round(displayScore * 1.6));
 
   const startBlockedReason = useMemo(() => {
     if (!cameraEnabled) return "Camera is off. Turn on camera first.";
@@ -939,7 +936,6 @@ export default function RecordPage() {
       aiStatsRef.current.frameCount > 0
         ? Math.round(aiStatsRef.current.totalScore / aiStatsRef.current.frameCount)
         : 0;
-    setScore(isRemixMode ? aiScore : null);
 
     try {
       if (!isRemixMode) {
@@ -948,20 +944,21 @@ export default function RecordPage() {
         const localUrl = URL.createObjectURL(portraitBlob);
         setMergedUrl(localUrl);
         setUploadedVideoUrl("");
+        setShowPreviewModal(true);
         return;
       }
 
       const mergedBlob = await generateMergedVideo({
         instructorSrc: choreo.video,
         userBlob: rawBlob,
-        score: aiScore,
       });
 
       if (mergedUrl) URL.revokeObjectURL(mergedUrl);
       const localUrl = URL.createObjectURL(mergedBlob);
       setMergedUrl(localUrl);
+      setShowPreviewModal(true);
 
-      const fallbackUserId = getLegacyClientUserId();
+      const fallbackUserId = getOrCreateGuestId();
       const storageUserId = authUserId || fallbackUserId;
       const fileRef = ref(storage, `attempts/${storageUserId}/${choreo.id}/${Date.now()}.webm`);
       await uploadBytes(fileRef, mergedBlob, { contentType: "video/webm" });
@@ -1015,9 +1012,14 @@ export default function RecordPage() {
   };
 
   const downloadMergedRecording = () => {
-    if (!mergedUrl) return;
+    const downloadableUrl = mergedUrl || uploadedVideoUrl;
+    if (!downloadableUrl) {
+      setError("Recording not ready to download yet. Please wait a moment.");
+      return;
+    }
+
     const anchor = document.createElement("a");
-    anchor.href = mergedUrl;
+    anchor.href = downloadableUrl;
     anchor.download = isRemixMode
       ? `naachly-remix-${choreo?.id || "dance"}.webm`
       : `naachly-recording-${Date.now()}.webm`;
@@ -1026,25 +1028,22 @@ export default function RecordPage() {
     anchor.remove();
   };
 
-  const shareRemixToInstagram = async () => {
-    if (!mergedUrl || shareBusy) return;
+  const shareToInstagram = async () => {
+    if ((!mergedUrl && !uploadedVideoUrl) || shareBusy) return;
 
     setShareBusy(true);
     setError("");
 
     try {
-      const response = await fetch(mergedUrl);
+      const shareSource = mergedUrl || uploadedVideoUrl;
+      const response = await fetch(shareSource);
       const blob = await response.blob();
       const file = new File([blob], `naachly-${isRemixMode ? "remix" : "recording"}-${choreo?.id || "dance"}.webm`, {
         type: blob.type || "video/webm",
       });
 
-      const title = isRemixMode
-        ? `${choreo?.title || "Naachly Remix"} - My Remix`
-        : "Naachly Recording - My Choreo";
-      const text = isRemixMode
-        ? "Created with Naachly AI dance coach. Share this remix to Instagram."
-        : "Recorded on Naachly Studio. Share this video to Instagram.";
+      const title = `${choreo?.title || "Naachly"} - Instagram Share`;
+      const text = "Sharing my Naachly dance video to Instagram.";
 
       if (
         typeof navigator !== "undefined" &&
@@ -1060,13 +1059,34 @@ export default function RecordPage() {
         return;
       }
 
+      if (typeof navigator !== "undefined" && navigator.share && uploadedVideoUrl) {
+        await navigator.share({ title, text, url: uploadedVideoUrl });
+        return;
+      }
+
       downloadMergedRecording();
-      setError(isRemixMode ? "Downloaded remix. Upload it to Instagram from your gallery." : "Downloaded recording. Upload it to Instagram from your gallery.");
+      if (typeof window !== "undefined") {
+        window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      }
+      setError("Instagram share is not available on this browser. Video downloaded for manual Instagram upload.");
     } catch {
-      setError("Could not open share sheet. Video downloaded for Instagram upload.");
       downloadMergedRecording();
+      if (typeof window !== "undefined") {
+        window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+      }
+      setError("Could not open Instagram share. Video downloaded for manual Instagram upload.");
     } finally {
       setShareBusy(false);
+    }
+  };
+
+  const copyUploadedVideoLink = async () => {
+    if (!uploadedVideoUrl || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(uploadedVideoUrl);
+      setError("Share link copied.");
+    } catch {
+      setError("Could not copy share link.");
     }
   };
 
@@ -1083,37 +1103,44 @@ export default function RecordPage() {
   }
 
   return (
-    <main className={`h-[100dvh] bg-obsidian text-[#E7E5E5] p-2 sm:p-4 ${canScroll ? "overflow-y-auto" : "overflow-hidden"}`}>
-      <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col">
-        <div className="mb-4 rounded-3xl border border-gold/10 bg-obsidian-100 p-4 sm:p-6 transition-all duration-700 shadow-2xl">
+    <main className={`h-[100dvh] bg-[#fbf9f4] text-[#31332e] ${canScroll ? "overflow-y-auto" : "overflow-hidden"}`}>
+      <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col px-2 sm:px-4">
+        <div className="sticky top-0 z-40 mb-3 border-b border-[#b2b2ab]/20 bg-[#fbf9f4]/85 px-4 py-4 backdrop-blur-xl sm:px-6">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-4">
-              <BrandLogo size={32} className="brightness-110 shadow-[0_0_20px_rgba(211,196,184,0.15)]" />
-              <h1 className="text-2xl font-extralight tracking-[0.2em] uppercase text-gold italic">Studio</h1>
-            </div>
-            {recording && (
-              <div className="inline-flex items-center gap-3 rounded-full border border-gold/20 bg-gold/5 px-4 py-1.5 text-[10px] font-bold tracking-widest text-gold uppercase animate-fade-in shadow-glow">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
-                RECORDING {String(Math.floor(recordingElapsed / 60)).padStart(2, "0")}:{String(recordingElapsed % 60).padStart(2, "0")}
-              </div>
-            )}
+            <Link href={isAiPracticeEntry ? `/learn/${choreo?.id || id}` : "/flow"} className="h-10 w-10 rounded-full grid place-items-center text-[#725b3f] hover:bg-[#eee0d4]/60 transition active:scale-95">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </Link>
+            <h1 className="text-2xl font-extrabold tracking-[0.08em] uppercase text-[#725b3f]">{isAiPracticeEntry ? "AI Practice" : "Studio"}</h1>
+            <BrandLogo size={40} className="rounded-full border border-[#b2b2ab]/30" />
           </div>
-          <p className="mt-3 text-[10px] uppercase tracking-[0.3em] text-[#E7E5E5]/40 font-medium">
+          <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-[#1f1f1b] font-semibold">
             {processing
-              ? "Synthesizing your motion..."
+              ? isAiPracticeEntry
+                ? "Analyzing your practice..."
+                : "Processing your recording..."
               : countdown > 0
                 ? `Initiating in ${countdown}s`
                 : recording
-                  ? "Capturing Movement"
+                  ? isAiPracticeEntry
+                    ? "Tracking Your Practice"
+                    : "Capturing Movement"
                   : canRecord
-                    ? "Academy Studio Ready"
+                    ? isAiPracticeEntry
+                      ? "AI Practice Ready"
+                      : "Recording Studio Ready"
                     : startBlockedReason}
           </p>
-          {error && <p className="mt-2 text-[11px] text-gold/80 italic animate-pulse">{error}</p>}
+          {recording && (
+            <div className="mx-auto mt-3 inline-flex items-center gap-3 rounded-full bg-[#725b3f]/90 px-4 py-1.5 text-[11px] font-bold tracking-[0.1em] text-[#fff7f3] uppercase shadow-md">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#fff7f3]" />
+              RECORDING {String(Math.floor(recordingElapsed / 60)).padStart(2, "0")}:{String(recordingElapsed % 60).padStart(2, "0")}
+            </div>
+          )}
+          {error && <p className="mt-2 text-center text-[11px] text-[#a73b21] italic animate-pulse">{error}</p>}
         </div>
 
-        <div className="mb-4 flex items-center justify-between gap-4 px-4 bg-white/5 py-3 rounded-2xl border border-white/5">
-          <p className="text-[#E7E5E5]/60 text-xs font-light tracking-[0.1em] uppercase italic truncate">{choreo?.title || "Choreo"}</p>
+        <div className="mb-4 flex items-center justify-between gap-4 px-4 bg-[#f5f4ed] py-3 rounded-2xl border border-[#b2b2ab]/25">
+          <p className="text-[#1f1f1b] text-xs font-semibold tracking-[0.12em] uppercase truncate">{choreo?.title || "Choreo"}</p>
           <div className="flex items-center gap-6">
             <button
               type="button"
@@ -1125,16 +1152,27 @@ export default function RecordPage() {
               disabled={recording || processing}
               className={`text-[10px] uppercase tracking-[0.2em] font-bold transition-all duration-500 ${
                 cameraEnabled
-                  ? "text-gold underline underline-offset-8 decoration-gold/50"
-                  : "text-[#E7E5E5]/30 hover:text-gold"
+                  ? "text-[#725b3f] underline underline-offset-8 decoration-[#725b3f]/50"
+                  : "text-[#4f4f48] hover:text-[#725b3f]"
               } disabled:cursor-not-allowed disabled:opacity-45`}
             >
               {cameraEnabled ? "LEN ACTIVE" : "ENABLE LENS"}
             </button>
             {isRemixMode ? (
-              <Link href={`/learn/${choreo?.id || id}?mode=stepwise`} className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#E7E5E5]/30 hover:text-gold transition-all">
+              <Link href={`/learn/${choreo?.id || id}?mode=stepwise`} className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#4f4f48] hover:text-[#725b3f] transition-all">
                 LEARN STEPS
               </Link>
+            ) : null}
+            {(mergedUrl || uploadedVideoUrl) ? (
+              <button
+                type="button"
+                onClick={downloadMergedRecording}
+                className="inline-flex items-center gap-2 rounded-full border border-[#6c513236] bg-[#fff8ed] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#725b3f] transition hover:bg-[#fdf1df]"
+                title="Download recording"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+                Download
+              </button>
             ) : null}
           </div>
         </div>
@@ -1142,8 +1180,8 @@ export default function RecordPage() {
         <div className="min-h-0 flex-1 overflow-hidden">
           {isRemixMode ? (
             <div className="flex flex-col md:flex-row h-full w-full gap-3">
-              <div className="relative flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
-                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-obsidian-100/90 border border-gold/20 rounded-full text-[9px] font-bold text-gold tracking-widest uppercase">Instructor</div>
+              <div className="relative flex-1 overflow-hidden rounded-3xl border border-[#b2b2ab]/20 bg-black shadow-2xl">
+                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-[#fbf9f4]/85 border border-[#b2b2ab]/30 rounded-full text-[9px] font-bold text-[#725b3f] tracking-widest uppercase">Instructor</div>
                 <video
                   ref={instructorRef}
                   src={choreo?.video}
@@ -1168,8 +1206,8 @@ export default function RecordPage() {
                 />
               </div>
 
-              <div className="relative flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
-                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-obsidian-100/90 border border-white/40 rounded-full text-[9px] font-bold text-white tracking-widest uppercase">You</div>
+              <div className="relative flex-1 overflow-hidden rounded-3xl border border-[#b2b2ab]/20 bg-black shadow-2xl">
+                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-[#fbf9f4]/85 border border-[#b2b2ab]/30 rounded-full text-[9px] font-bold text-[#725b3f] tracking-widest uppercase">You</div>
                 {cameraEnabled ? (
                   <video
                     ref={webcamRef}
@@ -1183,15 +1221,15 @@ export default function RecordPage() {
                     <div className="text-center px-4">
                       <div className="h-12 w-12 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center mx-auto mb-4 text-gold">📷</div>
                       <p className="text-sm font-semibold text-white tracking-wide uppercase">Camera is off</p>
-                      <p className="mt-2 text-[10px] text-zinc-400 uppercase tracking-widest">Enable lens to begin academy training</p>
+                      <p className="mt-2 text-[10px] text-zinc-400 uppercase tracking-widest">Enable lens to begin recording</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="relative h-full w-full overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
-              <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-obsidian-100/90 border border-white/40 rounded-full text-[9px] font-bold text-white tracking-widest uppercase">Performance Mode</div>
+            <div className="relative h-full w-full overflow-hidden rounded-3xl border border-[#b2b2ab]/20 bg-black shadow-2xl">
+              <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-[#fbf9f4]/85 border border-[#b2b2ab]/30 rounded-full text-[9px] font-bold text-[#725b3f] tracking-widest uppercase">Performance Mode</div>
               {cameraEnabled ? (
                 <video
                   ref={webcamRef}
@@ -1213,28 +1251,11 @@ export default function RecordPage() {
           )}
         </div>
 
-        {isRemixMode && score !== null && (
-          <div className="mt-4 rounded-[32px] border border-gold/20 bg-gold/5 p-6 backdrop-blur-xl animate-fade-up shadow-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-2xl font-light tracking-widest text-[#E7E5E5] uppercase italic">Dance Accuracy</p>
-              <div className="text-4xl font-light text-gold tracking-tighter">{score}%</div>
-            </div>
-            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-               <motion.div 
-                 initial={{ width: 0 }}
-                 animate={{ width: `${score}%` }}
-                 className="h-full bg-gold shadow-[0_0_20px_rgba(211,196,184,0.5)]"
-               />
-            </div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#E7E5E5]/40 mt-4 text-center">AI Synthesis: Continuous Motion Logic Analysis</p>
-          </div>
-        )}
-
         {countdown > 0 && (
-          <div className="fixed inset-0 z-[80] grid place-items-center bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[80] grid place-items-center bg-black/65 backdrop-blur-[2px]">
             <div className="text-center">
-              <p className="text-sm tracking-[0.2em] uppercase text-zinc-300 mb-3">Get Ready</p>
-              <div className="mx-auto h-36 w-36 rounded-full border border-gold/40 bg-obsidian-100/80 backdrop-blur-xl grid place-items-center text-7xl font-light text-gold shadow-[0_0_50px_rgba(211,196,184,0.15)] italic">
+              <p className="text-sm tracking-[0.2em] uppercase text-white/85 mb-3">Get Ready</p>
+              <div className="mx-auto h-36 w-36 rounded-full border border-white/35 bg-white/15 backdrop-blur-xl grid place-items-center text-7xl font-extrabold text-white shadow-[0_0_50px_rgba(255,255,255,0.22)]">
                 {countdown}
               </div>
               <p className="mt-4 text-sm text-zinc-300">Starting recording...</p>
@@ -1258,8 +1279,8 @@ export default function RecordPage() {
             <div className="text-center px-6">
               <BrandLogo size={64} className="mx-auto mb-6 shadow-[0_0_40px_rgba(211,196,184,0.2)]" priority />
               <div className="mx-auto mb-6 h-10 w-10 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
-              <p className="text-xl font-semibold text-white">Preparing AI Coach</p>
-              <p className="mt-2 text-sm text-zinc-300">Please wait before starting your recording.</p>
+              <p className="text-xl font-semibold text-white">{isAiPracticeEntry ? "Preparing AI Coach" : "Preparing Studio"}</p>
+              <p className="mt-2 text-sm text-zinc-300">{isAiPracticeEntry ? "Please wait while we load live pose tracking." : "Please wait before starting your recording."}</p>
             </div>
           </div>
         )}
@@ -1267,7 +1288,7 @@ export default function RecordPage() {
         {showCenteredStart && (
           <div className="fixed inset-0 z-[70] grid place-items-center bg-obsidian-100/60 p-4 backdrop-blur-xl animate-fade-in">
             <div className="w-full max-w-sm rounded-[40px] border border-gold/20 bg-obsidian p-8 text-center shadow-[0_32px_120px_rgba(0,0,0,0.8)] sm:max-w-md">
-              <h2 className="text-3xl font-extralight tracking-[0.2em] text-[#E7E5E5] uppercase italic mb-6">Remix Studio</h2>
+              <h2 className="text-3xl font-extralight tracking-[0.2em] text-[#E7E5E5] uppercase italic mb-6">{isAiPracticeEntry ? "AI Practice" : "Recording Studio"}</h2>
               {!cameraEnabled ? (
                 <button
                   type="button"
@@ -1285,7 +1306,7 @@ export default function RecordPage() {
                   disabled
                   className="mt-4 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500 opacity-75"
                 >
-                  Calibrating...
+                  Setting up...
                 </button>
               ) : (
                 <button
@@ -1294,7 +1315,7 @@ export default function RecordPage() {
                   disabled={!canRecord}
                   className="mt-4 w-full rounded-2xl bg-gold px-4 py-4 text-[11px] font-black uppercase tracking-[0.25em] text-obsidian transition hover:scale-[1.05] active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-40 shadow-glow"
                 >
-                  Start Remix
+                  {isAiPracticeEntry ? "Start AI Practice" : "Start Recording"}
                 </button>
               )}
               {!canRecord && startBlockedReason ? (
@@ -1314,102 +1335,117 @@ export default function RecordPage() {
               bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)",
               transform: "translateX(-50%)",
             }}
-            className="fixed z-[95] rounded-full border border-white/30 bg-red-500/90 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-[0_8px_30px_rgba(239,68,68,0.35)] transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="fixed z-[95] rounded-full border border-white/45 bg-[#a73b21] px-6 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-[0_8px_30px_rgba(167,59,33,0.45)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Stop Recording
           </button>
         )}
 
         {showCenteredResultActions && (
-          <div className="fixed inset-0 z-[88] overflow-y-auto bg-obsidian p-6 text-[#E7E5E5] animate-fade-in">
-            <div className="mx-auto w-full max-w-lg pb-12">
-              <div className="mb-10 flex items-center justify-between">
+          <div className="fixed inset-0 z-[88] overflow-y-auto bg-[#f4f1ec] p-4 text-[#1f1f1b] animate-fade-in sm:p-6">
+            <div className="mx-auto w-full max-w-lg pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] sm:pb-12">
+              <div className="mb-6 flex items-center justify-between sm:mb-10">
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(true)}
-                  className="text-gold/60 hover:text-gold transition-colors"
+                  className="text-[#725b3f] hover:text-[#5f472e] transition-colors"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
-                <h2 className="text-xl font-light tracking-[0.2em] uppercase text-gold/80">Session Overview</h2>
+                <h2 className="text-sm font-semibold tracking-[0.14em] uppercase text-[#1f1f1b] sm:text-xl sm:tracking-[0.16em]">Session Overview</h2>
                 <div className="w-6" />
               </div>
 
-              <div className="relative overflow-hidden rounded-[32px] bg-obsidian-100 border border-gold/10 shadow-2xl group">
+              <div className="relative overflow-hidden rounded-[32px] bg-[#f5f4ed] border border-[#b2b2ab]/35 shadow-[0_20px_45px_-30px_rgba(58,42,26,0.8)] group">
                 {mergedUrl ? (
-                  <video src={mergedUrl} className="absolute inset-0 h-full w-full object-cover opacity-60 transition-transform duration-[3s] group-hover:scale-105" muted playsInline loop autoPlay />
+                  <video src={mergedUrl} className="absolute inset-0 h-full w-full object-cover opacity-25 transition-transform duration-[3s] group-hover:scale-105" muted playsInline loop autoPlay />
                 ) : null}
-                <div className="absolute inset-0 bg-gradient-to-b from-obsidian/40 via-transparent to-obsidian" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#f5f4ed]/85 via-[#f5f4ed]/55 to-[#f5f4ed]/90" />
 
-                <div className="relative z-10 flex min-h-[500px] flex-col justify-between p-8">
+                <div className="relative z-10 flex min-h-[440px] flex-col justify-between p-5 sm:min-h-[500px] sm:p-8">
                   <div className="text-center group">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-gold/60">Dance Performance</span>
-                    <h3 className="text-4xl font-extralight tracking-widest text-gold mt-2 uppercase">Naachly</h3>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#5e6059]">{isAiPracticeEntry ? "AI Practice Complete" : "Recording Complete"}</span>
+                    <h3 className="mt-2 text-3xl font-semibold tracking-[0.12em] text-[#725b3f] uppercase sm:text-4xl">Naachly</h3>
                   </div>
 
                   <div className="space-y-8">
-                    <div className="flex items-end justify-between border-b border-gold/10 pb-6">
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase tracking-widest text-[#E7E5E5]/40">Mastery Rank</span>
-                        <div className="text-7xl font-light text-gold tracking-tight">{rankLabel}</div>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <span className="text-[10px] uppercase tracking-widest text-[#E7E5E5]/40">Accuracy</span>
-                        <div className="text-5xl font-extralight text-[#E7E5E5] italic">{displayScore}%</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-4 py-4 px-8 rounded-2xl bg-gold/5 border border-gold/10 backdrop-blur-md">
-                      <span className="text-lg">✨</span>
-                      <span className="text-xl font-light tracking-[0.2em] text-[#E7E5E5]">+{earnedXp} DANCE XP</span>
+                    <div className="flex items-center justify-center gap-3 rounded-2xl bg-[#fff8ed] border border-[#6c513236] px-5 py-4 backdrop-blur-md sm:gap-4 sm:px-8">
+                      <span className="text-base font-semibold tracking-[0.1em] text-[#1f1f1b] sm:text-xl sm:tracking-[0.12em]">{isAiPracticeEntry ? "Your AI practice video is ready to download or share." : "Your video is ready to download or share."}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-10 space-y-4">
+              <div className="mt-6 space-y-3 sm:mt-10 sm:space-y-4">
                 <button
                   type="button"
-                  onClick={() => shareRemixToInstagram()}
+                  onClick={() => shareToInstagram()}
                   disabled={shareBusy}
-                  className="premium-button w-full bg-gold text-obsidian border-none py-5 text-[13px] font-black tracking-[0.25em]"
+                  className="w-full rounded-2xl bg-gradient-to-r from-[#7a5c3a] to-[#9a7852] text-[#fffaf3] border border-[#6c513233] py-4 text-[11px] font-bold tracking-[0.16em] uppercase shadow-[0_18px_36px_-22px_rgba(58,42,26,0.9)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 sm:text-[12px] sm:tracking-[0.18em]"
                 >
-                  {shareBusy ? "PREPARING..." : "POST TO INSTAGRAM"}
+                  {shareBusy ? "PREPARING..." : "SHARE TO INSTAGRAM"}
                 </button>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowPreviewModal(true)}
-                    className="premium-button w-full bg-white/5 border border-white/10 text-white hover:bg-white/10 py-4 text-[11px] tracking-[0.15em]"
-                  >
-                    POST TO FEED
-                  </button>
+                <button
+                  type="button"
+                  onClick={downloadMergedRecording}
+                  className="w-full rounded-2xl border border-[#6c513236] bg-[#fff8ed] py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-[#725b3f] shadow-[0_14px_30px_-24px_rgba(58,42,26,0.95)] transition hover:bg-[#fdf1df] active:scale-[0.99] sm:text-[12px] sm:tracking-[0.14em]"
+                >
+                  DOWNLOAD RECORDING VIDEO
+                </button>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={downloadMergedRecording}
-                    className="premium-button w-full bg-white/5 border border-white/10 text-white hover:bg-white/10 py-4 text-[11px] tracking-[0.15em]"
+                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
                   >
-                    SAVE DEVICE
+                    {isRemixMode ? "Save Remix" : "Save Video"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(true)}
+                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
+                  >
+                    Open Preview
                   </button>
                 </div>
+
+                {uploadedVideoUrl ? (
+                  <button
+                    type="button"
+                    onClick={copyUploadedVideoLink}
+                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
+                  >
+                    COPY SHARE LINK
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
         )}
 
         {showPreviewModal && mergedUrl && (
-          <div className="fixed inset-0 z-[96] grid place-items-center bg-black/80 p-3 sm:p-4 backdrop-blur-sm">
-            <div className="w-full max-w-3xl rounded-2xl border border-white/15 bg-zinc-950 p-3 shadow-2xl sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-white sm:text-lg">Recorded Video</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowPreviewModal(false)}
-                  className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-white/10"
-                >
-                  Close
-                </button>
+          <div className="fixed inset-0 z-[96] grid place-items-center bg-[#1f1f1bcc] p-3 sm:p-4 backdrop-blur-sm">
+            <div className="w-full max-w-3xl rounded-2xl border border-[#b2b2ab]/35 bg-[#f5f4ed] p-3 shadow-2xl sm:p-4">
+              <div className="mb-3 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                <h2 className="text-base font-semibold text-[#1f1f1b] sm:text-lg">Recorded Video</h2>
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={downloadMergedRecording}
+                    className="flex-1 rounded-lg border border-[#b2b2ab]/45 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#1f1f1b] transition hover:bg-[#f8f3ea] sm:flex-none"
+                  >
+                    Download Video
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(false)}
+                    className="flex-1 rounded-lg border border-[#b2b2ab]/45 bg-white px-3 py-1.5 text-xs font-semibold text-[#1f1f1b] transition hover:bg-[#f8f3ea] sm:flex-none"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
               <video src={mergedUrl} controls className="max-h-[70vh] w-full rounded-xl bg-black" />
             </div>

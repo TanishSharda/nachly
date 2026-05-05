@@ -2,24 +2,46 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
-const FLOW_CACHE_KEY = "nachly_flow_feed_cache_v2";
+const FLOW_CACHE_KEY = "nachly_flow_feed_cache_v3";
+const ENABLED_FLOW_STYLES = ["bollywood", "bhangra"];
 
-function getClientAnonKey() {
-  if (typeof window === "undefined") return "anon";
-  const key = "naachly_scroll_anon";
-  const existing = window.localStorage.getItem(key);
-  if (existing) return existing;
-  const created = `anon_${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(key, created);
-  return created;
+function normalizeStyle(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isEnabledStyle(value) {
+  return ENABLED_FLOW_STYLES.includes(normalizeStyle(value));
+}
+
+function filterByStyle(list, styleFilter) {
+  const baseList = (list || []).filter((item) => {
+    const styleSlug = normalizeStyle(item?.styleSlug || item?.style);
+    return isEnabledStyle(styleSlug);
+  });
+
+  if (!styleFilter || styleFilter === "mix") return baseList;
+
+  return baseList.filter((item) => {
+    const styleSlug = String(item?.styleSlug || item?.style || "").toLowerCase();
+    const styleName = String(item?.styleName || "").toLowerCase();
+    const title = String(item?.title || "").toLowerCase();
+    return styleSlug === styleFilter || styleName.includes(styleFilter) || title.includes(styleFilter);
+  });
 }
 
 function getFlowLearnHref(item) {
-  if (!item?.id) return "/explore";
-  return `/learn/${item.id}`;
+  const routineSlug = String(item?.routineSlug || "").trim();
+  if (routineSlug) return `/learn/${encodeURIComponent(routineSlug)}`;
+
+  const routineId = String(item?.id || "").trim();
+  if (routineId) return `/learn/${encodeURIComponent(routineId)}`;
+
+  return "/explore";
 }
 
 function shouldAttachVideoSrc(index, activeIndex) {
@@ -94,16 +116,22 @@ async function fetchChoreos() {
 }
 
 export default function FlowPage() {
+  const searchParams = useSearchParams();
+  const styleFilter = (searchParams.get("style") || "").trim().toLowerCase();
+  const cacheKey = styleFilter ? `${FLOW_CACHE_KEY}_${styleFilter}` : FLOW_CACHE_KEY;
   const [choreos, setChoreos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [loadedMap, setLoadedMap] = useState({});
-  const [engagementMap, setEngagementMap] = useState({});
   const [savedMap, setSavedMap] = useState({});
   const [uiMessage, setUiMessage] = useState("");
   const [masterMuted, setMasterMuted] = useState(false);
-  const [masterVolume, setMasterVolume] = useState(1);
+  const [pendingLearn, setPendingLearn] = useState(null);
+  const [paywallItem, setPaywallItem] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+  const masterVolume = 1;
   const feedRef = useRef(null);
   const videoRefs = useRef([]);
   const sectionRefs = useRef([]);
@@ -113,6 +141,165 @@ export default function FlowPage() {
   const GESTURE_COOLDOWN_MS = 420;
   const WHEEL_THRESHOLD = 28;
   const SWIPE_THRESHOLD = 42;
+
+  const stylePriceFallbacks = {
+    bollywood: 29900,
+    bhangra: 19900,
+    kathak: 19900,
+    "hip-hop": 19900,
+  };
+
+  const resolveStylePriceInr = useCallback((item) => {
+    const direct = Number(item?.stylePriceInr || item?.price_inr || 0);
+    if (Number.isFinite(direct) && direct >= 100) return direct;
+    const slug = String(item?.styleSlug || item?.style || "").toLowerCase();
+    return stylePriceFallbacks[slug] || 29900;
+  }, []);
+
+  const formatInr = useCallback((paise) => {
+    const inr = Math.max(1, Math.round(Number(paise || 0) / 100));
+    return new Intl.NumberFormat("en-IN").format(inr);
+  }, []);
+
+  const loadRazorpayScript = useCallback(async () => {
+    if (typeof window === "undefined") return false;
+    if (window.Razorpay) return true;
+
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  const openLearnPrompt = useCallback((item) => {
+    setPendingLearn(item);
+  }, []);
+
+  const closeLearnPrompt = useCallback(() => {
+    setPendingLearn(null);
+  }, []);
+
+  const closePaywall = useCallback(() => {
+    setPaywallItem(null);
+    setPaying(false);
+    setPayError("");
+  }, []);
+
+  const proceedToLearn = useCallback((item) => {
+    const href = getFlowLearnHref(item);
+    if (typeof window !== "undefined") {
+      window.location.href = href;
+    }
+  }, []);
+
+  const handleContinueLearn = useCallback(async (item) => {
+    closeLearnPrompt();
+    proceedToLearn(item);
+  }, [closeLearnPrompt, proceedToLearn]);
+
+  const handlePayment = useCallback(async () => {
+    if (!paywallItem) return;
+    setPayError("");
+    setPaying(true);
+
+    try {
+      const styleSlug = String(paywallItem?.styleSlug || paywallItem?.style || "").trim().toLowerCase();
+      const styleName = String(paywallItem?.styleName || paywallItem?.style || "Style").trim();
+      const amountPaise = resolveStylePriceInr(paywallItem);
+
+      const orderResponse = await fetch("/api/purchases/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          styleSlug,
+          styleName,
+        }),
+      });
+
+      const orderPayload = await orderResponse.json().catch(() => ({}));
+      if (!orderResponse.ok) {
+        setPayError(orderPayload?.error || "Unable to start payment.");
+        setPaying(false);
+        return;
+      }
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded || !window.Razorpay) {
+        setPayError("Razorpay SDK failed to load. Please try again.");
+        setPaying(false);
+        return;
+      }
+
+      const razorpay = new window.Razorpay({
+        key: orderPayload.keyId,
+        amount: orderPayload.amount,
+        currency: orderPayload.currency || "INR",
+        name: "Naachly",
+        description: `Unlock ${styleName}`,
+        order_id: orderPayload.orderId,
+        method: { upi: true },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [{ method: "upi" }],
+              },
+            },
+            sequence: ["block.upi"],
+            preferences: { show_default_blocks: true },
+          },
+        },
+        prefill: {
+          name: orderPayload?.user?.name || "",
+          email: orderPayload?.user?.email || "",
+        },
+        notes: {
+          styleSlug,
+        },
+        handler: async (response) => {
+          const verifyResponse = await fetch("/api/purchases/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              styleSlug,
+              amountPaise,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          const verifyPayload = await verifyResponse.json().catch(() => ({}));
+          if (!verifyResponse.ok || !verifyPayload?.verified) {
+            setPayError(verifyPayload?.error || "Payment verification failed.");
+            setPaying(false);
+            return;
+          }
+
+          closePaywall();
+          proceedToLearn(paywallItem);
+        },
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+          },
+        },
+        theme: {
+          color: "#725b3f",
+        },
+      });
+
+      razorpay.open();
+    } catch {
+      setPayError("Unable to start payment.");
+      setPaying(false);
+    }
+  }, [closePaywall, loadRazorpayScript, paywallItem, proceedToLearn, resolveStylePriceInr]);
 
   const navigateToIndex = useCallback((nextIndex) => {
     if (!choreos.length) return;
@@ -140,12 +327,13 @@ export default function FlowPage() {
 
       if (typeof window !== "undefined") {
         try {
-          const cached = window.sessionStorage.getItem(FLOW_CACHE_KEY);
+          const cached = window.sessionStorage.getItem(cacheKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0 && mounted) {
+            const filteredCached = filterByStyle(parsed, styleFilter);
+            if (Array.isArray(filteredCached) && filteredCached.length > 0 && mounted) {
               hasWarmCache = true;
-              setChoreos(parsed);
+              setChoreos(filteredCached);
               setLoading(false);
             }
           }
@@ -161,12 +349,13 @@ export default function FlowPage() {
       setError("");
       try {
         const list = await fetchChoreos();
+        const filteredList = filterByStyle(list, styleFilter);
         if (!mounted) return;
 
-        setChoreos(list);
+        setChoreos(filteredList);
         if (typeof window !== "undefined") {
           try {
-            window.sessionStorage.setItem(FLOW_CACHE_KEY, JSON.stringify(list));
+            window.sessionStorage.setItem(cacheKey, JSON.stringify(list));
           } catch {
             // Non-blocking cache write.
           }
@@ -188,7 +377,7 @@ export default function FlowPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [cacheKey, styleFilter]);
 
   useEffect(() => {
     if (!choreos.length) return;
@@ -292,24 +481,10 @@ export default function FlowPage() {
 
   useEffect(() => {
     if (!choreos.length) {
-      setEngagementMap({});
       return;
     }
 
     let mounted = true;
-
-    async function loadEngagement() {
-      try {
-        const ids = choreos.map((item) => item.id).filter(Boolean).join(",");
-        const response = await fetch(`/api/choreos/engagement?ids=${encodeURIComponent(ids)}`, { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
-        if (!mounted) return;
-        setEngagementMap(payload?.metrics || {});
-      } catch {
-        // Non-blocking for feed.
-      }
-    }
 
     async function loadSaves() {
       try {
@@ -327,7 +502,6 @@ export default function FlowPage() {
       }
     }
 
-    void loadEngagement();
     void loadSaves();
     return () => {
       mounted = false;
@@ -344,7 +518,7 @@ export default function FlowPage() {
           choreoId,
           action,
           mode: action === "like" ? "toggle" : "track",
-          anonKey: getClientAnonKey(),
+          anonKey: getOrCreateGuestId(),
         }),
       });
 
@@ -358,19 +532,7 @@ export default function FlowPage() {
         return;
       }
 
-      const counts = payload?.counts;
-      if (!counts) return;
-
-      setEngagementMap((prev) => ({
-        ...prev,
-        [choreoId]: {
-          likes: counts.like || 0,
-          comments: counts.comment || 0,
-          tryThis: counts.try_this || 0,
-          views: counts.view_stats || 0,
-          viewerLiked: payload?.liked ?? prev?.[choreoId]?.viewerLiked ?? false,
-        },
-      }));
+      if (!payload?.counts) return;
     } catch {
       setUiMessage("Unable to connect to Academy servers");
     }
@@ -433,14 +595,6 @@ export default function FlowPage() {
     }
   }, []);
 
-  function compactCount(value) {
-    if (!value) return "0";
-    if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}k`;
-    }
-    return String(value);
-  }
-
   const content = useMemo(() => {
     if (loading) {
       return (
@@ -467,14 +621,13 @@ export default function FlowPage() {
     if (choreos.length === 0) {
       return (
         <div className="h-screen bg-obsidian grid place-items-center text-gold/40 font-light tracking-widest uppercase px-6 text-center">
-          No dances to show right now.
+          {styleFilter ? `No ${styleFilter} flow videos right now.` : "No Bollywood or Bhangra videos right now."}
         </div>
       );
     }
 
     return choreos.map((item, index) => {
       const isReady = loadedMap[item.id];
-      const metrics = engagementMap[item.id] || { likes: 0, comments: 0, tryThis: 0, views: 0, viewerLiked: false };
       const videoAsset = getOptimizedVideoAsset(item.video);
 
       return (
@@ -484,7 +637,7 @@ export default function FlowPage() {
           ref={(node) => {
             sectionRefs.current[index] = node;
           }}
-          className="relative h-[100dvh] w-full snap-start bg-black overflow-hidden"
+          className="relative h-[100dvh] w-full snap-start overflow-hidden bg-[#31332e]"
           onDoubleClick={() => {
             void trackAction(item.id, "like");
           }}
@@ -538,77 +691,46 @@ export default function FlowPage() {
             ) : null}
           </video>
 
-          {/* Luxury Soft Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/20" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(251,249,244,0.45)_0%,rgba(251,249,244,0)_25%,rgba(251,249,244,0)_70%,rgba(251,249,244,0.9)_100%)]" />
 
-          {/* Header Info */}
-          <div className="absolute left-6 right-24 bottom-32 z-30 space-y-3">
+          <div className="absolute left-4 right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+9.6rem)] z-30 space-y-2 max-w-xl md:left-8 md:right-8 md:bottom-36 md:space-y-4">
             <div className="space-y-1">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/60">{item.styleName || item.style} • {item.difficulty || "Intermediate"}</span>
-              <h2 className="text-3xl font-light tracking-tight text-[#E7E5E5]">{item.title}</h2>
-              <p className="text-sm font-light text-[#E7E5E5]/40 italic">choreography by {item.choreographerName || "Official Artist"}</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className="px-3 py-1 bg-[#fbf9f4]/80 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-[0.05em] text-[#675e54]">
+                  {item.difficulty || "Beginner Friendly"}
+                </span>
+                <span className="px-3 py-1 bg-[#fbf9f4]/80 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-[0.05em] text-[#675e54]">
+                  {Math.max(2, Math.round((item.durationSeconds || 120) / 60))} min
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-extrabold leading-[0.95] tracking-tight text-[#1f1f1b]">{item.title}</h2>
+              <p className="text-xs md:text-sm font-medium text-[#5e6059] max-w-lg">with {item.choreographerName || "Elena Rossi"}</p>
             </div>
           </div>
 
-          {/* Right Floating Actions */}
-          <div className="absolute bottom-32 right-6 z-30 flex flex-col gap-6">
+          <div className="absolute left-4 right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+6.45rem)] z-30 flex items-center justify-between gap-2 md:left-8 md:right-8 md:bottom-16 md:gap-4">
             <button
               type="button"
-              onClick={() => trackAction(item.id, "like")}
-              className="flex flex-col items-center gap-1 group"
+              onClick={() => openLearnPrompt(item)}
+              className="flex-1 bg-[#725b3f] text-white font-bold py-2.5 md:py-4 rounded-full flex items-center justify-center gap-2 shadow-[0px_14px_28px_rgba(49,51,46,0.14)] active:scale-95 transition-all text-[13px] md:text-base"
             >
-              <div className={`p-3 rounded-full border transition-all duration-500 ${metrics.viewerLiked ? 'bg-gold border-gold text-obsidian' : 'bg-white/5 border-white/10 text-white group-hover:border-gold/30'}`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={metrics.viewerLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" /></svg>
-              </div>
-              <span className="text-[11px] font-medium text-[#E7E5E5]/40 tracking-wider uppercase">{compactCount(metrics.likes || 0)}</span>
+              <span>Learn This</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="md:h-[18px] md:w-[18px]"><path d="M8 5v14l11-7z" /></svg>
             </button>
 
-            <button
-              type="button"
-              onClick={() => toggleSave(item)}
-              className="flex flex-col items-center gap-1 group"
-            >
-              <div className={`p-3 rounded-full border transition-all duration-500 ${savedMap[item.id] ? 'bg-gold/20 border-gold text-gold' : 'bg-white/5 border-white/10 text-white group-hover:border-gold/30'}`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-              </div>
-              <span className="text-[11px] font-medium text-[#E7E5E5]/40 tracking-wider uppercase">{savedMap[item.id] ? "Saved" : "Save"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => shareChoreo(item)}
-              className="flex flex-col items-center gap-1 group"
-            >
-              <div className="p-3 rounded-full border bg-white/5 border-white/10 text-white group-hover:border-gold/30 transition-all">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
-              </div>
-              <span className="text-[11px] font-medium text-[#E7E5E5]/40 tracking-wider uppercase">Share</span>
-            </button>
-          </div>
-
-          {/* Bottom Action Bar */}
-          <div className="absolute left-6 right-6 bottom-10 z-30">
-            <div className="flex gap-3">
-              <Link
-                href={`/record/${item.id}?mode=remix`}
-                className="flex-1 flex items-center justify-center gap-3 premium-button bg-gold text-obsidian border-none py-4 text-[13px] font-black tracking-[0.25em] uppercase"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" fill="currentColor" /></svg>
-                REMIX
-              </Link>
-
-              <Link
-                href={getFlowLearnHref(item)}
-                className="flex-1 flex items-center justify-center gap-2 premium-button bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all py-4 text-[13px] tracking-[0.15em] backdrop-blur-md uppercase"
-              >
-                Learn Step by Step
-              </Link>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => toggleSave(item)} className="w-11 h-11 md:w-12 md:h-12 bg-[#fbf9f4]/90 backdrop-blur-md rounded-full flex items-center justify-center text-[#725b3f] shadow-sm hover:bg-[#fbf9f4] transition-colors active:scale-90">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={savedMap[item.id] ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.9"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+              </button>
+              <button type="button" onClick={() => shareChoreo(item)} className="w-11 h-11 md:w-12 md:h-12 bg-[#fbf9f4]/90 backdrop-blur-md rounded-full flex items-center justify-center text-[#725b3f] shadow-sm hover:bg-[#fbf9f4] transition-colors active:scale-90">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
+              </button>
             </div>
           </div>
         </section>
       );
     });
-  }, [activeIndex, choreos, engagementMap, error, loadedMap, loading, savedMap, shareChoreo, toggleSave, trackAction]);
+  }, [activeIndex, choreos, error, loadedMap, loading, masterMuted, savedMap, shareChoreo, styleFilter, toggleSave, trackAction]);
 
   return (
     <main
@@ -618,35 +740,177 @@ export default function FlowPage() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onKeyDown={handleKeyDown}
-      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-black text-[#E7E5E5] transition-opacity duration-700 ease-in-out scroll-smooth no-scrollbar touch-pan-y"
+      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-[#31332e] transition-opacity duration-700 ease-in-out scroll-smooth no-scrollbar touch-pan-y"
     >
-      <Link
-        href="/explore"
-        className="fixed left-6 top-6 z-40 p-2 rounded-full bg-black/40 border border-white/10 text-white backdrop-blur-md hover:bg-black/60 transition-all"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-      </Link>
+      <AnimatePresence>
+        {pendingLearn ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/45 p-4 backdrop-blur-sm md:items-center"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 16, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#fbf9f4] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.3em] text-[#725b3f]">Ready to learn?</p>
+              <h3 className="mt-2 text-2xl font-extrabold text-[#2a261f]">{pendingLearn.title}</h3>
+              <p className="mt-2 text-sm text-[#6f675b]">Open the full routine and start step-by-step practice.</p>
 
-      <button
-        type="button"
-        onClick={() => {
-          setMasterMuted((prev) => !prev);
-          const activeVideo = videoRefs.current[activeIndex];
-          if (activeVideo) {
-            activeVideo.muted = !masterMuted;
-            activeVideo.defaultMuted = !masterMuted;
-            activeVideo.volume = !masterMuted ? 0 : masterVolume;
-            activeVideo.play().catch(() => {});
-          }
-        }}
-        className="fixed right-6 top-6 z-40 rounded-full bg-black/40 border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-white backdrop-blur-md hover:bg-black/60 transition-all"
-      >
-        {masterMuted ? "Sound Off" : "Sound On"}
-      </button>
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleContinueLearn(pendingLearn)}
+                  className="inline-flex items-center justify-center rounded-full bg-[#725b3f] px-5 py-3 text-sm font-semibold text-white"
+                >
+                  Continue to learn
+                </button>
+                <button
+                  type="button"
+                  onClick={closeLearnPrompt}
+                  className="rounded-full border border-[#725b3f]/20 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#725b3f]"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paywallItem ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 p-4 backdrop-blur-sm md:items-center"
+          >
+            <motion.div
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 12, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#fbf9f4] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#725b3f]">Unlock the full routine</p>
+                  <h3 className="mt-2 text-2xl font-extrabold text-[#2a261f]">{paywallItem.title}</h3>
+                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#8a7f73]">{paywallItem.styleName || paywallItem.styleSlug}</p>
+                </div>
+                <div className="rounded-full bg-[#725b3f]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#725b3f]">UPI ready</div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-[#e6dccf] bg-white px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#8a7f73]">One-time pass</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-display font-bold text-[#2a261f]">&#8377;{formatInr(resolveStylePriceInr(paywallItem))}</span>
+                  <span className="text-xs text-[#7b7268]">Lifetime access to this style</span>
+                </div>
+              </div>
+
+              <ul className="mt-4 space-y-2 text-sm text-[#5f564c]">
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#725b3f]" />Full step-by-step breakdowns</li>
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#725b3f]" />Practice loops + slow mode</li>
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#725b3f]" />Save sessions & track progress</li>
+              </ul>
+
+              {payError ? <p className="mt-3 text-xs text-red-600">{payError}</p> : null}
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handlePayment}
+                  disabled={paying}
+                  className="inline-flex items-center justify-center rounded-full bg-[#725b3f] px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+                >
+                  {paying ? "Opening Razorpay..." : "Pay with Razorpay"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closePaywall}
+                  className="rounded-full border border-[#725b3f]/20 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#725b3f]"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <header className="fixed top-0 z-50 w-full bg-[#fbf9f4]/75 backdrop-blur-xl px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] md:px-6 md:py-4">
+        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/explore" className="text-[#725b3f] hover:opacity-80 transition-opacity active:scale-95 rounded-full p-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </Link>
+          <h1 className="font-black text-2xl md:text-2xl tracking-tight text-[#725b3f]">Nachly</h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setMasterMuted((prev) => !prev);
+              const activeVideo = videoRefs.current[activeIndex];
+              if (activeVideo) {
+                activeVideo.muted = !masterMuted;
+                activeVideo.defaultMuted = !masterMuted;
+                activeVideo.volume = !masterMuted ? 0 : masterVolume;
+                activeVideo.play().catch(() => {});
+              }
+            }}
+            className="rounded-full bg-[#fbf9f4]/90 border border-[#725b3f]/15 px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-[#725b3f]"
+          >
+            {masterMuted ? "Muted" : "Sound"}
+          </button>
+          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#fdddb9] shadow-sm">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-eGDaQBRyHvPVmIpH3TvjjPjI6ZcggzOs5ylihE7u_JXJ0OH5vKl7PzTnTswma3VxdWrIp-2_Aubd_v2F8j0VDO3X_DS13XoqKBM9RxQ_APKJ_FKxSNw9TogNRrOhV04-f8zwM-DtpO8_NUUslBSUe7shr4th-q2gZkxHyp3hZPsSPZHoFOZjOVJtQdUJaJRqE2vsDvczSihNXVwFz1yF3tY4mElyXVENyjH5pid5rjbUhMdeXqKAHTJt5tTVJRpcJnuURMcbGJY" alt="profile" className="h-full w-full object-cover" />
+          </div>
+        </div>
+        </div>
+
+        <div className="mt-2 flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          {[
+            { href: "/flow?style=bollywood", label: "Bollywood", value: "bollywood" },
+            { href: "/flow?style=bhangra", label: "Bhangra", value: "bhangra" },
+            { href: "/flow?style=mix", label: "Mix", value: "mix" },
+          ].map((pill) => {
+            const selected = (styleFilter || "mix") === pill.value;
+            return (
+              <Link
+                key={pill.value}
+                href={pill.href}
+                className={selected
+                  ? "rounded-full border border-[#725b3f]/20 bg-[#725b3f] px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#fff7f3]"
+                  : "rounded-full border border-[#725b3f]/20 bg-[#fbf9f4]/95 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#725b3f]"}
+              >
+                {pill.label}
+              </Link>
+            );
+          })}
+        </div>
+      </header>
 
       {uiMessage ? (
-        <div className="fixed left-1/2 top-6 z-40 -translate-x-1/2 rounded-full bg-gold/10 border border-gold/20 px-6 py-2 text-[11px] uppercase tracking-widest text-gold backdrop-blur-md">
+        <div className="fixed left-1/2 top-[calc(env(safe-area-inset-top,0px)+0.35rem)] z-40 -translate-x-1/2 rounded-full bg-gold/10 border border-gold/20 px-6 py-2 text-[11px] uppercase tracking-widest text-gold backdrop-blur-md">
           {uiMessage}
+        </div>
+      ) : null}
+
+      {choreos.length > 1 ? (
+        <div className="pointer-events-none fixed right-6 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-3 md:flex">
+          {choreos.map((entry, idx) => (
+            <div
+              key={entry.id || idx}
+              className={idx === activeIndex ? "w-1.5 h-8 rounded-full bg-[#725b3f]" : "w-1.5 h-1.5 rounded-full bg-[#725b3f]/40"}
+            />
+          ))}
         </div>
       ) : null}
 

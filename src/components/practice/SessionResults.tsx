@@ -340,42 +340,54 @@ export default function SessionResults({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="mb-8 rounded-[28px] border border-nred-500/45 bg-[#05070d] px-5 py-8 shadow-[0_0_0_1px_rgba(163,230,53,0.18),0_30px_80px_rgba(0,0,0,0.6)] sm:px-10"
+            className="relative mb-8 overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-[#0b0f1a] via-[#0d111c] to-[#131722] px-6 py-7 shadow-[0_30px_80px_rgba(0,0,0,0.6)] sm:px-10"
           >
-            <div className="text-center">
-              <h1 className="font-display text-4xl font-bold text-nred-300 sm:text-5xl">Naachly</h1>
-              <p className="mt-4 text-3xl font-semibold text-white">Dancer</p>
-              <p className="mt-1 text-lg text-zinc-400">{routineTitle}</p>
-            </div>
+            <div className="pointer-events-none absolute -top-28 right-0 h-48 w-48 rounded-full bg-nred-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-36 left-6 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
 
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div className="text-center">
-                <CircularProgress value={accuracy} size={120} strokeWidth={8} color="wine">
-                  <span className="text-4xl font-bold text-nred-400">{accuracy}%</span>
-                </CircularProgress>
-                <p className="mt-3 text-base text-zinc-400">Accuracy</p>
-              </div>
-              <div className="text-center">
-                <CircularProgress value={consistency} size={120} strokeWidth={8} color="gold">
-                  <span className="text-4xl font-bold text-white">{consistency}%</span>
-                </CircularProgress>
-                <p className="mt-3 text-base text-zinc-400">Consistency</p>
-              </div>
-              <div className="text-center">
-                <CircularProgress value={completion} size={120} strokeWidth={8} color="green">
-                  <span className="text-4xl font-bold text-lime-300">{completion}%</span>
-                </CircularProgress>
-                <p className="mt-3 text-base text-zinc-400">Completion</p>
-              </div>
-            </div>
+            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-nred-200/80">Session complete</p>
+                <h1 className="mt-3 font-display text-3xl font-semibold text-white sm:text-4xl">
+                  {routineTitle}
+                </h1>
+                <p className="mt-2 text-sm text-zinc-400">Practice mode · {getMotivationalMessage(accuracy)}</p>
+                {streak.count > 0 && (
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-xs font-semibold text-nred-200 ring-1 ring-white/10">
+                    🔥 {streak.count} day streak
+                  </div>
+                )}
 
-            <div className="mt-8 text-center">
-              <p className="text-6xl font-bold text-nred-300">{overall}</p>
-              <p className="mt-1 text-2xl text-zinc-400">Overall Score</p>
-              {streak.count > 0 && (
-                <p className="mt-4 text-2xl font-semibold text-nred-400">🔥 {streak.count} day streak</p>
-              )}
-              <p className="mt-3 text-2xl text-zinc-300">{getMotivationalMessage(accuracy)}</p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {[
+                    { label: "Accuracy", value: accuracy, color: "wine" as const },
+                    { label: "Consistency", value: consistency, color: "gold" as const },
+                    { label: "Completion", value: completion, color: "green" as const },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-3 rounded-full bg-white/5 px-4 py-2 ring-1 ring-white/10"
+                    >
+                      <CircularProgress value={item.value} size={42} strokeWidth={5} color={item.color}>
+                        <span className="text-[11px] font-semibold text-white">{item.value}%</span>
+                      </CircularProgress>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">{item.label}</p>
+                        <p className="text-sm font-semibold text-white">{item.value}%</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <CircularProgress value={overall} size={150} strokeWidth={8} color={getColor(overall)}>
+                  <div className="text-center">
+                    <div className="text-4xl font-display font-bold text-nred-300">{overall}</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">Overall</div>
+                  </div>
+                </CircularProgress>
+              </div>
             </div>
           </motion.div>
 
@@ -403,10 +415,10 @@ export default function SessionResults({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.56 }}
-            className="mb-8 rounded-2xl border border-white/10 bg-[#12131b] p-5"
+            className="mb-10 rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-lg font-bold text-white">Project Timeline</h3>
+              <h3 className="font-display text-lg font-bold text-white">Mistake Timeline</h3>
               <p className="text-xs text-zinc-400">Mistake segments across routine time</p>
             </div>
             <div className="space-y-2">
@@ -450,7 +462,7 @@ export default function SessionResults({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.58 }}
-            className="mb-8 rounded-2xl border border-white/10 bg-[#12131b] p-5"
+            className="mb-10 rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
           >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-lg font-bold text-white">Comparative Trend</h3>
@@ -483,71 +495,34 @@ export default function SessionResults({
           </motion.div>
         )}
 
-        {/* Overall score */}
-        <div className="flex justify-center mb-8">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3, type: "spring" }}
-          >
-            <CircularProgress value={overall} size={140} strokeWidth={8} color={getColor(overall)}>
-              <div className="text-center">
-                <div className="text-3xl font-display font-bold text-nred-500">{overall}</div>
-                <div className="text-xs text-zinc-400">Overall</div>
-              </div>
-            </CircularProgress>
-          </motion.div>
-        </div>
-
-        {/* Score breakdown */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[
-            { label: "Accuracy", value: accuracy, color: getColor(accuracy) },
-            { label: "Consistency", value: consistency, color: getColor(consistency) },
-            { label: "Completion", value: completion, color: getColor(completion) },
-          ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + i * 0.1 }}
-              className="bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10"
-            >
-              <CircularProgress value={s.value} size={60} strokeWidth={4} color={s.color}>
-                <span className="text-sm font-bold text-white">{s.value}</span>
-              </CircularProgress>
-              <p className="text-xs text-zinc-400 mt-2">{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
 
         {/* Performance dashboard cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
           {[
             { label: "Frames Compared", value: `${comparedFrames}` },
             { label: "Perfect Match", value: `${perfectRate}%` },
             { label: "Good Match", value: `${goodRate}%` },
             { label: "Avg Drift", value: avgDrift > 0 ? `${avgDrift}°` : "-" },
           ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-white/10 bg-[#12131b] p-4">
+            <div key={item.label} className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur">
               <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-400">{item.label}</p>
               <p className="mt-2 text-2xl font-display font-bold text-white">{item.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-2xl border border-white/10 bg-[#12131b] p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10">
+          <div className="rounded-[26px] border border-white/10 bg-white/5 p-5 backdrop-blur">
             <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-400">Weakest Area</p>
             <p className="mt-2 text-xl font-semibold text-white capitalize">{weakPart}</p>
             <p className="mt-1 text-xs text-zinc-400">Primary correction focus for your next session.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-[#12131b] p-4">
+          <div className="rounded-[26px] border border-white/10 bg-white/5 p-5 backdrop-blur">
             <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-400">Mistake Windows</p>
             <p className="mt-2 text-xl font-semibold text-white">{replaySegments.length}</p>
             <p className="mt-1 text-xs text-zinc-400">Detected segments where movement drifted the most.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-[#12131b] p-4">
+          <div className="rounded-[26px] border border-white/10 bg-white/5 p-5 backdrop-blur">
             <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-400">Consistency Index</p>
             <p className="mt-2 text-xl font-semibold text-white">{consistency}%</p>
             <p className="mt-1 text-xs text-zinc-400">How stable your form remained across the full routine.</p>

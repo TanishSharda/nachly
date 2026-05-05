@@ -76,7 +76,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
-      <body suppressHydrationWarning className="font-body bg-black text-white antialiased min-h-screen overscroll-none">
+      <body suppressHydrationWarning className="font-body antialiased min-h-screen overscroll-none text-[color:var(--foreground)]">
         {children}
         <PWAInstallPrompt />
       </body>

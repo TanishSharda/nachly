@@ -7,6 +7,12 @@ const KEYS = {
   DRILLS: "naachly_drills",
 } as const;
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
 export interface SessionRecord {
   routineId: string;
   routineTitle: string;
@@ -108,6 +114,34 @@ export function saveSession(sessionData: Omit<SessionRecord, "date">): void {
     );
   } catch {
     // ignore storage errors
+  }
+}
+
+export async function saveSessionToServer(
+  sessionData: Omit<SessionRecord, "date"> & {
+    bodyPartScores?: Record<string, number>;
+    difficultyLevel?: string;
+  }
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!sessionData?.routineId || !isUuid(sessionData.routineId)) return;
+
+  try {
+    await fetch("/api/practice-sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        routineId: sessionData.routineId,
+        accuracy: sessionData.accuracy,
+        consistency: sessionData.consistency,
+        completion: sessionData.completion,
+        durationMs: Math.max(0, Math.round(sessionData.elapsed * 1000)),
+        bodyPartScores: sessionData.bodyPartScores,
+        difficultyLevel: sessionData.difficultyLevel,
+      }),
+    });
+  } catch {
+    // Non-blocking sync attempt.
   }
 }
 

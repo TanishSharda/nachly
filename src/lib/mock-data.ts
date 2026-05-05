@@ -109,10 +109,64 @@ const FIRST_CLASS_ROUTINE: Routine = {
   updated_at: new Date().toISOString(),
 };
 
+const ZUMBA_BASICS_ROUTINE: Routine = {
+  id: "routine-bollywood-zumba-basics",
+  style_id: "style-2",
+  choreographer_id: "choreographer-1",
+  title: "Zumba Basics",
+  slug: "zumba-basics",
+  description:
+    "Get started with Zumba fundamentals. Learn the core hip movements, basic steps, and rhythm patterns that form the foundation of this high-energy dance style.",
+  difficulty: "beginner",
+  duration_seconds: 45,
+  thumbnail_url: null,
+  is_published: true,
+  is_approved: true,
+  sort_order: 3,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const ZUMBA_CARDIO_ROUTINE: Routine = {
+  id: "routine-bollywood-zumba-cardio",
+  style_id: "style-2",
+  choreographer_id: "choreographer-1",
+  title: "Zumba Cardio",
+  slug: "zumba-cardio",
+  description:
+    "Pump up the energy with this fast-paced Zumba cardio routine. High-intensity movements combined with Latin rhythms for a complete cardiovascular workout.",
+  difficulty: "intermediate",
+  duration_seconds: 50,
+  thumbnail_url: null,
+  is_published: true,
+  is_approved: true,
+  sort_order: 4,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const ZUMBA_PARTY_ROUTINE: Routine = {
+  id: "routine-bollywood-zumba-party",
+  style_id: "style-2",
+  choreographer_id: "choreographer-1",
+  title: "Zumba Party",
+  slug: "zumba-party",
+  description:
+    "Feel the party vibes with this fun and festive Zumba routine. Dance like you're on a dance floor with infectious rhythms, smooth transitions, and maximum fun.",
+  difficulty: "intermediate",
+  duration_seconds: 55,
+  thumbnail_url: null,
+  is_published: true,
+  is_approved: true,
+  sort_order: 5,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
 // Only real routines — dummy routines removed
 export const MOCK_ROUTINES: Record<string, Routine[]> = {
   "hip-hop": [],
-  bollywood: [BIJURIA_ROUTINE, ONE_NIGHT_ROUTINE, FIRST_CLASS_ROUTINE],
+  bollywood: [BIJURIA_ROUTINE, ONE_NIGHT_ROUTINE, FIRST_CLASS_ROUTINE, ZUMBA_BASICS_ROUTINE, ZUMBA_CARDIO_ROUTINE, ZUMBA_PARTY_ROUTINE],
   kathak: [],
   bhangra: [],
 };
@@ -153,6 +207,9 @@ const ROUTINE_VIDEOS: Record<string, string> = {
   "routine-bollywood-bijuria": "/videos/bijuria.optimized.mp4",
   "routine-bollywood-one-night": "/videos/one-night.optimized.mp4",
   "routine-bollywood-first-class": "/videos/first-class.optimized.mp4",
+  "routine-bollywood-zumba-basics": "/videos/zumba-basics.mov",
+  "routine-bollywood-zumba-cardio": "/videos/zumba-cardio.mov",
+  "routine-bollywood-zumba-party": "/videos/zumba-party.mov",
 };
 
 export function getMockVideos(routineId: string): RoutineVideo[] {

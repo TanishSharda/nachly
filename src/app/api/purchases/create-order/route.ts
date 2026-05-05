@@ -25,9 +25,8 @@ export async function POST(request: Request) {
 
   const styleSlug = String(body.styleSlug || "").trim().toLowerCase();
   const styleName = String(body.styleName || "Dance Style").trim();
-  const amountPaise = Number(body.amountPaise || 0);
 
-  if (!styleSlug || !Number.isFinite(amountPaise) || amountPaise < 100) {
+  if (!styleSlug) {
     return NextResponse.json({ error: "Invalid payment payload" }, { status: 400 });
   }
 
@@ -46,6 +45,32 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: styleRow } = await supabase
+    .from("dance_styles")
+    .select("id, name, price_inr, is_active")
+    .eq("slug", styleSlug)
+    .maybeSingle();
+
+  if (!styleRow?.id || !styleRow.is_active) {
+    return NextResponse.json({ error: "Dance style not available" }, { status: 404 });
+  }
+
+  const amountPaise = Number(styleRow.price_inr || 0);
+  if (!Number.isFinite(amountPaise) || amountPaise < 100) {
+    return NextResponse.json({ error: "Invalid style price" }, { status: 400 });
+  }
+
+  const { data: existingPurchase } = await supabase
+    .from("purchases")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("style_id", styleRow.id)
+    .maybeSingle();
+
+  if (existingPurchase?.status === "completed") {
+    return NextResponse.json({ error: "Style already unlocked" }, { status: 409 });
+  }
+
   const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
 
   const receipt = `naachly_${styleSlug}_${Date.now()}`.slice(0, 40);
@@ -56,7 +81,7 @@ export async function POST(request: Request) {
     notes: {
       userId: user.id,
       styleSlug,
-      styleName,
+      styleName: styleRow.name || styleName,
     },
   };
 
@@ -72,6 +97,26 @@ export async function POST(request: Request) {
   const razorpayJson = await razorpayResponse.json().catch(() => ({}));
   if (!razorpayResponse.ok || !razorpayJson?.id) {
     return NextResponse.json({ error: razorpayJson?.error?.description || "Unable to create payment order" }, { status: 502 });
+  }
+
+  const amountInr = Math.max(1, Math.round(amountPaise / 100));
+
+  const { error: insertError } = await supabase
+    .from("purchases")
+    .upsert(
+      {
+        user_id: user.id,
+        style_id: styleRow.id,
+        amount_inr: amountInr,
+        status: "pending",
+        order_id: razorpayJson.id,
+        payment_provider: "razorpay",
+      },
+      { onConflict: "user_id,style_id" }
+    );
+
+  if (insertError) {
+    return NextResponse.json({ error: "Unable to reserve purchase" }, { status: 500 });
   }
 
   return NextResponse.json({

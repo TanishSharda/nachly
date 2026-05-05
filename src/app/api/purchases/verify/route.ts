@@ -76,6 +76,9 @@ export async function POST(request: Request) {
         amount_inr: amountInr,
         status: "completed",
         payment_ref: paymentId,
+        payment_id: paymentId,
+        order_id: orderId,
+        payment_provider: "razorpay",
       },
       { onConflict: "user_id,style_id" }
     );

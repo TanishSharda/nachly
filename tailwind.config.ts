@@ -23,25 +23,25 @@ const config: Config = {
           900: "#831843",
         },
         gold: {
-          DEFAULT: "#D3C4B8", // Champagne Gold
-          50: "#f9f7f5",
-          100: "#f2eee9",
-          200: "#e6ddd3",
-          300: "#d3c4b8",
-          400: "#c1ab9a",
-          500: "#af917c",
-          600: "#9d775e",
-          700: "#8a5d40",
-          800: "#744b2f",
-          900: "#5e3a24",
+          DEFAULT: "#7A5C3A",
+          50: "#f8f4ef",
+          100: "#efe6db",
+          200: "#dfcdb6",
+          300: "#d0b391",
+          400: "#c29a6d",
+          500: "#ad8151",
+          600: "#8f6b44",
+          700: "#7a5c3a",
+          800: "#624a2f",
+          900: "#4c3924",
         },
         obsidian: {
-          DEFAULT: "#0E0E0E",
-          100: "#1C1B1B", // Secondary Surface
+          DEFAULT: "#F4F1EC",
+          100: "#EDE7DE",
         },
         /* Primary accent palette */
         nred: {
-          DEFAULT: "#D3C4B8", // Switched to Gold for overhaul
+          DEFAULT: "#7A5C3A",
           50: "#f7ffe0",
           100: "#edffc2",
           200: "#e1ff8a",

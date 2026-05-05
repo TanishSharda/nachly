@@ -20,7 +20,7 @@ import { usePoseDetection } from "@/components/practice/usePoseDetection";
 import { createAudioEngine, type AudioEngine } from "@/lib/ai/audio-engine";
 import { createVoiceCoach, type VoiceCoach } from "@/lib/ai/voice-coach";
 import { adjustDifficulty, getDifficulty, type DifficultyAdjustment } from "@/lib/ai/difficulty";
-import { evaluateDrillCompletions, getStoredDrills, saveSession, updateStreak, saveDrill } from "@/lib/ai/session-storage";
+import { evaluateDrillCompletions, getStoredDrills, saveSession, saveSessionToServer, updateStreak, saveDrill } from "@/lib/ai/session-storage";
 import { getDistanceGuidance } from "@/lib/ai/pose-engine";
 import { buildPromotedDrill, buildWeakSpotDrill, type WeakSpotDrill } from "@/lib/ai/weak-spot-drills";
 import { buildReplaySegments, type ReplaySegment } from "@/lib/ai/replay-segments";
@@ -779,6 +779,19 @@ export default function PracticeModePage() {
         consistency,
         completion,
         elapsed,
+      });
+      const bodyPartScores =
+        Object.keys(finalScores.bodyPartScores).length > 0
+          ? finalScores.bodyPartScores
+          : undefined;
+      void saveSessionToServer({
+        routineId: routine.id,
+        accuracy,
+        consistency,
+        completion,
+        elapsed,
+        bodyPartScores,
+        difficultyLevel: diffResult.level,
       });
     }
 

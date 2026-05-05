@@ -50,6 +50,31 @@ function buildMockChoreoById(id: string) {
   };
 }
 
+function buildMockChoreoBySlug(slug: string) {
+  const routine = Object.values(MOCK_ROUTINES)
+    .flat()
+    .find((entry) => entry.slug === slug);
+
+  if (!routine) return null;
+
+  return {
+    id: routine.id,
+    title: routine.title || "Untitled Choreo",
+    video: getRoutineVideoUrl(routine.id) || "",
+    caption: routine.description || "",
+    style: routine.style_slug || "unknown",
+    tier: "community",
+    score: null,
+    tags: [],
+    moves: getMockSteps(routine.id, routine.duration_seconds).map((step) => ({
+      id: step.id || String(step.step_number),
+      name: step.label || `Move ${step.step_number || ""}`,
+      start: Number(step.start_time || 0),
+      end: Number(step.end_time || 0),
+    })),
+  };
+}
+
 function missingSupabaseConfigResponse() {
   return NextResponse.json(
     {
@@ -72,27 +97,49 @@ export async function GET(_: Request, context: { params: { id: string } }) {
 
   const supabase = createServerSupabase();
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const routineSelect =
+    "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)";
 
-  const { data: row, error } = await db
+  const { data: rowById, error: idLookupError } = await db
     .from("routines")
-    .select(
-      "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)"
-    )
+    .select(routineSelect)
     .eq("id", id)
     .eq("is_published", true)
     .eq("is_approved", true)
     .maybeSingle();
 
-  if (error) {
-    const mockChoreo = buildMockChoreoById(id);
+  if (idLookupError) {
+    const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
     if (mockChoreo) {
       return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
     }
     return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
   }
 
+  let row = rowById;
+
   if (!row) {
-    const mockChoreo = buildMockChoreoById(id);
+    const { data: rowBySlug, error: slugLookupError } = await db
+      .from("routines")
+      .select(routineSelect)
+      .eq("slug", id)
+      .eq("is_published", true)
+      .eq("is_approved", true)
+      .maybeSingle();
+
+    if (slugLookupError) {
+      const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
+      if (mockChoreo) {
+        return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
+      }
+      return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
+    }
+
+    row = rowBySlug;
+  }
+
+  if (!row) {
+    const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
     if (mockChoreo) {
       return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
     }

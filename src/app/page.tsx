@@ -1,515 +1,672 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
-import { SITE_NAME } from "@/lib/utils/constants";
 
-const easeOutExpo = [0.16, 1, 0.3, 1] as const;
+const easeOut = [0.16, 1, 0.3, 1] as const;
+const HERO_VIDEO = "/videos/one-night.optimized.mp4";
+const HERO_POSTER = "/videos/one-night.poster.jpg";
+const HERO_VIDEO_ALT = "/videos/bijuria.optimized.mp4";
+const HERO_POSTER_ALT = "/videos/bijuria.poster.jpg";
+const HERO_VIDEO_THIRD = "/videos/first-class.optimized.mp4";
 
-/* ── Inline SVG icon helpers ── */
-const Ico = ({ d, size = 22, stroke = "currentColor", fill = "none" }: { d: string; size?: number; stroke?: string; fill?: string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill={fill}
-    stroke={stroke}
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="transition-transform duration-500 group-hover:scale-110"
-  >
-    <path d={d} />
-  </svg>
-);
+const WAITLIST_COUNT = process.env.NEXT_PUBLIC_WAITLIST_COUNT;
+const CREATOR_COUNT = process.env.NEXT_PUBLIC_CREATOR_COUNT;
+const DROP_COUNT = process.env.NEXT_PUBLIC_DROP_COUNT;
 
-const IcoScroll = ({ size }: { size?: number }) => <Ico d="M12 2v20M5 5l7-3 7 3M5 19l7 3 7-3" size={size} />;
-const IcoPose = ({ size }: { size?: number }) => <Ico d="M12 2a3 3 0 100 6 3 3 0 000-6zM12 8v6m-4 4l4-4 4 4m-8 0v2m8-2v2" size={size} />;
-const IcoRecord = ({ size = 22 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="4" fill="currentColor" />
-  </svg>
-);
-const IcoRemix = ({ size }: { size?: number }) => <Ico d="M16 3h5v5M4 20L20.5 3.5M21 16v5h-5M3 4l16.5 16.5" size={size} />;
-const IcoLearn = ({ size }: { size?: number }) => <Ico d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" size={size} />;
-const IcoShare = ({ size }: { size?: number }) => <Ico d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" size={size} />;
-const IcoHeart = ({ size }: { size?: number }) => <Ico d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" size={size} />;
-const IcoComment = ({ size }: { size?: number }) => <Ico d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" size={size} />;
-const IcoBookmark = ({ size }: { size?: number }) => <Ico d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" size={size} />;
+const heroBadges = ["Trending drops", "Step-by-step", "Creator-led"];
 
-
-
-const sectionReveal = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOutExpo } },
-};
-
-const staggerParent = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
-};
-
-const staggerChild = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: easeOutExpo } },
-};
-
-const FEATURES = [
-  { icon: <IcoScroll />, title: "New Dances", desc: "Find the latest dance routines in our high-quality video feed.", accent: true },
-  { icon: <IcoPose />, title: "Smart Tracking", desc: "Our AI body tracking compares your moves to the teacher's moves." },
-  { icon: <IcoRecord />, title: "Dance Library", desc: "Your practice sessions are saved automatically in high quality." },
-  { icon: <IcoRemix />, title: "Easy Practice", desc: "Learn with a split-screen and get real-time feedback on your moves." },
-  { icon: <IcoLearn />, title: "Move by Move", desc: "Break any dance down into single moves to learn them perfectly." },
-  { icon: <IcoShare />, title: "Share your Dance", desc: "One-tap share to your social media or with the global community." },
+const whyLove = [
+  {
+    title: "Learn trending dances faster",
+    description: "Skip endless tutorials. Naachly turns viral dances into learnable steps.",
+  },
+  {
+    title: "Guided breakdowns",
+    description: "Clear sections, repeat loops, and clean timing so you build muscle memory.",
+  },
+  {
+    title: "Practice without pressure",
+    description: "Slow it down, mirror the teacher, then ramp up when it feels right.",
+  },
+  {
+    title: "Made for Gen Z habits",
+    description: "Scroll-native, short-form, and addictive in the best way.",
+  },
+  {
+    title: "Progress you can feel",
+    description: "Track streaks and improvements instead of guessing if you are better.",
+  },
+  {
+    title: "Affordable alternative",
+    description: "Get studio-like structure without the studio price tag.",
+  },
 ];
 
-const STYLES = [
-  { title: "Bollywood", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCjWNf-BUZuFqpm-E2XJuHyMidLtRlwTJHpTKO2YVzLCAA1sdwDzCkxT7YO40Ny2wq2mR831No9PQWWGSvUyfr23JPxQ61P6fAri73hDAHM96UoqTKGMA4i_rbEJoLMxioyv2eQheQFTGkLh3IimSO8rblpAyZGGOOmI_M5E6t56t32XyqUcK6hSAV9tdr9qM6bMQ80pefl5KySwhSmkIR11_AfatJCUJRrhp8vY60KtxpqJ9T4EBpje9HzrmsTu_T1khvWt1VhRhA" },
-  { title: "Grove", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCvq5kYoGjy8xQDmhLCFaUT8x7XKSq9W0JXW37gUzgC8rSMPnX8rT4hgII4J0GOFTjc8aAoCXQPYeKQxZmZ6gw6HNQzElvhUgiseOTEbbfa2d_Nch0tBw4_hNcPDBWzouB1s9RbchLwV7Eqa0_QlQXrNFsG6S9qcwpvEA4ox9K10ipsPNOUQl0X_gUWAqJ4JcuEO5pmzZh_QLE52xOCmO0bn56didNdMVQmyN6ctP7rEwrv4MGXf7L6x48JeIACBmI13aqGWMwYfm8" },
+const howItWorks = [
+  {
+    step: "01",
+    title: "Scroll",
+    description: "Browse a feed of choreography curated for your vibe.",
+  },
+  {
+    step: "02",
+    title: "Pick",
+    description: "Open the routine you want and see the full breakdown.",
+  },
+  {
+    step: "03",
+    title: "Learn step-by-step",
+    description: "Use loops, slow motion, and clean sections to lock it in.",
+  },
+  {
+    step: "04",
+    title: "Practice",
+    description: "Mirror the instructor and record your take when ready.",
+  },
+  {
+    step: "05",
+    title: "Improve",
+    description: "Save your sessions and build a real progression arc.",
+  },
 ];
 
-const SCROLL_STEPS = [
-  { num: "01", title: "Watch", desc: "Watch the latest dances in a clean, high-quality video feed." },
-  { num: "02", title: "Break Down", desc: "Break any dance into small steps that you can loop. Focus on the details." },
-  { num: "03", title: "Practice", desc: "Start practicing. Our AI tracks your body to help you improve." },
-  { num: "04", title: "Save", desc: "Save all your practice videos automatically in high quality." },
+const features = [
+  {
+    title: "Short-form choreography feed",
+    description: "Discover trending dances and remix-ready routines.",
+  },
+  {
+    title: "Structured lessons",
+    description: "Clean breakdowns that make every move learnable.",
+  },
+  {
+    title: "Practice tools",
+    description: "Speed control, loops, mirror mode, and instant replay.",
+  },
+  {
+    title: "Progress tracking",
+    description: "Streaks, saved sessions, and visible growth over time.",
+  },
+  {
+    title: "Future AI-assisted feedback",
+    description: "Personalized guidance will arrive as the AI coach evolves.",
+  },
+  {
+    title: "Creator-led learning",
+    description: "Learn from choreographers who shape the trends.",
+  },
 ];
 
-function RevealSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.section className={className} variants={sectionReveal} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.18 }}>
-      {children}
-    </motion.section>
-  );
+const faqs = [
+  {
+    question: "Is Naachly beginner-friendly?",
+    answer: "Yes. Start slow, loop sections, and build confidence at your pace.",
+  },
+  {
+    question: "Will AI coach me?",
+    answer: "AI-assisted feedback is coming soon. The current flow already gives you structured practice.",
+  },
+  {
+    question: "Is it affordable?",
+    answer: "We are building an accessible option for dance learners everywhere.",
+  },
+  {
+    question: "When does Naachly launch?",
+    answer: "We are rolling out soon. Join the waitlist to be first.",
+  },
+];
+
+const waitlistStats = [
+  {
+    label: "Waitlist signups",
+    value: WAITLIST_COUNT ? `${WAITLIST_COUNT}+` : "Growing daily",
+  },
+  {
+    label: "Creator drops",
+    value: DROP_COUNT ? `${DROP_COUNT}+ weekly` : "Weekly drops",
+  },
+  {
+    label: "Creators onboard",
+    value: CREATOR_COUNT ? `${CREATOR_COUNT}+` : "Top choreographers",
+  },
+];
+
+const appPreviews = [
+  {
+    title: "Scroll the feed",
+    subtitle: "Viral drops daily",
+    video: HERO_VIDEO,
+    poster: HERO_POSTER,
+  },
+  {
+    title: "Learn step-by-step",
+    subtitle: "Breakdowns that stick",
+    video: HERO_VIDEO_ALT,
+    poster: HERO_POSTER_ALT,
+  },
+  {
+    title: "Practice + record",
+    subtitle: "Save your progress",
+    video: HERO_VIDEO_THIRD,
+    poster: HERO_POSTER_ALT,
+  },
+];
+
+function sectionReveal(delay = 0) {
+  return {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    transition: { duration: 0.7, delay, ease: easeOut },
+    viewport: { once: true, amount: 0.2 },
+  };
 }
 
-const AnimatedHeadline = ({ text, accent }: { text: string; accent?: string }) => {
-  const words = text.split(" ");
+function BentoCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <h2 className="font-display text-5xl font-extralight leading-[1.1] tracking-[-0.03em] text-[#E7E5E5] sm:text-7xl">
-      {words.map((word, idx) => (
-        <motion.span
-          key={`${word}-${idx}`}
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className={`mr-[0.2em] inline-block ${accent?.includes(word) ? "text-gold font-light" : ""}`}
-        >
-          {word}
-        </motion.span>
-      ))}
-    </h2>
-  );
-};
-
-const MotionButton = ({ 
-  href, 
-  label, 
-  primary = false, 
-  className = "", 
-  onClick 
-}: { 
-  href: string; 
-  label: string; 
-  primary?: boolean; 
-  className?: string;
-  onClick?: (e: React.MouseEvent) => void;
-}) => {
-  return (
-    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className="relative">
-      <Link
-        href={href}
-        onClick={onClick}
-        className={`relative inline-flex items-center overflow-hidden rounded-full px-10 py-4 text-[13px] font-semibold uppercase tracking-[0.2em] transition-all duration-500 ${
-          primary
-            ? "bg-gold text-obsidian shadow-[0_10px_40px_rgba(211,196,184,0.15)] hover:shadow-[0_15px_60px_rgba(211,196,184,0.25)]"
-            : "border border-gold/20 bg-gold/5 text-gold backdrop-blur-xl hover:bg-gold/10"
-        } ${className}`}
-      >
-        <span className="relative z-10">{label}</span>
-      </Link>
-    </motion.div>
-  );
-};
-
-function CursorGlow() {
-  const [active, setActive] = useState(false);
-  const x = useMotionValue(-200);
-  const y = useMotionValue(-200);
-  const smoothX = useSpring(x, { stiffness: 180, damping: 22, mass: 0.2 });
-  const smoothY = useSpring(y, { stiffness: 180, damping: 22, mass: 0.2 });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const isTouch = window.matchMedia("(hover: none)").matches;
-    if (isTouch) return;
-    const onMove = (event: MouseEvent) => { setActive(true); x.set(event.clientX - 110); y.set(event.clientY - 110); };
-    const onLeave = () => setActive(false);
-    window.addEventListener("mousemove", onMove, { passive: true });
-    window.addEventListener("mouseleave", onLeave);
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseleave", onLeave); };
-  }, [x, y]);
-
-  return (
-    <motion.div
-      aria-hidden
-      className="pointer-events-none fixed z-20 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(211,196,184,0.08)_0%,rgba(211,196,184,0)_70%)] blur-[80px]"
-      style={{ x: smoothX, y: smoothY, opacity: active ? 1 : 0 }}
-      transition={{ duration: 0.3 }}
-    />
+    <div
+      className={`relative overflow-hidden rounded-[2rem] border border-[#6c51321f] bg-[#fbf7f1] p-6 shadow-[0_18px_45px_-28px_rgba(58,42,26,0.45)] transition duration-300 hover:-translate-y-0.5 hover:border-[#6c513236] hover:shadow-[0_24px_50px_-26px_rgba(58,42,26,0.5)] sm:p-7 ${className}`}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#efe3d2] to-transparent" />
+      {children}
+    </div>
   );
 }
 
 export default function HomePage() {
   const router = useRouter();
-  const [seconds, setSeconds] = useState(1);
-  const [isEntering, setIsEntering] = useState(false);
-  const { scrollY } = useScroll();
-  const blobY = useTransform(scrollY, [0, 1300], [0, -120]);
-  const parallaxY = useTransform(scrollY, [0, 1500], [0, -80]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [email, setEmail] = useState("");
+  const [captureState, setCaptureState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [captureMessage, setCaptureMessage] = useState("");
 
   useEffect(() => {
-    const id = setInterval(() => setSeconds((prev) => (prev >= 10 ? 1 : prev + 1)), 900);
-    return () => clearInterval(id);
-  }, []);
-
-  // Background Prefetch for Flow Feed
-  useEffect(() => {
-    async function prefetchFlow() {
-      try {
-        const response = await fetch("/api/choreos?tier=official");
-        if (response.ok) {
-          const payload = await response.json();
-          if (Array.isArray(payload?.choreos)) {
-            window.sessionStorage.setItem("nachly_flow_feed_cache_v1", JSON.stringify(payload.choreos));
-          }
-        }
-      } catch (e) {
-        console.warn("Background prefetch failed:", e);
-      }
+    if (!isSupabaseConfigured()) {
+      setAuthReady(true);
+      return;
     }
-    prefetchFlow();
+
+    const supabase = createClient();
+    let mounted = true;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        setIsAuthenticated(Boolean(data.session?.user));
+        setAuthReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setIsAuthenticated(false);
+        setAuthReady(true);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session?.user));
+      setAuthReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const handleStartDancing = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsEntering(true);
-    // Allow animation to play and data to settle
-    setTimeout(() => {
-      router.push("/scroll");
-    }, 1200);
-  }, [router]);
+  const flowEntryHref = useMemo(() => {
+    if (!authReady) return "/login?redirect=%2Fexplore";
+    return isAuthenticated ? "/explore" : "/login?redirect=%2Fexplore";
+  }, [authReady, isAuthenticated]);
 
-  const timerLabel = useMemo(() => `00:${String(seconds).padStart(2, "0")}`, [seconds]);
+  const goToFlowEntry = useCallback(() => {
+    router.push(flowEntryHref);
+  }, [flowEntryHref, router]);
+
+  const handleLeadCapture = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!normalizedEmail) {
+        setCaptureState("error");
+        setCaptureMessage("Please enter your email.");
+        return;
+      }
+
+      setCaptureState("saving");
+      setCaptureMessage("");
+
+      try {
+        const response = await fetch("/api/marketing/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            source: "homepage_final_cta",
+            page: "/",
+            guestKey: getOrCreateGuestId(),
+            metadata: {
+              campaign: "flow-learning-landing",
+            },
+          }),
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.error || "Unable to save email");
+        }
+
+        setCaptureState("saved");
+        setCaptureMessage(payload?.duplicate ? "You are already on the list. We will keep you updated." : "You are on the list. Early updates are on the way.");
+        setEmail("");
+      } catch {
+        setCaptureState("error");
+        setCaptureMessage("Could not save your email right now. Please try again.");
+      }
+    },
+    [email]
+  );
 
   return (
-    <main className="relative min-h-screen overflow-x-clip bg-obsidian text-[#E7E5E5] selection:bg-gold/30 selection:text-gold">
-      <AnimatePresence>
-        {isEntering && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-obsidian"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center gap-6"
-            >
-              <BrandLogo size={60} className="shadow-[0_0_50px_rgba(211,196,184,0.2)]" />
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[11px] font-medium tracking-[0.5em] uppercase text-gold animate-pulse">
-                  Entering Academy
-                </p>
-                <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <main className="relative min-h-screen overflow-x-clip bg-[#f4f1ec] text-[#221d16]">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(122,92,58,0.12),transparent_45%),radial-gradient(circle_at_85%_5%,rgba(251,249,245,0.7),transparent_55%),linear-gradient(180deg,#f6f3ef_0%,#f1ebe2_48%,#ece4d8_100%)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04] [background-image:radial-gradient(rgba(122,92,58,0.2)_1px,transparent_1px)] [background-size:36px_36px]" />
 
-      <CursorGlow />
-      <div className="pointer-events-none fixed inset-0 -z-10 opacity-[0.03] marketing-grain" />
-
-      <motion.div style={{ y: blobY }} className="pointer-events-none fixed inset-0 -z-10">
-        <motion.div
-          animate={{ x: [0, 40, -30, 0], y: [0, -40, 30, 0], scale: [1, 1.1, 0.9, 1] }}
-          transition={{ repeat: Infinity, duration: 20, ease: "easeInOut" }}
-          className="absolute -top-32 left-[-15%] h-[40rem] w-[40rem] rounded-full bg-gold/3 blur-[120px]"
-        />
-        <motion.div
-          animate={{ x: [0, -50, 40, 0], y: [0, 30, -25, 0], scale: [1, 0.9, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 25, ease: "easeInOut" }}
-          className="absolute right-[-10%] top-40 h-[45rem] w-[45rem] rounded-full bg-[#E7E5E5]/2 blur-[150px]"
-        />
-      </motion.div>
-
-      {/* ── NAV ── */}
-      <RevealSection className="section-padding pt-6 sm:pt-8">
-        <nav className="mb-12 hidden items-center justify-between rounded-full border border-white/5 bg-obsidian-100/40 px-8 py-4 backdrop-blur-3xl md:flex shadow-2xl">
+      <section className="section-padding pt-8 sm:pt-12">
+        <motion.nav
+          {...sectionReveal()}
+          className="flex items-center justify-between rounded-full border border-[#6c51321f] bg-[#fbf7f1]/80 px-4 py-3 backdrop-blur-xl sm:px-7"
+        >
+          <Link href="/" className="flex items-center gap-3">
+            <BrandLogo size={28} />
+            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Naachly</span>
+          </Link>
           <div className="flex items-center gap-3">
-            <BrandLogo size={24} />
-            <p className="text-[11px] font-medium tracking-[0.3em] uppercase text-gold">Nachly</p>
+            <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
+              Log In
+            </Link>
+            <button
+              type="button"
+              onClick={goToFlowEntry}
+              className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110"
+            >
+              Start Learning
+            </button>
           </div>
-          <div className="flex items-center gap-8 text-[10px] uppercase tracking-[0.2em] font-medium text-[#E7E5E5]/40">
-            <a href="#scroll-feature" className="hover:text-gold transition-colors">Start Dancing</a>
-            <a href="#features" className="hover:text-gold transition-colors">How it Works</a>
-            <a href="#styles" className="hover:text-gold transition-colors">Dance Styles</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <MotionButton href="/login" label="Log In" />
-            <MotionButton href="/scroll" label="Start Dancing" primary />
-          </div>
-        </nav>
+        </motion.nav>
 
-        {/* ── HERO ── */}
-        <div className="grid items-center gap-16 lg:grid-cols-2 lg:pt-8">
+        <motion.div {...sectionReveal(0.05)} className="mt-12 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="mb-8 inline-flex items-center gap-3 rounded-full border border-gold/15 bg-gold/5 px-5 py-2 text-[10px] uppercase tracking-[0.25em] font-medium text-gold"
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" /> Dance Academy — Now Live
-            </motion.div>
-            <AnimatedHeadline text="Improve Your Moves. Master the Rhythm." accent="Master" />
-            <p className="mt-8 max-w-lg text-[15px] font-light leading-relaxed text-[#E7E5E5]/60 tracking-wide">
-              The premium AI-powered dance academy. Watch amazing dances, learn every step with smart tracking, and practice with our AI trainer. Improve your skills today.
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#7a5c3a]">Beta waitlist open</p>
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-[#241e17] sm:text-6xl">
+              Learn Dance Like You Scroll.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5f554b] sm:text-lg">
+              Discover viral choreography, practice step-by-step, and level up your moves. Naachly turns short-form dances into real skills.
             </p>
 
-            <div className="mt-12 flex flex-wrap gap-5">
-              <MotionButton href="/scroll" label="Start Dancing" onClick={handleStartDancing} primary />
-              <MotionButton href="/explore" label="Find Styles" />
-            </div>
-
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerParent} className="mt-12 space-y-4">
-              {[
-                { label: "High-Quality Dance Feed", color: "bg-gold/15 text-gold", icon: "✧" },
-                { label: "Smart AI Body Tracking", color: "bg-white/5 text-white/40", icon: <IcoPose /> },
-                { label: "Automated Practice Videos", color: "bg-white/5 text-white/40", icon: <IcoShare /> },
-              ].map((item) => (
-                <motion.div key={item.label} variants={staggerChild} whileHover={{ x: 8 }} className="flex items-center gap-4 group">
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-white/5 bg-obsidian-100/40 text-[13px] transition-all duration-500 group-hover:border-gold/20 group-hover:bg-gold/5 ${item.color}`}>
-                    {item.icon}
-                  </span>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#E7E5E5]/50 group-hover:text-gold transition-colors">{item.label}</p>
-                </motion.div>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {heroBadges.map((badge) => (
+                <span key={badge} className="rounded-full border border-[#6c513226] bg-white/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6d5133]">
+                  {badge}
+                </span>
               ))}
-            </motion.div>
-          </div>
+            </div>
 
-          <motion.div
-            id="demo"
-            style={{ y: parallaxY }}
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="relative mx-auto w-full max-w-[26rem]"
-          >
-            <div className="rounded-[40px] bg-gold/5 p-4 backdrop-blur-3xl shadow-2xl border border-white/5 relative group overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-tr from-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-              <div
-                className="relative h-[34rem] overflow-hidden rounded-[30px] bg-cover bg-center grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 shadow-inner"
-                style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvq5kYoGjy8xQDmhLCFaUT8x7XKSq9W0JXW37gUzgC8rSMPnX8rT4hgII4J0GOFTjc8aAoCXQPYeKQxZmZ6gw6HNQzElvhUgiseOTEbbfa2d_Nch0tBw4_hNcPDBWzouB1s9RbchLwV7Eqa0_QlQXrNFsG6S9qcwpvEA4ox9K10ipsPNOUQl0X_gUWAqJ4JcuEO5pmzZh_QLE52xOCmO0bn56didNdMVQmyN6ctP7rEwrv4MGXf7L6x48JeIACBmI13aqGWMwYfm8')" }}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={goToFlowEntry}
+                className="h-12 rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110"
               >
-                <div className="absolute inset-0 bg-gradient-to-b from-obsidian/30 via-transparent to-obsidian" />
-                <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
-                  <div className="inline-flex items-center gap-3 rounded-full bg-obsidian-100/60 border border-white/5 px-4 py-1.5 text-[9px] uppercase tracking-widest text-[#E7E5E5] backdrop-blur-md">
-                    <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="h-1.5 w-1.5 rounded-full bg-gold" />
-                    Archive {timerLabel}
-                  </div>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: seconds > 2 ? 1 : 0 }} className="rounded-full bg-gold px-4 py-1.5 text-[10px] uppercase font-bold text-obsidian tracking-wider">
-                    MASTERED {82}%
-                  </motion.div>
-                </div>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-6">
-                  {[<IcoHeart key="h" />, <IcoComment key="c" />, <IcoShare key="s" />, <IcoBookmark key="b" />].map((icon, i) => (
-                    <div key={i} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-obsidian-100/40 border border-white/10 text-gold/60 hover:text-gold transition-all duration-300 backdrop-blur-md group/ico">
-                      {icon}
-                    </div>
-                  ))}
-                </div>
-                <div className="absolute inset-x-6 bottom-6 space-y-4">
-                  <div className="flex gap-2">
-                    {["Top Performance", "Academy Choice"].map((r) => (
-                      <span key={r} className="rounded-full bg-white/5 border border-white/5 px-3 py-1 text-[9px] uppercase tracking-wider text-[#E7E5E5]/60">{r}</span>
-                    ))}
-                  </div>
-                  <div className="flex gap-4">
-                    <Link href="/scroll" className="flex-1 premium-button bg-gold text-obsidian py-4 text-[11px] tracking-widest uppercase">Start</Link>
-                    <Link href="/scroll" className="flex-1 premium-button bg-white/5 border border-white/10 text-white py-4 text-[11px] tracking-widest uppercase">Learn</Link>
-                  </div>
-                </div>
-              </div>
+                Start Learning
+              </button>
+              <a
+                href="#waitlist"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-[#6c513236] bg-white/70 px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#7a5c3a] transition hover:bg-[#f5ede2]"
+              >
+                Join Waitlist
+              </a>
             </div>
-          </motion.div>
-        </div>
-      </RevealSection>
+          </div>
 
-      {/* ── SCROLL FEATURE ── */}
-      <RevealSection className="mt-32 py-32 bg-obsidian-100/30 border-y border-white/5">
-        <div className="section-padding" id="scroll-feature">
-          <div className="text-center mb-20">
+          <div className="relative grid gap-4 sm:grid-cols-2">
+            <div className="absolute -top-6 -left-4 h-24 w-24 rounded-full bg-[#f3e7d8] blur-2xl" />
+            <div className="absolute -bottom-8 right-6 h-32 w-32 rounded-full bg-[#efe0cf] blur-2xl" />
+
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/5 text-gold border border-gold/10"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              whileHover={{ y: -6 }}
+              className="relative rounded-[2.5rem] border border-[#6c513236] bg-white/85 p-3 shadow-[0_28px_60px_-30px_rgba(58,42,26,0.6)]"
             >
-              <IcoScroll />
-            </motion.div>
-            <AnimatedHeadline text="The Smooth Dance Experience" accent="Smooth" />
-            <p className="mx-auto mt-6 max-w-2xl text-[15px] font-light text-[#E7E5E5]/50 leading-relaxed tracking-wide">
-              A high-quality video feed designed for focused learning. Watch hand-picked routines, learn every move, and improve your dancing.
-            </p>
-          </div>
-
-          <motion.div variants={staggerParent} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {SCROLL_STEPS.map((step) => (
-              <motion.div key={step.num} variants={staggerChild} whileHover={{ y: -10 }} className="p-8 rounded-3xl bg-obsidian-100/50 border border-white/5 hover:border-gold/20 transition-all duration-500 group">
-                <div className="text-4xl font-extralight text-gold/20 mb-6 group-hover:text-gold transition-colors duration-700">{step.num}</div>
-                <h3 className="text-lg font-light tracking-widest uppercase text-gold/80 mb-3">{step.title}</h3>
-                <p className="text-[13px] font-light text-[#E7E5E5]/40 leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <div className="mt-16 text-center">
-            <MotionButton href="/scroll" label="Start Dancing Now" onClick={handleStartDancing} primary className="px-12" />
-          </div>
-        </div>
-      </RevealSection>
-
-      {/* ── PHILOSOPHY ── */}
-      <RevealSection className="section-padding py-32" >
-        <div id="features">
-          <div className="max-w-xl">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-semibold mb-3">Foundations</p>
-            <AnimatedHeadline text="A New Standard of Excellence" accent="Excellence" />
-          </div>
-
-          <motion.div variants={staggerParent} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <motion.div key={f.title} variants={staggerChild} whileHover={{ y: -8 }} className="p-8 rounded-[32px] bg-obsidian-100/40 border border-white/5 hover:bg-gold/[0.02] hover:border-gold/10 transition-all duration-700 group">
-                <div className="mb-6 text-gold/60 group-hover:text-gold transition-colors duration-500">{f.icon}</div>
-                <h3 className="text-sm font-medium tracking-widest uppercase text-gold/90 mb-3">{f.title}</h3>
-                <p className="text-[13px] font-light text-[#E7E5E5]/40 leading-relaxed">{f.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </RevealSection>
-
-      {/* ── STUDIO ── */}
-      <RevealSection className="bg-obsidian-100/40 py-32 border-y border-white/5">
-        <div className="section-padding">
-          <div className="grid gap-20 lg:grid-cols-2 items-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-semibold mb-3">The Studio</p>
-              <AnimatedHeadline text="Professional AI for Dancing" accent="Dancing" />
-              <div className="mt-12 space-y-8">
-                {[
-                  { t: "Body mapping", d: "Real-time pose analysis that compares your moves to the teacher's moves." },
-                  { t: "Dance Analysis", d: "Deep insights into your timing, accuracy, and energy." },
-                  { t: "Auto Recording", d: "Every session is automatically recorded in high quality for you to watch later." },
-                ].map(item => (
-                  <div key={item.t} className="group">
-                    <h4 className="text-[11px] uppercase tracking-[0.2em] font-medium text-gold mb-2 group-hover:translate-x-1 transition-transform">{item.t}</h4>
-                    <p className="text-[14px] font-light text-[#E7E5E5]/40 leading-relaxed">{item.d}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-12 flex flex-wrap gap-5">
-                <MotionButton href="/scroll" label="Join the Studio" primary />
-                <MotionButton href="/explore" label="All Dances" />
-              </div>
-            </div>
-            <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.8 }} className="relative overflow-hidden rounded-[40px] border border-white/5 p-4 bg-obsidian shadow-2xl">
-              <div className="h-[26rem] rounded-[32px] bg-cover bg-center grayscale shadow-2xl" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuATUbss4yuUBxUB-vpjYdQhOI-fgbkxbEuYUe_OXoUa2_vvawn5lnm2BSRdt1tj_T7aUT276pVivh4JcvoE-YGArwOSXQO9vANFpQmkJdtY0lt4OZv09eiu1V3KIVaR0Pvqp6FHJhO4tGbD-5ECUGMmlYjudlbaWP9kXdmi5QunI10fCSHro_3FKStz6-7T510xzT7GKK-CkHKrtvTztbrD0FYbUV8V7M7bn9N2rOpCGrs6bcLkABl9m2-L3xZ3UlB4uQ-q5diTD0Q')" }} />
-               <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent opacity-40" />
-            </motion.div>
-          </div>
-        </div>
-      </RevealSection>
-
-      {/* ── STYLES ── */}
-      <RevealSection className="py-32" >
-        <div className="section-padding" id="styles">
-          <div className="text-center mb-20">
-             <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-semibold mb-3">Global Disciplines</p>
-             <AnimatedHeadline text="Curated Masteries" accent="Masteries" />
-          </div>
-          <motion.div variants={staggerParent} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {STYLES.map((card) => (
-              <motion.article key={card.title} variants={staggerChild} whileHover={{ y: -10 }} className="group relative overflow-hidden rounded-[40px] aspect-[4/5] shadow-2xl">
-                <div className="absolute inset-0 bg-cover bg-center grayscale group-hover:grayscale-0 transition-all duration-[2s] scale-110 group-hover:scale-100" style={{ backgroundImage: `url('${card.img}')` }} />
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/20 to-transparent opacity-80" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-end items-center text-center">
-                   <h3 className="text-2xl font-light tracking-widest uppercase text-[#E7E5E5] group-hover:text-gold transition-colors">{card.title}</h3>
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#e7dccd] bg-[#1b1510]">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster={HERO_POSTER}
+                  className="h-full w-full object-cover"
+                >
+                  <source src={HERO_VIDEO} type="video/mp4" />
+                </video>
+                <div className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                  Scroll
                 </div>
-              </motion.article>
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 p-3">
+                  <p className="text-xs font-semibold text-[#2b241b]">Monsoon Groove</p>
+                  <p className="text-[10px] text-[#6d6157]">Learn in 6 steps</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              whileHover={{ y: -6 }}
+              className="relative rounded-[2.5rem] border border-[#6c513236] bg-white/85 p-3 shadow-[0_28px_60px_-30px_rgba(58,42,26,0.6)]"
+            >
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#e7dccd] bg-[#f6efe5]">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster={HERO_POSTER_ALT}
+                  className="h-full w-full object-cover"
+                >
+                  <source src={HERO_VIDEO_ALT} type="video/mp4" />
+                </video>
+                <div className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                  Learn
+                </div>
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 p-3">
+                  <p className="text-xs font-semibold text-[#2b241b]">Step-by-step</p>
+                  <div className="mt-2 h-1.5 rounded-full bg-[#efe6da]">
+                    <div className="h-full w-1/2 rounded-full bg-[#7a5c3a]" />
+                  </div>
+                  <p className="mt-2 text-[10px] text-[#6d6157]">Loop the chorus</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">App preview</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">See it in motion</h2>
+          <p className="mt-3 max-w-2xl text-sm text-[#6b6056]">
+            Real choreography clips, real practice flow. This is what Naachly feels like.
+          </p>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {appPreviews.map((item) => (
+              <motion.div key={item.title} whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
+                <BentoCard>
+                  <div className="relative aspect-[9/16] overflow-hidden rounded-[1.75rem] border border-[#e7dccd] bg-[#1b1510]">
+                    <video
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      poster={item.poster}
+                      className="h-full w-full object-cover"
+                    >
+                      <source src={item.video} type="video/mp4" />
+                    </video>
+                    <div className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                      {item.title}
+                    </div>
+                    <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 px-3 py-2">
+                      <p className="text-[10px] font-semibold text-[#2b241b]">{item.subtitle}</p>
+                    </div>
+                  </div>
+                </BentoCard>
+              </motion.div>
             ))}
-          </motion.div>
-        </div>
-      </RevealSection>
+          </div>
+        </motion.div>
+      </section>
 
-      {/* ── FINAL CTA ── */}
-      <RevealSection className="section-padding pb-40 pt-20 text-center">
-        <p className="text-[10px] uppercase tracking-[0.4em] text-gold font-semibold mb-6">Start Dancing</p>
-        <h2 className="font-display text-6xl font-extralight tracking-tighter text-[#E7E5E5] sm:text-7xl">Make Your <span className="text-gold italic">Mark.</span></h2>
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-6">
-          <MotionButton href="/scroll" label="Start Now" onClick={handleStartDancing} primary className="px-12" />
-          <MotionButton href="/explore" label="Find Styles" className="px-12" />
-        </div>
-      </RevealSection>
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Why users love it</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Built for dance learners, not spectators</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {whyLove.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.04 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <BentoCard>
+                  <h3 className="text-lg font-semibold text-[#241e17]">{item.title}</h3>
+                  <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+                </BentoCard>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-white/5 bg-obsidian">
-        <div className="section-padding py-24">
-          <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">How it works</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">A scroll-native learning loop</h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-5">
+            {howItWorks.map((step, index) => (
+              <motion.div
+                key={step.step}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <BentoCard className="text-center">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">{step.step}</p>
+                  <h3 className="mt-3 text-xl font-semibold text-[#241e17]">{step.title}</h3>
+                  <p className="mt-2 text-sm text-[#6b6056]">{step.description}</p>
+                </BentoCard>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
-              <div className="flex items-center gap-4 mb-6 group">
-                <BrandLogo size={36} className="shadow-[0_0_20px_rgba(211,196,184,0.1)] group-hover:shadow-[0_0_35px_rgba(211,196,184,0.2)] transition-all duration-700" />
-                <p className="text-[14px] font-light tracking-[0.5em] uppercase text-gold group-hover:text-gold transition-colors">{SITE_NAME}</p>
-              </div>
-              <p className="text-[13px] font-light leading-relaxed text-[#E7E5E5]/30">The premium dance academy. Expert choreography, made easy to learn.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Problem and solution</p>
+              <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Watching dance is not learning dance</h2>
+              <p className="mt-5 text-base leading-relaxed text-[#5f554b]">
+                Naachly bridges the gap between passive scrolling and real practice. You get structure, repetition, and progress so dances actually stick.
+              </p>
             </div>
-            <div>
-              <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/60">Dances</p>
-              <div className="flex flex-col gap-4 text-[13px] font-light text-[#E7E5E5]/40">
-                <Link href="/scroll" className="hover:text-gold transition-colors">Start Dancing</Link>
-                <Link href="/explore" className="hover:text-gold transition-colors">Styles</Link>
-                <Link href="/reels" className="hover:text-gold transition-colors">Video Feed</Link>
-              </div>
+            <BentoCard>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">Naachly fixes it</p>
+              <ul className="mt-4 space-y-3 text-sm text-[#5f554b]">
+                <li>Breakdowns built for repetition</li>
+                <li>Practice tools you control</li>
+                <li>Progress you can track</li>
+                <li>Creator-led routines that stay fresh</li>
+              </ul>
+            </BentoCard>
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Features</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Everything you need to level up</h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.04 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <BentoCard>
+                  <h3 className="text-lg font-semibold text-[#241e17]">{item.title}</h3>
+                  <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+                </BentoCard>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()} className="grid gap-5 md:grid-cols-3">
+          {[
+            {
+              title: "Learn what is trending",
+              label: "Community",
+              description: "Stay plugged into the dances that everyone is doing right now.",
+            },
+            {
+              title: "Track your streaks",
+              label: "Consistency",
+              description: "Build a habit with visual streaks and saved practice sessions.",
+            },
+            {
+              title: "Show your progress",
+              label: "Share",
+              description: "Record your best takes and share the glow up.",
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.06 }}
+              viewport={{ once: true, amount: 0.2 }}
+            >
+              <BentoCard>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">{item.label}</p>
+                <h3 className="mt-3 text-xl font-semibold text-[#241e17]">{item.title}</h3>
+                <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+              </BentoCard>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      <section id="waitlist" className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <div className="rounded-[2.5rem] border border-[#6c513236] bg-[#fbf7f1] p-8 text-center shadow-[0_25px_50px_-30px_rgba(58,42,26,0.6)] sm:p-10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Waitlist</p>
+            <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">
+              Be among the first to transform how you learn dance.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6b6056]">
+              Get early access, new drops, and creator-led routines as soon as we launch.
+            </p>
+
+            <div className="mx-auto mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
+              {waitlistStats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-[#6c51321f] bg-white/80 px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#7a5c3a]">{stat.label}</p>
+                  <p className="mt-2 text-lg font-semibold text-[#241e17]">{stat.value}</p>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/60">Teach</p>
-              <div className="flex flex-col gap-4 text-[13px] font-light text-[#E7E5E5]/40">
-                <Link href="/login" className="hover:text-gold transition-colors">Log In</Link>
-                <Link href="/signup" className="hover:text-gold transition-colors">Sign Up</Link>
-                <Link href="/download" className="hover:text-gold transition-colors">Mobile App</Link>
-              </div>
-            </div>
-            <div>
-               <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold/60">Help</p>
-              <div className="flex flex-col gap-4 text-[13px] font-light text-[#E7E5E5]/40">
-                <Link href="/legal" className="hover:text-gold transition-colors">Legal Terms</Link>
-              </div>
+
+            <form onSubmit={handleLeadCapture} className="mx-auto mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="h-12 flex-1 rounded-full border border-[#6c513236] bg-white px-5 text-sm text-[#2b241b] placeholder:text-[#8a7d70] outline-none transition focus:border-[#7a5c3a]"
+              />
+              <button
+                type="submit"
+                disabled={captureState === "saving"}
+                className="h-12 rounded-full bg-[#7a5c3a] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110 disabled:opacity-70"
+              >
+                {captureState === "saving" ? "Saving..." : "Join Waitlist"}
+              </button>
+            </form>
+
+            {captureMessage ? (
+              <p className={`mt-3 text-sm ${captureState === "error" ? "text-[#9a3e2a]" : "text-[#5f554b]"}`}>{captureMessage}</p>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={goToFlowEntry}
+                className="h-12 rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110"
+              >
+                Start Learning
+              </button>
+              <Link
+                href="/flow?style=mix"
+                className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]"
+              >
+                Explore the Feed
+              </Link>
             </div>
           </div>
-          <div className="mt-20 pt-8 border-t border-white/5 flex flex-wrap justify-between items-center gap-4">
-             <p className="text-[10px] uppercase tracking-widest text-[#E7E5E5]/20">© 2026 Nachly Academy. All Rights Reserved.</p>
-             <div className="flex gap-8 text-[10px] uppercase tracking-widest text-[#E7E5E5]/20">
-                <span className="hover:text-gold cursor-pointer transition-colors">Privacy</span>
-                <span className="hover:text-gold cursor-pointer transition-colors">Terms</span>
-             </div>
+        </motion.div>
+      </section>
+
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">FAQ</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Quick answers</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {faqs.map((item, index) => (
+              <motion.div
+                key={item.question}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.04 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <BentoCard>
+                  <h3 className="text-base font-semibold text-[#241e17]">{item.question}</h3>
+                  <p className="mt-2 text-sm text-[#6b6056]">{item.answer}</p>
+                </BentoCard>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      <footer className="section-padding pb-16 pt-14">
+        <div className="flex flex-col items-start justify-between gap-6 border-t border-[#6c51321f] pt-8 sm:flex-row">
+          <div>
+            <div className="flex items-center gap-3">
+              <BrandLogo size={28} />
+              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Naachly</span>
+            </div>
+            <p className="mt-3 max-w-sm text-sm text-[#6b6056]">A modern dance learning app built for the scroll generation.</p>
+          </div>
+          <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">
+            <Link href="/flow?style=mix">Flow</Link>
+            <Link href="/explore">Explore</Link>
+            <Link href="/login">Login</Link>
+            <Link href="/download-app">App</Link>
           </div>
         </div>
       </footer>

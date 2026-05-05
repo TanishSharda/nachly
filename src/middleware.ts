@@ -1,13 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-function isPhoneRequest(request: NextRequest) {
-  const ua = (request.headers.get("user-agent") || "").toLowerCase();
-  const isTablet = /ipad|tablet/.test(ua);
-  const isPhone = /iphone|ipod|android.*mobile|mobile/.test(ua);
-  return isPhone && !isTablet;
-}
-
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -88,14 +81,9 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthPage && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/explore";
-    return attachSupabaseCookies(NextResponse.redirect(url));
-  }
-
-  // Mobile entrypoint: go directly to auth flow instead of download gate.
-  if (request.nextUrl.pathname === "/" && isPhoneRequest(request)) {
-    const url = request.nextUrl.clone();
-    url.pathname = user ? "/explore" : "/login";
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    url.pathname = redirectParam && redirectParam.startsWith("/") ? redirectParam : "/explore";
+    url.search = "";
     return attachSupabaseCookies(NextResponse.redirect(url));
   }
 

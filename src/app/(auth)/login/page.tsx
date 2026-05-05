@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getOAuthRedirectBaseClient } from "@/lib/utils/site-url";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
 import Spinner from "@/components/ui/Spinner";
 
@@ -135,7 +136,12 @@ function LoginForm() {
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
-        <Link href="/explore">
+        <Link
+          href="/explore"
+          onClick={() => {
+            getOrCreateGuestId();
+          }}
+        >
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

@@ -23,6 +23,9 @@ interface PurchaseModalProps {
 export default function PurchaseModal({ open, onClose, style, onPurchaseComplete }: PurchaseModalProps) {
   const [step, setStep] = useState<"confirm" | "processing" | "success">("confirm");
   const [error, setError] = useState("");
+  const amountPaise = Number(style.price_inr || 0);
+  const amountInr = Math.max(1, Math.round(amountPaise / 100));
+  const formattedAmount = new Intl.NumberFormat("en-IN").format(amountInr);
 
   async function loadRazorpayScript() {
     if (typeof window === "undefined") return false;
@@ -43,7 +46,6 @@ export default function PurchaseModal({ open, onClose, style, onPurchaseComplete
     setStep("processing");
 
     try {
-      const amountPaise = Number(style.price_inr || 0);
       if (!amountPaise || amountPaise < 100) {
         setError("Invalid style price. Please try again later.");
         setStep("confirm");
@@ -81,6 +83,23 @@ export default function PurchaseModal({ open, onClose, style, onPurchaseComplete
         name: "Naachly",
         description: `Unlock ${style.name}`,
         order_id: orderPayload.orderId,
+        method: {
+          upi: true,
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [{ method: "upi" }],
+              },
+            },
+            sequence: ["block.upi"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
         prefill: {
           name: orderPayload?.user?.name || "",
           email: orderPayload?.user?.email || "",
@@ -158,7 +177,7 @@ export default function PurchaseModal({ open, onClose, style, onPurchaseComplete
             </div>
             <div className="border-t border-dark-200 mt-3 pt-3 flex justify-between items-center">
               <span className="font-semibold text-dark">Total</span>
-              <span className="text-2xl font-display font-bold text-wine-900">&#8377;299</span>
+              <span className="text-2xl font-display font-bold text-wine-900">&#8377;{formattedAmount}</span>
             </div>
           </div>
 
@@ -169,7 +188,7 @@ export default function PurchaseModal({ open, onClose, style, onPurchaseComplete
               Cancel
             </Button>
             <Button onClick={handlePurchase} className="flex-1">
-              Pay &#8377;299
+              Pay &#8377;{formattedAmount}
             </Button>
           </div>
         </div>

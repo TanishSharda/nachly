@@ -12,8 +12,56 @@ import {
 import { extractAdaptiveAngles, getPartialVisibilitySummary } from "@/lib/ai/partial-body";
 import { computeCoachScores, getCoachCue } from "@/lib/ai/coach-metrics";
 import { getDifficulty } from "@/lib/ai/difficulty";
+import { createPoseSmoother, interpolateLandmarks, type PoseSmoother } from "@/lib/ai/pose-filters";
+import { normalizeLandmarks } from "@/lib/ai/pose-normalization";
 
 const MIN_VISIBILITY = 0.5;
+const QUALITY_CHECK_INTERVAL_MS = 1000;
+const LOW_LIGHT_THRESHOLD = 0.18;
+const BRIGHT_LIGHT_THRESHOLD = 0.9;
+const ALIGNMENT_THRESHOLD = 0.18;
+const MAX_VISIBILITY_WARNINGS = 5;
+
+function getLightingScore(video: HTMLVideoElement, canvas: HTMLCanvasElement): number | null {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+
+  const width = 32;
+  const height = 18;
+  canvas.width = width;
+  canvas.height = height;
+
+  try {
+    ctx.drawImage(video, 0, 0, width, height);
+    const data = ctx.getImageData(0, 0, width, height).data;
+    let total = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      total += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    return total / (data.length / 4) / 255;
+  } catch {
+    return null;
+  }
+}
+
+function getBodyCenterX(landmarks: PoseLandmark[]): number | null {
+  const ls = landmarks[11];
+  const rs = landmarks[12];
+  if (ls && rs && ls.visibility >= 0.4 && rs.visibility >= 0.4) {
+    return (ls.x + rs.x) / 2;
+  }
+
+  const lh = landmarks[23];
+  const rh = landmarks[24];
+  if (lh && rh && lh.visibility >= 0.4 && rh.visibility >= 0.4) {
+    return (lh.x + rh.x) / 2;
+  }
+
+  return null;
+}
 
 interface FeedbackMessage {
   type: "error" | "warning" | "praise";
@@ -68,6 +116,7 @@ export function usePoseDetection(
   const frameCountRef = useRef(0);
   const animFrameRef = useRef<number>(0);
   const lastFeedbackTimeRef = useRef(0);
+  const visibilityWarningCountRef = useRef(0);
   const poseLandmarkerRef = useRef<unknown>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const bodyVisibleRef = useRef(false);
@@ -79,6 +128,12 @@ export function usePoseDetection(
   const visibilityHistoryRef = useRef<number[]>([]);
   const thresholdsRef = useRef({ perfectMax: 40, gentleMax: 62 });
   const difficultyLevelRef = useRef("beginner");
+  const smootherRef = useRef<PoseSmoother | null>(null);
+  const lastStableLandmarksRef = useRef<PoseLandmark[] | null>(null);
+  const qualityCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lastQualityCheckRef = useRef(0);
+  const lightingStatusRef = useRef<"ok" | "low" | "bright">("ok");
+  const alignmentStatusRef = useRef<"ok" | "left" | "right">("ok");
 
   // Keep activeRef in sync
   useEffect(() => {
@@ -123,6 +178,13 @@ export function usePoseDetection(
       previousAnglesRef.current = null;
       motionHistoryRef.current = [];
       visibilityHistoryRef.current = [];
+      smootherRef.current = createPoseSmoother({ minCutoff: 1.2, beta: 0.15, dCutoff: 1.0 });
+      lastStableLandmarksRef.current = null;
+      visibilityWarningCountRef.current = 0;
+      qualityCanvasRef.current = document.createElement("canvas");
+      lastQualityCheckRef.current = 0;
+      lightingStatusRef.current = "ok";
+      alignmentStatusRef.current = "ok";
       const difficulty = getDifficulty();
       thresholdsRef.current = {
         perfectMax: difficulty.perfectMax,
@@ -235,14 +297,52 @@ export function usePoseDetection(
               );
 
               if (result.landmarks && result.landmarks.length > 0) {
-                const lms = result.landmarks[0] as PoseLandmark[];
-                setLandmarks(lms);
+                const rawLandmarks = result.landmarks[0] as PoseLandmark[];
+                const smoothedLandmarks = smootherRef.current
+                  ? smootherRef.current.smooth(rawLandmarks, nowTs)
+                  : rawLandmarks;
+                const stableLandmarks = interpolateLandmarks(
+                  smoothedLandmarks,
+                  lastStableLandmarksRef.current,
+                  0.45
+                );
+                lastStableLandmarksRef.current = stableLandmarks;
+                setLandmarks(stableLandmarks);
 
                 // Check body visibility
-                const visibilitySummary = getPartialVisibilitySummary(lms, MIN_VISIBILITY);
-                const isBodyVisible = visibilitySummary.hasAny;
+                const visibilitySummary = getPartialVisibilitySummary(smoothedLandmarks, MIN_VISIBILITY);
+                const isBodyVisible = visibilitySummary.hasUpper && visibilitySummary.hasLower;
                 bodyVisibleRef.current = isBodyVisible;
                 setBodyVisible(isBodyVisible);
+                if (isBodyVisible) {
+                  visibilityWarningCountRef.current = 0;
+                }
+
+                // Periodic quality checks
+                if (nowTs - lastQualityCheckRef.current > QUALITY_CHECK_INTERVAL_MS) {
+                  lastQualityCheckRef.current = nowTs;
+                  const canvas = qualityCanvasRef.current;
+                  const video = videoRef.current;
+                  if (canvas && video) {
+                    const lightingScore = getLightingScore(video, canvas);
+                    if (lightingScore !== null) {
+                      if (lightingScore < LOW_LIGHT_THRESHOLD) {
+                        lightingStatusRef.current = "low";
+                      } else if (lightingScore > BRIGHT_LIGHT_THRESHOLD) {
+                        lightingStatusRef.current = "bright";
+                      } else {
+                        lightingStatusRef.current = "ok";
+                      }
+                    }
+                  }
+
+                  const centerX = getBodyCenterX(stableLandmarks);
+                  if (centerX !== null) {
+                    if (centerX < 0.5 - ALIGNMENT_THRESHOLD) alignmentStatusRef.current = "left";
+                    else if (centerX > 0.5 + ALIGNMENT_THRESHOLD) alignmentStatusRef.current = "right";
+                    else alignmentStatusRef.current = "ok";
+                  }
+                }
 
                 if (!isBodyVisible) {
                   // Nothing usable visible right now.
@@ -258,20 +358,24 @@ export function usePoseDetection(
 
                   // Provide body visibility feedback every 4 seconds
                   const now = Date.now();
-                  if (now - lastFeedbackTimeRef.current > 4000) {
+                  if (
+                    now - lastFeedbackTimeRef.current > 4000 &&
+                    visibilityWarningCountRef.current < MAX_VISIBILITY_WARNINGS
+                  ) {
                     lastFeedbackTimeRef.current = now;
+                    visibilityWarningCountRef.current += 1;
                     setFeedbackMessages((prev) => [
                       ...prev.slice(-10),
                       {
                         type: "error",
-                        message: "I can’t see enough body landmarks yet — adjust camera and keep moving.",
+                        message: "Full body not visible yet — step back so head, arms, torso, and legs are in frame.",
                         timestamp: now,
                       },
                     ]);
                   }
                 } else {
                   // Partial-body friendly scoring: estimate mirrored side when possible.
-                  const angles = extractAdaptiveAngles(lms, 0.45, true);
+                  const angles = extractAdaptiveAngles(stableLandmarks, 0.45, true);
                   bufferRef.current.push(angles);
                   const previousAngles = previousAnglesRef.current;
 
@@ -310,12 +414,14 @@ export function usePoseDetection(
                   const coach = computeCoachScores({
                     styleSlug,
                     difficultyLevel: difficultyLevelRef.current,
-                    landmarks: lms,
+                    landmarks: stableLandmarks,
                     currentAngles: angles,
                     previousAngles,
                     motionHistory: motionHistoryRef.current,
                     visibilityHistory: visibilityHistoryRef.current,
                   });
+
+                  void normalizeLandmarks(stableLandmarks, 0.3);
 
                   motionHistoryRef.current = [...motionHistoryRef.current.slice(-15), coach.motionMagnitude];
                   visibilityHistoryRef.current = [
@@ -336,11 +442,21 @@ export function usePoseDetection(
                     } else if (!visibilitySummary.hasLower) {
                       visibilityHint = " I can’t see your legs clearly, step back a little.";
                     }
+                    let qualityHint = "";
+                    if (lightingStatusRef.current === "low") {
+                      qualityHint = " Lighting is low - move to a brighter area.";
+                    } else if (lightingStatusRef.current === "bright") {
+                      qualityHint = " Lighting is harsh - soften or reduce glare if possible.";
+                    } else if (alignmentStatusRef.current === "left") {
+                      qualityHint = " Move slightly right so you are centered.";
+                    } else if (alignmentStatusRef.current === "right") {
+                      qualityHint = " Move slightly left so you are centered.";
+                    }
                     setFeedbackMessages((prev) => [
                       ...prev.slice(-10),
                       {
                         type: cue.type,
-                        message: `${cue.message}${visibilityHint}`,
+                        message: `${cue.message}${visibilityHint}${qualityHint}`,
                         timestamp: now,
                       },
                     ]);
@@ -353,6 +469,7 @@ export function usePoseDetection(
                 setBodyVisible(false);
                 bodyVisibleRef.current = false;
                 previousAnglesRef.current = null;
+                lastStableLandmarksRef.current = null;
                 setLiveScores((prev) => ({
                   posture: Math.max(0, Math.round(prev.posture * 0.88)),
                   timing: Math.max(0, Math.round(prev.timing * 0.88)),
@@ -362,8 +479,12 @@ export function usePoseDetection(
                 }));
 
                 const now = Date.now();
-                if (now - lastFeedbackTimeRef.current > 4000) {
+                if (
+                  now - lastFeedbackTimeRef.current > 4000 &&
+                  visibilityWarningCountRef.current < MAX_VISIBILITY_WARNINGS
+                ) {
                   lastFeedbackTimeRef.current = now;
+                  visibilityWarningCountRef.current += 1;
                   setFeedbackMessages((prev) => [
                     ...prev.slice(-10),
                     {
@@ -417,6 +538,7 @@ export function usePoseDetection(
     setIsReady(false);
     setBodyVisible(false);
     bodyVisibleRef.current = false;
+    lastStableLandmarksRef.current = null;
     setLiveScores({ posture: 0, timing: 0, energy: 0, confidence: 0, overall: 0 });
   }, []);
 
@@ -439,6 +561,7 @@ export function usePoseDetection(
           // ignore
         }
       }
+      lastStableLandmarksRef.current = null;
     };
   }, []);
 

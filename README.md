@@ -20,6 +20,9 @@ copy .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `DRILL_SIGNING_SECRET`
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `RAZORPAY_WEBHOOK_SECRET`
 
 4. Start development server.
 
@@ -33,6 +36,7 @@ App runs on `http://localhost:3000`.
 
 - Supabase variables are required for auth, drill APIs, and feedback persistence.
 - Firebase variables are only required for Firebase-backed routes (for example reels/learn/record/replay).
+- Razorpay variables are required for checkout, verification, and webhook reconciliation.
 - Do not commit secrets to source control.
 
 ## Supabase Migrations

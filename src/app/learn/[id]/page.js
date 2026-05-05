@@ -97,16 +97,16 @@ export default function LearnPage() {
   }, [id]);
 
   if (loading) {
-    return <main className="min-h-screen grid place-items-center bg-black text-zinc-300">Loading Learn Mode...</main>;
+    return <main className="min-h-screen grid place-items-center bg-[#f4f1ec] text-[#3a2f22]">Loading Learn Mode...</main>;
   }
 
   if (error || !choreo) {
     return (
-      <main className="min-h-screen grid place-items-center bg-black p-6 text-center">
-        <div className="rounded-2xl border border-red-400/30 bg-red-400/10 px-5 py-4 text-red-200">{error || "Not found"}</div>
+      <main className="min-h-screen grid place-items-center bg-[#f4f1ec] p-6 text-center">
+        <div className="rounded-2xl border border-[#b76a59]/35 bg-[#fff2ef] px-5 py-4 text-[#7d3023]">{error || "Not found"}</div>
       </main>
     );
   }
 
-  return <LearnModePlayer choreo={choreo} backHref="/scroll" practiceHref={`/record/${choreo.id}?mode=remix`} />;
+  return <LearnModePlayer choreo={choreo} backHref="/flow?style=mix" practiceHref={`/record/${choreo.id}?mode=remix`} />;
 }

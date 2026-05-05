@@ -4,18 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { MOCK_ROUTINES } from "@/lib/mock-data";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
 const SCROOL_CACHE_KEY = "naachly_scrool_feed_cache_v1";
-
-function getClientAnonKey() {
-  if (typeof window === "undefined") return "anon";
-  const key = "naachly_scroll_anon";
-  const existing = window.localStorage.getItem(key);
-  if (existing) return existing;
-  const created = `anon_${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(key, created);
-  return created;
-}
 
 function getScroolLearnHref(item) {
   if (item?.styleSlug && item?.routineSlug) {
@@ -318,7 +309,7 @@ export default function ReelsPage() {
           choreoId,
           action,
           mode: action === "like" ? "toggle" : "track",
-          anonKey: getClientAnonKey(),
+          anonKey: getOrCreateGuestId(),
         }),
       });
 
@@ -382,7 +373,7 @@ export default function ReelsPage() {
         body: JSON.stringify({
           choreoId,
           reaction,
-          anonKey: getClientAnonKey(),
+          anonKey: getOrCreateGuestId(),
         }),
       });
 

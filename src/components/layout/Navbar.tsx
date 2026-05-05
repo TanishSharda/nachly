@@ -39,13 +39,13 @@ export default function Navbar({ user }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-obsidian-100/40 backdrop-blur-3xl border-b border-white/5 shadow-2xl">
+    <header className="sticky top-0 z-40 border-b border-[#6c51321f] bg-[#f8f5ef]/85 backdrop-blur-2xl shadow-[0_10px_28px_-24px_rgba(58,42,26,0.65)]">
       <nav className="section-padding">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-4 group">
-            <BrandLogo size={42} className="shadow-[0_0_30px_rgba(211,196,184,0.15)] group-hover:shadow-[0_0_45px_rgba(211,196,184,0.25)] transition-all duration-700" priority />
-            <span className="font-display font-light text-[14px] tracking-[0.5em] uppercase text-gold group-hover:text-gold transition-colors block">{SITE_NAME}</span>
+              <BrandLogo size={42} className="shadow-[0_12px_32px_-22px_rgba(122,92,58,0.6)] transition-all duration-700" priority />
+              <span className="font-display font-semibold text-[14px] tracking-[0.36em] uppercase text-[#7a5c3a] transition-colors block">{SITE_NAME}</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -59,14 +59,14 @@ export default function Navbar({ user }: NavbarProps) {
                   href={link.href}
                   className={cn(
                     "text-[10px] uppercase font-semibold tracking-[0.2em] transition-all duration-500 relative py-2",
-                    isActive ? "text-gold" : "text-white/40 hover:text-white"
+                    isActive ? "text-[#7a5c3a]" : "text-[#7e7468] hover:text-[#3a2f22]"
                   )}
                 >
                   {link.label}
                   {isActive && (
                     <motion.div
                       layoutId="nav-indicator"
-                      className="absolute bottom-0 left-0 right-0 h-px bg-gold/60 rounded-full"
+                      className="absolute bottom-0 left-0 right-0 h-px bg-[#7a5c3a]/70 rounded-full"
                     />
                   )}
                 </Link>
@@ -80,7 +80,7 @@ export default function Navbar({ user }: NavbarProps) {
               <>
                 <button type="button" onClick={handleProfileClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Avatar src={user.avatar_url} name={user.full_name} size="sm" />
-                  <span className="text-sm font-medium text-white">{user.full_name}</span>
+                  <span className="text-sm font-medium text-[#2d241a]">{user.full_name}</span>
                 </button>
                 <Button variant="ghost" size="sm" onClick={handleSignOut} loading={signingOut}>
                   Sign out
@@ -100,7 +100,7 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-[#6c513214] transition-colors text-[#7a5c3a]"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -128,7 +128,7 @@ export default function Navbar({ user }: NavbarProps) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t border-white/10"
+              className="md:hidden overflow-hidden border-t border-[#6c51321f]"
             >
               <div className="py-4 space-y-2">
                 {NAV_LINKS.map((link) => {
@@ -141,15 +141,15 @@ export default function Navbar({ user }: NavbarProps) {
                       className={cn(
                         "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                         pathname.startsWith(link.href)
-                          ? "bg-gold/15 text-gold"
-                          : "text-zinc-400 hover:bg-white/5"
+                          ? "bg-[#7a5c3a1a] text-[#7a5c3a]"
+                          : "text-[#7e7468] hover:bg-[#6c51320f] hover:text-[#2d241a]"
                       )}
                     >
                       {link.label}
                     </Link>
                   );
                 })}
-                <div className="pt-2 border-t border-white/10 space-y-2">
+                <div className="pt-2 border-t border-[#6c51321f] space-y-2">
                   {user ? (
                     <>
                       <button

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
+import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
 type AttemptRecord = {
   id: string;
@@ -16,8 +17,7 @@ type AttemptRecord = {
 };
 
 function getClientUserId() {
-  if (typeof window === "undefined") return "anon";
-  return window.localStorage.getItem("naachly_user_id") || "anon";
+  return getOrCreateGuestId();
 }
 
 function formatDate(timestamp: number) {

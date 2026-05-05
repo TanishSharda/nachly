@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-const SEEK_STEP_SECONDS = 10;
 
 const HINTS = [
   "Move faster",
@@ -45,29 +45,26 @@ function getLearnVideoSources(videoUrl) {
 }
 
 export default function LearnModePlayer({ choreo, backHref = "/scroll", practiceHref }) {
+  const router = useRouter();
   const videoRef = useRef(null);
-  const [videoReady, setVideoReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [hintIndex, setHintIndex] = useState(0);
-  const [loopEnabled, setLoopEnabled] = useState(false);
-  const [loopStart, setLoopStart] = useState(0);
-  const [loopEnd, setLoopEnd] = useState(0);
   const [videoError, setVideoError] = useState("");
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
   const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = muted;
-    video.volume = volume;
-  }, [muted, volume]);
+  const recordHref = useMemo(() => {
+    if (practiceHref) return practiceHref;
+    if (choreo?.id) return `/record/${encodeURIComponent(choreo.id)}?mode=remix`;
+    return "/flow?style=mix";
+  }, [practiceHref, choreo?.id]);
+  const aiPracticeHref = useMemo(() => {
+    if (choreo?.id) return `/ai-practice/${encodeURIComponent(choreo.id)}`;
+    return "/adaptive-pose";
+  }, [choreo?.id]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -76,10 +73,6 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     const onTimeUpdate = () => {
       const now = video.currentTime || 0;
       setCurrentTime(now);
-
-      if (loopEnabled && loopEnd > loopStart && now >= loopEnd) {
-        video.currentTime = loopStart;
-      }
 
       try {
         window.localStorage.setItem(resumeKey, String(now));
@@ -91,7 +84,6 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     const onLoadedMetadata = () => {
       setVideoError("");
       setDuration(video.duration || 0);
-      setVideoReady(true);
 
       try {
         const saved = Number(window.localStorage.getItem(resumeKey) || 0);
@@ -121,7 +113,7 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
       video.removeEventListener("pause", onPause);
       video.removeEventListener("error", onError);
     };
-  }, [loopEnabled, loopEnd, loopStart, resumeKey]);
+  }, [resumeKey]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -174,38 +166,53 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     await document.exitFullscreen?.();
   };
 
-  const markLoopStart = () => {
-    const now = videoRef.current?.currentTime || 0;
-    setLoopStart(now);
-    if (loopEnd <= now) {
-      setLoopEnd(Math.min(now + 8, duration || now + 8));
-    }
+  const handleRecordClick = () => {
+    router.push(recordHref);
   };
 
-  const markLoopEnd = () => {
-    const now = videoRef.current?.currentTime || 0;
-    setLoopEnd(now);
-    if (now <= loopStart) {
-      setLoopStart(Math.max(now - 8, 0));
-    }
+  const handleAiPracticeClick = () => {
+    router.push(aiPracticeHref);
   };
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6">
-        <header className="mb-3 flex items-center justify-between">
-          <Link href={backHref} className="rounded-lg border border-white/15 px-3 py-2 text-xs uppercase tracking-widest text-white/80 hover:bg-white/10">
-            Back
-          </Link>
-          <h1 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Learn Mode</h1>
-          <div className="w-[66px]" />
-        </header>
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <section className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/35 z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgba(114,91,63,0.33),transparent_45%)] z-10" />
 
-        <section className="relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+        <div className="absolute left-4 right-4 top-[calc(env(safe-area-inset-top,0px)+0.45rem)] z-20 flex items-start justify-between md:left-6 md:right-6 md:top-8">
+          <Link href={backHref} className="h-12 w-12 rounded-full border border-white/10 bg-white/10 backdrop-blur-xl grid place-items-center transition active:scale-95 hover:bg-white/15 md:h-14 md:w-14">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          </Link>
+          <div className="max-w-[72vw] text-right">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/65">Session 04</p>
+            <h1 className="mt-2 text-3xl font-semibold leading-[0.95] text-white tracking-tight md:text-6xl">{choreo?.title || "Ethereal Foundations"}</h1>
+            <button
+              type="button"
+              onClick={handleAiPracticeClick}
+              className="mt-2 inline-flex items-center rounded-full border border-white/20 bg-white/12 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.13em] text-white hover:bg-white/20 transition md:px-3 md:text-[10px]"
+            >
+              Practice with AI
+            </button>
+          </div>
+        </div>
+
+        <div className="absolute inset-0 z-10 grid place-items-center pointer-events-none">
+          <button onClick={togglePlayPause} className="pointer-events-auto relative grid h-24 w-24 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition hover:scale-105 active:scale-95 md:h-32 md:w-32">
+            <span className="absolute inset-0 rounded-full bg-[#fdddb9]/20 blur-xl" />
+            {isPlaying ? (
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+            ) : (
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><path d="M8 5v14l11-7z" /></svg>
+            )}
+          </button>
+        </div>
+
+        <section className="absolute inset-0 z-0">
           <video
             ref={videoRef}
             playsInline
-            className="h-full w-full bg-black object-contain"
+            className="h-full w-full bg-[#1b1510] object-contain"
           >
             {videoSources.map((source) => (
               <source key={source.src} src={source.src} type={source.type} />
@@ -213,24 +220,19 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
           </video>
 
           {videoError ? (
-            <div className="absolute inset-0 grid place-items-center bg-black/70 px-6 text-center text-sm text-red-200">
+            <div className="absolute inset-0 grid place-items-center bg-[#2c1f16]/70 px-6 text-center text-sm text-[#ffe9e5]">
               {videoError}
             </div>
           ) : null}
 
-          <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-gold/30 bg-black/50 px-3 py-1 text-xs text-gold">
+          <div className="pointer-events-none absolute left-4 top-[calc(env(safe-area-inset-top,0px)+5.6rem)] rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.08em] text-white/90 backdrop-blur-md md:left-6 md:top-28 md:px-4 md:text-[11px]">
             AI Hint: {HINTS[hintIndex]}
           </div>
 
-          {loopEnabled && loopEnd > loopStart ? (
-            <div className="pointer-events-none absolute right-4 top-4 rounded-md border border-emerald-300/30 bg-black/50 px-3 py-1 text-xs text-emerald-200">
-              Loop {formatTime(loopStart)} - {formatTime(loopEnd)}
-            </div>
-          ) : null}
         </section>
 
-        <section className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/80 p-4">
-          <div className="mb-3 flex items-center justify-between text-xs text-white/70">
+        <section className="absolute inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] z-20 rounded-[20px] border border-white/10 bg-white/10 p-3 backdrop-blur-xl md:inset-x-6 md:bottom-7">
+          <div className="mb-2.5 flex items-center justify-between text-sm text-white/85 tabular-nums">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -242,66 +244,54 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
             step={0.1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seekTo(Number(event.target.value || 0))}
-            className="mb-4 h-2 w-full cursor-pointer accent-[#D3C4B8]"
+            className="mb-2.5 h-1.5 w-full cursor-pointer accent-[#7a5c3a]"
           />
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => skipBy(-SEEK_STEP_SECONDS)} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">-10s</button>
-              <button type="button" onClick={togglePlayPause} className="rounded-lg border border-gold/50 bg-gold/20 px-4 py-2 text-sm text-gold hover:bg-gold/30" disabled={!videoReady}>
-                {isPlaying ? "Pause" : "Play"}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => skipBy(-5)} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-white/10 border border-white/15 hover:bg-white/20 transition">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M11 19l-7-7 7-7"/><path d="M20 19l-7-7 7-7"/></svg>
               </button>
-              <button type="button" onClick={() => skipBy(SEEK_STEP_SECONDS)} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">+10s</button>
-              <button
-                type="button"
-                onClick={() => setMuted((prev) => !prev)}
-                className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10"
-              >
-                {muted ? "Unmute" : "Mute"}
+              <button type="button" onClick={() => skipBy(5)} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-white/10 border border-white/15 hover:bg-white/20 transition">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M3 12a9 9 0 0 1 9-9h4"/><path d="M16 3l3 3-3 3"/><path d="M21 12a9 9 0 0 1-9 9H8"/><path d="M8 21l-3-3 3-3"/></svg>
               </button>
-              <button type="button" onClick={toggleFullscreen} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Fullscreen</button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 md:justify-end">
-              <label className="text-xs uppercase tracking-widest text-white/50">Speed</label>
+            <div className="rounded-full border border-white/10 bg-black/35 px-2 py-1.5 md:px-4 md:py-2 backdrop-blur-lg flex items-center gap-1 md:gap-1.5">
+              <span className="hidden md:inline text-[10px] md:text-xs uppercase tracking-tight font-semibold text-white/85">Speed</span>
               <select
                 value={speed}
                 onChange={(event) => applySpeed(Number(event.target.value || 1))}
-                className="rounded-lg border border-white/20 bg-black px-3 py-2 text-sm"
+                className="bg-transparent text-sm md:text-base font-semibold text-[#f0ddc2] outline-none border-none"
               >
                 {SPEED_OPTIONS.map((option) => (
-                  <option key={option} value={option}>{option}x</option>
+                  <option key={option} value={option} className="text-black">{option}x</option>
                 ))}
               </select>
+            </div>
 
-              <label className="text-xs uppercase tracking-widest text-white/50">Volume</label>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={volume}
-                onChange={(event) => {
-                  const next = Number(event.target.value || 0);
-                  setVolume(next);
-                  if (next > 0 && muted) setMuted(false);
-                }}
-                className="h-2 w-24 cursor-pointer accent-[#D3C4B8]"
-              />
-
-              <button type="button" onClick={markLoopStart} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Set Loop A</button>
-              <button type="button" onClick={markLoopEnd} className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10">Set Loop B</button>
-              <button type="button" onClick={() => setLoopEnabled((prev) => !prev)} className="rounded-lg border border-emerald-300/40 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-300/10">
-                {loopEnabled ? "Loop On" : "Loop Off"}
+            <div className="flex shrink-0 gap-1.5 md:gap-2 max-[390px]:flex-col max-[390px]:items-stretch">
+              <button type="button" onClick={toggleFullscreen} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-[#725b3f] text-white shadow-[0_20px_40px_rgba(49,51,46,0.2)] hover:brightness-110 transition max-[390px]:self-end">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="md:h-4 md:w-4"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
               </button>
-
-              <Link href={practiceHref || `/record/${choreo?.id || ""}?mode=remix`} className="rounded-lg border border-nred-400/50 bg-nred-500/20 px-3 py-2 text-sm text-nred-200 hover:bg-nred-500/30">
-                Practice with Camera
-              </Link>
+              <button
+                type="button"
+                onClick={handleAiPracticeClick}
+                className="inline-flex items-center rounded-full border border-white/15 bg-[#725b3f]/85 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.11em] text-white hover:brightness-110 transition md:px-3 md:text-[8px] max-[390px]:w-full max-[390px]:justify-center"
+              >
+                Practice with AI
+              </button>
+              <button
+                type="button"
+                onClick={handleRecordClick}
+                className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.11em] text-white hover:bg-white/20 transition md:px-3 md:text-[8px] max-[390px]:w-full max-[390px]:justify-center"
+              >
+                Record
+              </button>
             </div>
           </div>
         </section>
-      </div>
+      </section>
     </main>
   );
 }

@@ -8,7 +8,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 const mobileNavItems = [
   {
     label: "Home",
-    href: "/",
+    href: "/explore",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <path d="M3 10.5 12 3l9 7.5" />
@@ -62,6 +62,9 @@ export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const hideOnImmersiveRoute =
+    pathname.startsWith("/flow") ||
+    pathname.startsWith("/learn") ||
+    pathname.startsWith("/record") ||
     pathname.startsWith("/scroll") ||
     pathname.startsWith("/scrool") ||
     pathname.startsWith("/reels");
@@ -96,8 +99,8 @@ export default function MobileNav() {
   }
 
   return (
-    <nav className="fixed bottom-6 left-6 right-6 z-40 md:hidden">
-      <div className="bg-obsidian-100/60 backdrop-blur-3xl border border-white/5 rounded-[32px] px-3 py-3 flex items-center justify-around shadow-2xl">
+    <nav className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.65rem)] left-3 right-3 z-40 md:hidden sm:left-6 sm:right-6 sm:bottom-6">
+      <div className="bg-[#f8f5ef]/92 backdrop-blur-2xl border border-[#6c513224] rounded-[28px] px-2 py-2.5 sm:rounded-[32px] sm:px-3 sm:py-3 flex items-center justify-around shadow-[0_24px_40px_-30px_rgba(58,42,26,0.75)]">
         {mobileNavItems.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
@@ -107,21 +110,21 @@ export default function MobileNav() {
               href={item.href}
               onClick={item.href === "/profile" ? (e) => { e.preventDefault(); void handleProfileClick(); } : undefined}
               className={cn(
-                "flex flex-col items-center gap-1.5 transition-all duration-500 min-w-[50px]",
-                isActive ? "text-gold" : "text-white/30 hover:text-white/50"
+                "flex flex-col items-center gap-1 transition-all duration-500 min-w-[52px]",
+                isActive ? "text-[#7a5c3a]" : "text-[#8d8275] hover:text-[#5f4a31]"
               )}
             >
               <span
                 className={cn(
-                  "h-10 w-10 rounded-2xl flex items-center justify-center transition-all duration-500",
+                  "h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-500",
                   isActive
-                    ? "bg-gold text-obsidian shadow-[0_0_20px_rgba(211,196,184,0.3)]"
-                    : "bg-white/5 text-inherit border border-white/5"
+                    ? "bg-[#e9dfd2] text-[#6f5436] shadow-[0_8px_22px_-14px_rgba(58,42,26,0.65)]"
+                    : "bg-[#f1ebe3] text-inherit border border-[#6c51321a]"
                 )}
               >
                 {item.icon}
               </span>
-              <span className="text-[9px] uppercase tracking-[0.15em] font-bold">{item.label}</span>
+              <span className="text-[8px] uppercase tracking-[0.14em] font-bold sm:text-[9px] sm:tracking-[0.15em]">{item.label}</span>
             </Link>
           );
         })}
