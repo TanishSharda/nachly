@@ -55,8 +55,8 @@ export default function DownloadAppPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-5">
       <div className="w-full max-w-md rounded-3xl border border-nred-500/30 bg-black/40 p-6 text-center backdrop-blur-sm sm:p-8">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-nred-200/75">Naachly</p>
-        <h1 className="mt-3 text-3xl font-black text-white">Naachly works best on mobile</h1>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-nred-200/75">Nachly</p>
+        <h1 className="mt-3 text-3xl font-black text-white">Nachly works best on mobile</h1>
         <p className="mt-3 text-sm text-zinc-300">
           Open the app for the smoothest training, camera capture, and recording experience.
         </p>

@@ -55,24 +55,6 @@ export const MOCK_STYLES: DanceStyle[] = [
   },
 ];
 
-// Only Bijuria has a real video — no dummy routines
-const BIJURIA_ROUTINE: Routine = {
-  id: "routine-bollywood-bijuria",
-  style_id: "style-2",
-  choreographer_id: "choreographer-1",
-  title: "Bijuria",
-  slug: "bijuria",
-  description: "Dance to the iconic Bijuria! Learn graceful Bollywood moves with expressive hand gestures, playful footwork, and the infectious energy of this timeless classic. A perfect blend of folk and filmi style.",
-  difficulty: "intermediate",
-  duration_seconds: 42,
-  thumbnail_url: null,
-  is_published: true,
-  is_approved: true,
-  sort_order: 0,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
 const ONE_NIGHT_ROUTINE: Routine = {
   id: "routine-bollywood-one-night",
   style_id: "style-2",
@@ -166,7 +148,7 @@ const ZUMBA_PARTY_ROUTINE: Routine = {
 // Only real routines — dummy routines removed
 export const MOCK_ROUTINES: Record<string, Routine[]> = {
   "hip-hop": [],
-  bollywood: [BIJURIA_ROUTINE, ONE_NIGHT_ROUTINE, FIRST_CLASS_ROUTINE, ZUMBA_BASICS_ROUTINE, ZUMBA_CARDIO_ROUTINE, ZUMBA_PARTY_ROUTINE],
+  bollywood: [ONE_NIGHT_ROUTINE, FIRST_CLASS_ROUTINE, ZUMBA_BASICS_ROUTINE, ZUMBA_CARDIO_ROUTINE, ZUMBA_PARTY_ROUTINE],
   kathak: [],
   bhangra: [],
 };
@@ -204,12 +186,11 @@ export function getMockSteps(routineId: string, durationOverride?: number): Rout
 
 // Map of routine IDs to their real video files (in public/videos/)
 const ROUTINE_VIDEOS: Record<string, string> = {
-  "routine-bollywood-bijuria": "/videos/bijuria.optimized.mp4",
   "routine-bollywood-one-night": "/videos/one-night.optimized.mp4",
   "routine-bollywood-first-class": "/videos/first-class.optimized.mp4",
-  "routine-bollywood-zumba-basics": "/videos/zumba-basics.mov",
-  "routine-bollywood-zumba-cardio": "/videos/zumba-cardio.mov",
-  "routine-bollywood-zumba-party": "/videos/zumba-party.mov",
+  "routine-bollywood-zumba-basics": "/videos/zumba-basics.optimized.mp4",
+  "routine-bollywood-zumba-cardio": "/videos/zumba-cardio.optimized.mp4",
+  "routine-bollywood-zumba-party": "/videos/zumba-party.optimized.mp4",
 };
 
 export function getMockVideos(routineId: string): RoutineVideo[] {

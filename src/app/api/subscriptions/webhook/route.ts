@@ -1,0 +1,84 @@
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+
+function missingRazorpayConfigResponse() {
+  return NextResponse.json(
+    { error: "Razorpay webhook is not configured", detail: "Set RAZORPAY_WEBHOOK_SECRET and SUPABASE_SERVICE_ROLE_KEY." },
+    { status: 503 }
+  );
+}
+
+function timingSafeEquals(a: string, b: string) {
+  if (!a || !b) return false;
+  const aBuf = Buffer.from(a);
+  const bBuf = Buffer.from(b);
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+export async function POST(request: Request) {
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!webhookSecret || !serviceKey) {
+    return missingRazorpayConfigResponse();
+  }
+
+  const rawBody = await request.text();
+  const signature = request.headers.get("x-razorpay-signature") || "";
+  const expected = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+
+  if (!timingSafeEquals(signature, expected)) {
+    return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
+  }
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  const event = String((payload as { event?: string }).event || "");
+  const payment = (payload as any)?.payload?.payment?.entity;
+  const order = (payload as any)?.payload?.order?.entity;
+
+  const orderId = String(payment?.order_id || order?.id || "");
+  const paymentId = String(payment?.id || "");
+  const status = String(payment?.status || order?.status || "");
+
+  if (!orderId) {
+    return NextResponse.json({ ok: true, skipped: true });
+  }
+
+  let mappedStatus: "active" | "failed" | "pending" = "pending";
+  if (event === "payment.captured" || event === "order.paid" || status === "captured" || status === "paid") {
+    mappedStatus = "active";
+  } else if (event === "payment.failed" || status === "failed") {
+    mappedStatus = "failed";
+  }
+
+  const db = createServiceRoleClient();
+  const { data: updatedRow, error: updateError } = await db
+    .from("subscriptions")
+    .update({
+      status: mappedStatus,
+      payment_id: paymentId || null,
+      payment_provider: "razorpay",
+      payment_payload: payload,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("order_id", orderId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    return NextResponse.json({ error: "Webhook update failed" }, { status: 500 });
+  }
+
+  if (updatedRow?.id) {
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ ok: true, skipped: true });
+}

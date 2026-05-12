@@ -21,7 +21,7 @@ export default function BrandLogo({
     >
       <Image
         src="/logo-elite.svg"
-        alt="Naachly logo"
+        alt="Nachly logo"
         fill
         sizes={`${size}px`}
         priority={priority}

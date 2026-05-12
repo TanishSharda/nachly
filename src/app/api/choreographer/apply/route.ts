@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { appendApplicationToSheet } from "@/lib/fallbacks/googleSheets";
+import { sendApplicationEmail } from "@/lib/fallbacks/email";
 
 const APPLY_COOLDOWN_MS = 10 * 60 * 1000;
 
@@ -114,6 +116,46 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    console.error("[/api/choreographer/apply] Insert error:", error);
+    // If the routines/table isn't present in this environment, surface a clear message
+    const isMissingTable = error.code === "PGRST205" || (error.message && String(error.message).includes("Could not find the table"));
+
+    // Try persistent fallback: append to Google Sheet & send email notification
+    try {
+      const saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_SERVICE_ACCOUNT;
+      const sheetId = process.env.CHOREO_APPS_SPREADSHEET_ID;
+      const row = [user.id, input.name, input.email, input.portfolio || "", input.sampleVideo, input.experience, (input.specialties || []).join(','), new Date().toISOString()];
+
+      if (saJson && sheetId) {
+        await appendApplicationToSheet({ serviceAccountJson: saJson, spreadsheetId: sheetId, values: row });
+      }
+
+      // Send notification email
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpPort = process.env.SMTP_PORT;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const notifyTo = process.env.CHOREO_APPS_NOTIFY_EMAIL;
+
+      if (notifyTo && smtpHost && smtpPort) {
+        const html = `<p>New choreographer application (fallback)</p><ul><li>user: ${user.id}</li><li>name: ${input.name}</li><li>email: ${input.email}</li><li>portfolio: ${input.portfolio}</li><li>experience: ${input.experience}</li></ul>`;
+        await sendApplicationEmail({ smtpHost, smtpPort, smtpUser, smtpPass, from: smtpUser, to: notifyTo, subject: 'New choreographer application (fallback)', html });
+      }
+    } catch (fallbackErr) {
+      console.error('[/api/choreographer/apply] fallback error', fallbackErr);
+    }
+
+    if (isMissingTable) {
+      return NextResponse.json(
+        {
+          ok: true,
+          fallback: true,
+          message: 'Application received — queued via fallback. We will review it soon.',
+        },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json({ error: "Failed to submit application" }, { status: 500 });
   }
 

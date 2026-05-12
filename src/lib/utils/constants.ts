@@ -1,6 +1,6 @@
 import { getSiteUrl } from "@/lib/utils/site-url";
 
-export const SITE_NAME = "Naachly";
+export const SITE_NAME = "Nachly";
 export const SITE_DESCRIPTION = "AI-powered dance academy — learn from real choreographers, practice with AI coaching";
 export const SITE_URL = getSiteUrl();
 

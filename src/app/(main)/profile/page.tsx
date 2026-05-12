@@ -8,9 +8,65 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Avatar from "@/components/ui/Avatar";
 import Select from "@/components/ui/Select";
+import Progress from "@/components/ui/Progress";
+import CircularProgress from "@/components/ui/CircularProgress";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 type ExperienceLevel = "beginner" | "intermediate" | "advanced";
+
+type PracticeSessionItem = {
+  routineId: string;
+  routineTitle: string;
+  styleSlug: string;
+  accuracy: number;
+  consistency: number;
+  completion: number;
+  date: string;
+  elapsed: number;
+};
+
+type SavedItem = {
+  choreoId: string;
+  title: string;
+  styleSlug: string;
+  difficulty: string | null;
+};
+
+type LikedItem = {
+  choreoId: string;
+  title: string;
+  styleSlug: string;
+  difficulty: string;
+};
+
+function computeCurrentStreak(dates: string[]) {
+  const uniqueDays = Array.from(
+    new Set(
+      dates
+        .map((value) => new Date(value).toISOString().slice(0, 10))
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b.localeCompare(a));
+
+  if (!uniqueDays.length) return 0;
+
+  let streak = 0;
+  const cursor = new Date(uniqueDays[0]);
+
+  for (const day of uniqueDays) {
+    const expected = cursor.toISOString().slice(0, 10);
+    if (day !== expected) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function formatMinutes(seconds: number) {
+  const mins = Math.max(0, Math.round(seconds / 60));
+  return `${mins} min`;
+}
 
 export default function ProfilePage() {
   const [name, setName] = useState("");
@@ -21,6 +77,10 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [savedCount, setSavedCount] = useState(0);
+  const [likedCount, setLikedCount] = useState(0);
+  const [practiceSessions, setPracticeSessions] = useState<PracticeSessionItem[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -80,6 +140,72 @@ export default function ProfilePage() {
 
     void loadProfile();
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadProfileStats() {
+      try {
+        const [sessionsResponse, savesResponse, likesResponse] = await Promise.all([
+          fetch("/api/practice-sessions?limit=100", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+          fetch("/api/choreos/saves", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+          fetch("/api/choreos/likes", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+        ]);
+
+        if (!mounted) return;
+
+        setPracticeSessions(Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as PracticeSessionItem[]) : []);
+        setSavedCount(Array.isArray(savesResponse?.saves) ? savesResponse.saves.length : 0);
+        setLikedCount(Array.isArray(likesResponse?.likes) ? likesResponse.likes.length : 0);
+      } catch {
+        if (mounted) {
+          setPracticeSessions([]);
+          setSavedCount(0);
+          setLikedCount(0);
+        }
+      } finally {
+        if (mounted) setStatsLoading(false);
+      }
+    }
+
+    void loadProfileStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const practiceCount = practiceSessions.length;
+  const currentStreak = computeCurrentStreak(practiceSessions.map((session) => session.date));
+  const topScore = practiceSessions.reduce((max, session) => Math.max(max, session.accuracy, session.consistency, session.completion), 0);
+  const averageCompletion = practiceCount > 0
+    ? Math.round(practiceSessions.reduce((sum, session) => sum + session.completion, 0) / practiceCount)
+    : 0;
+  const totalPracticeMinutes = practiceSessions.reduce((sum, session) => sum + session.elapsed, 0) / 60;
+
+  const routineProgress = new Map<string, { title: string; styleSlug: string; completion: number; sessions: number }>();
+  for (const session of practiceSessions) {
+    const current = routineProgress.get(session.routineId) || {
+      title: session.routineTitle,
+      styleSlug: session.styleSlug,
+      completion: 0,
+      sessions: 0,
+    };
+    current.completion += session.completion;
+    current.sessions += 1;
+    routineProgress.set(session.routineId, current);
+  }
+
+  const topRoutines = Array.from(routineProgress.entries())
+    .map(([routineId, value]) => ({
+      routineId,
+      title: value.title,
+      styleSlug: value.styleSlug,
+      sessions: value.sessions,
+      progress: value.sessions > 0 ? Math.round(value.completion / value.sessions) : 0,
+    }))
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, 4);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -144,9 +270,119 @@ export default function ProfilePage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-xl mx-auto"
+        className="mx-auto max-w-6xl"
       >
-        <h1 className="font-display text-3xl font-bold app-accent-text mb-5">Profile</h1>
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-3xl font-bold app-accent-text">Profile</h1>
+            <p className="mt-1 text-sm text-zinc-300">Your account, progress, and practice history.</p>
+          </div>
+          <Link
+            href="/choreographer/apply"
+            className="rounded-xl border border-[#c4ff00]/20 bg-[#c4ff00]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#c4ff00] transition hover:bg-[#c4ff00]/15"
+          >
+            Apply to teach
+          </Link>
+        </div>
+
+        <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Card className="app-card border-white/15 tap-feedback">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Saved dances</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-3xl font-black text-white">{savedCount}</p>
+                <p className="mt-1 text-xs text-zinc-400">Reels queued for later</p>
+              </div>
+              <CircularProgress value={Math.min(100, savedCount * 10)} size={68} strokeWidth={6} color="gold">
+                <span className="text-xs font-semibold text-white">{savedCount}</span>
+              </CircularProgress>
+            </div>
+          </Card>
+
+          <Card className="app-card border-white/15 tap-feedback">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Practice sessions</p>
+            <p className="mt-3 text-3xl font-black text-white">{practiceCount}</p>
+            <p className="mt-1 text-xs text-zinc-400">{formatMinutes(totalPracticeMinutes * 60)} practiced</p>
+            <Progress value={Math.min(100, practiceCount * 10)} size="sm" color="green" className="mt-4" />
+          </Card>
+
+          <Card className="app-card border-white/15 tap-feedback">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Current streak</p>
+            <p className="mt-3 text-3xl font-black text-white">{currentStreak}d</p>
+            <p className="mt-1 text-xs text-zinc-400">Practice on consecutive days</p>
+            <Progress value={Math.min(100, currentStreak * 20)} size="sm" color="wine" className="mt-4" />
+          </Card>
+
+          <Card className="app-card border-white/15 tap-feedback">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Best score</p>
+            <p className="mt-3 text-3xl font-black text-white">{topScore}%</p>
+            <p className="mt-1 text-xs text-zinc-400">Highest accuracy, consistency, or completion</p>
+            <Progress value={topScore} size="sm" color="green" className="mt-4" />
+          </Card>
+        </div>
+
+        <div className="mb-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          <Card className="app-card border-white/15 tap-feedback p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Practice summary</p>
+                <h2 className="mt-1 text-xl font-bold text-white">Progress at a glance</h2>
+              </div>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-300">
+                {likedCount} liked
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Average completion</p>
+                <p className="mt-2 text-2xl font-black text-white">{averageCompletion}%</p>
+                <Progress value={averageCompletion} size="sm" color="wine" className="mt-3" />
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Top score</p>
+                <p className="mt-2 text-2xl font-black text-white">{topScore}%</p>
+                <Progress value={topScore} size="sm" color="green" className="mt-3" />
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Practice minutes</p>
+                <p className="mt-2 text-2xl font-black text-white">{Math.round(totalPracticeMinutes)}</p>
+                <p className="mt-2 text-xs text-zinc-400">Minutes logged in practice sessions</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="app-card border-white/15 tap-feedback p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Learning path</p>
+                <h2 className="mt-1 text-xl font-bold text-white">Most practiced routines</h2>
+              </div>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-300">
+                {statsLoading ? "syncing" : "live"}
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {topRoutines.length > 0 ? topRoutines.map((routine) => (
+                <div key={routine.routineId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{routine.title}</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">{routine.styleSlug} • {routine.sessions} sessions</p>
+                    </div>
+                    <span className="text-sm font-semibold text-[#c4ff00]">{routine.progress}%</span>
+                  </div>
+                  <Progress value={routine.progress} size="sm" color={routine.progress >= 80 ? "green" : "wine"} className="mt-3" />
+                </div>
+              )) : (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-300">
+                  Start a practice session to unlock routine progress here.
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
 
         <Link
           href="/liked"

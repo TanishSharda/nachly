@@ -201,7 +201,7 @@ export default function HomePageNew() {
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()} className="grid gap-5 md:grid-cols-4">
           <BentoCard className="md:col-span-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold">See Naachly in Action</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold">See Nachly in Action</p>
             <h3 className="mt-3 font-display text-3xl font-semibold text-[#f3e7d8]">From learn mode to recording</h3>
             <div className="mt-5 grid h-40 grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#14110e] p-3">
               <div className="rounded-xl bg-gradient-to-b from-[#2a211b] to-[#171310]" />
@@ -229,7 +229,7 @@ export default function HomePageNew() {
           <BentoCard className="md:col-span-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold">Social Proof</p>
             <p className="mt-4 text-base leading-relaxed text-[#d7c8b7]">
-              &quot;Naachly helps our students practice efficiently and master routines outside studio hours.&quot;
+              &quot;Nachly helps our students practice efficiently and master routines outside studio hours.&quot;
             </p>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold">Ibadat e Bhangra</p>
           </BentoCard>
@@ -279,7 +279,7 @@ export default function HomePageNew() {
             <p className="text-[11px] uppercase tracking-[0.2em] text-gold">{SITE_NAME}</p>
             <p className="mt-1 text-xs text-[#bcae9d]">Structured dance learning for students and academies.</p>
           </div>
-          <p className="text-[10px] uppercase tracking-widest text-[#8f8070]">© 2026 NAACHLY. ALL RIGHTS RESERVED.</p>
+          <p className="text-[10px] uppercase tracking-widest text-[#8f8070]">© 2026 NACHLY. ALL RIGHTS RESERVED.</p>
         </div>
       </footer>
     </main>

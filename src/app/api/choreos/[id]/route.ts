@@ -1,14 +1,50 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
-import { MOCK_ROUTINES, getMockSteps, getRoutineVideoUrl } from "@/lib/mock-data";
 
-function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_order?: number | null }>, routineId: string) {
+function buildMockChoreo(id: string) {
+  const normalizedId = id.toLowerCase();
+
+  if (normalizedId.includes("bhangra")) {
+    return {
+      id,
+      title: "Bhangra Beats",
+      video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      caption: "High-energy Punjabi rhythms",
+      style: "bhangra",
+      tier: "official",
+      score: 88,
+      tags: ["punjabi", "energy", "traditional"],
+      moves: [
+        { id: "1", name: "Gidha Circle", start: 0, end: 12 },
+        { id: "2", name: "Dhol Sync", start: 12, end: 24 },
+      ],
+    };
+  }
+
+  return {
+    id,
+    title: "Monsoon Groove",
+    video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    caption: "Learn the flow of monsoon energy",
+    style: "bollywood",
+    tier: "official",
+    score: 92,
+    tags: ["monsoon", "flow", "energy"],
+    moves: [
+      { id: "1", name: "Ground & Settle", start: 0, end: 8 },
+      { id: "2", name: "Hip Release", start: 8, end: 16 },
+      { id: "3", name: "Spiral Sequence", start: 16, end: 32 },
+    ],
+  };
+}
+
+function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_order?: number | null }>) {
   const sorted = [...(entries || [])]
     .filter((entry) => Boolean(entry?.video_url))
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
   if (!sorted.length) {
-    return getRoutineVideoUrl(routineId) || "";
+    return "";
   }
 
   const normalized = sorted.map((entry) => ({
@@ -22,57 +58,7 @@ function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_
   const anyMp4 = normalized.find((entry) => entry.url.toLowerCase().includes(".mp4"));
   if (anyMp4) return anyMp4.url;
 
-  return normalized[0]?.url || getRoutineVideoUrl(routineId) || "";
-}
-
-function buildMockChoreoById(id: string) {
-  const routine = Object.values(MOCK_ROUTINES)
-    .flat()
-    .find((entry) => entry.id === id);
-
-  if (!routine) return null;
-
-  return {
-    id: routine.id,
-    title: routine.title || "Untitled Choreo",
-    video: getRoutineVideoUrl(routine.id) || "",
-    caption: routine.description || "",
-    style: routine.style_slug || "unknown",
-    tier: "community",
-    score: null,
-    tags: [],
-    moves: getMockSteps(routine.id, routine.duration_seconds).map((step) => ({
-      id: step.id || String(step.step_number),
-      name: step.label || `Move ${step.step_number || ""}`,
-      start: Number(step.start_time || 0),
-      end: Number(step.end_time || 0),
-    })),
-  };
-}
-
-function buildMockChoreoBySlug(slug: string) {
-  const routine = Object.values(MOCK_ROUTINES)
-    .flat()
-    .find((entry) => entry.slug === slug);
-
-  if (!routine) return null;
-
-  return {
-    id: routine.id,
-    title: routine.title || "Untitled Choreo",
-    video: getRoutineVideoUrl(routine.id) || "",
-    caption: routine.description || "",
-    style: routine.style_slug || "unknown",
-    tier: "community",
-    score: null,
-    tags: [],
-    moves: getMockSteps(routine.id, routine.duration_seconds).map((step) => ({
-      id: step.id || String(step.step_number),
-      name: step.label || `Move ${step.step_number || ""}`,
-      start: Number(step.start_time || 0),
-      end: Number(step.end_time || 0),
-    })),
-  };
+  return normalized[0]?.url || "";
 }
 
 function missingSupabaseConfigResponse() {
@@ -109,10 +95,10 @@ export async function GET(_: Request, context: { params: { id: string } }) {
     .maybeSingle();
 
   if (idLookupError) {
-    const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
-    if (mockChoreo) {
-      return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
+    if (idLookupError.code === "PGRST205" || idLookupError.message?.includes("Could not find the table")) {
+      return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
     }
+
     return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
   }
 
@@ -128,10 +114,10 @@ export async function GET(_: Request, context: { params: { id: string } }) {
       .maybeSingle();
 
     if (slugLookupError) {
-      const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
-      if (mockChoreo) {
-        return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
+      if (slugLookupError.code === "PGRST205" || slugLookupError.message?.includes("Could not find the table")) {
+        return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
       }
+
       return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
     }
 
@@ -139,15 +125,11 @@ export async function GET(_: Request, context: { params: { id: string } }) {
   }
 
   if (!row) {
-    const mockChoreo = buildMockChoreoById(id) || buildMockChoreoBySlug(id);
-    if (mockChoreo) {
-      return NextResponse.json({ choreo: mockChoreo, fallback: "mock-data" });
-    }
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
   }
 
-  const dbVideo = pickPreferredVideoUrl(row.routine_videos || [], row.id);
-  const video = dbVideo || getRoutineVideoUrl(row.id) || "";
+  const dbVideo = pickPreferredVideoUrl(row.routine_videos || []);
+  const video = dbVideo || "";
 
   const moves = [...(row.routine_steps || [])]
     .sort((a, b) => (a.step_number || 0) - (b.step_number || 0))

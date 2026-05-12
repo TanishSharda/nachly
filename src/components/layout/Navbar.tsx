@@ -14,11 +14,44 @@ interface NavbarProps {
   user?: { id: string; full_name: string; avatar_url: string | null; role: string } | null;
 }
 
+interface NavLink {
+  label: string;
+  href: string;
+  auth?: boolean;
+  minRole?: "choreographer" | "admin";
+}
+
+// Helper function to build nav links based on role
+function getNavLinks(user: NavbarProps["user"]): NavLink[] {
+  const baseLinks: NavLink[] = [
+    { label: "Explore", href: "/explore" },
+    { label: "Scroll", href: "/scroll" },
+    { label: "My Library", href: "/library", auth: true },
+    { label: "Stats", href: "/stats", auth: true },
+  ];
+
+  // Add choreographer-specific links
+  if (user?.role === "choreographer" || user?.role === "admin") {
+    baseLinks.push(
+      { label: "Create", href: "/choreographer/create", minRole: "choreographer" },
+      { label: "Dashboard", href: "/choreographer/dashboard", minRole: "choreographer" }
+    );
+  }
+
+  // Add admin-specific links
+  if (user?.role === "admin") {
+    baseLinks.push({ label: "Admin", href: "/admin/dashboard", minRole: "admin" });
+  }
+
+  return baseLinks;
+}
+
 export default function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const navLinks = getNavLinks(user);
 
   const handleProfileClick = () => {
     console.log("Profile clicked");
@@ -50,8 +83,10 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map((link) => {
-              if ("auth" in link && link.auth && !user) return null;
+            {navLinks.map((link) => {
+              if (link.auth && !user) return null;
+              if (link.minRole === "choreographer" && user?.role !== "choreographer" && user?.role !== "admin") return null;
+              if (link.minRole === "admin" && user?.role !== "admin") return null;
               const isActive = pathname.startsWith(link.href);
               return (
                 <Link
@@ -131,8 +166,10 @@ export default function Navbar({ user }: NavbarProps) {
               className="md:hidden overflow-hidden border-t border-[#6c51321f]"
             >
               <div className="py-4 space-y-2">
-                {NAV_LINKS.map((link) => {
-                  if ("auth" in link && link.auth && !user) return null;
+                {navLinks.map((link) => {
+                  if (link.auth && !user) return null;
+                  if (link.minRole === "choreographer" && user?.role !== "choreographer" && user?.role !== "admin") return null;
+                  if (link.minRole === "admin" && user?.role !== "admin") return null;
                   return (
                     <Link
                       key={link.href}

@@ -22,19 +22,26 @@ const DANCE_FORMS = [
   "Contemporary",
   "Salsa",
   "Bharatanatyam",
+  "Jazz",
+  "Freestyle",
   "Other",
 ];
 
 export default function ApplyChoreographerPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [youtube, setYoutube] = useState("");
+  const [danceStyles, setDanceStyles] = useState<string[]>([]);
+  const [otherStyle, setOtherStyle] = useState("");
+  const [yearsExperience, setYearsExperience] = useState("");
   const [driveLink, setDriveLink] = useState("");
-  const [danceForm, setDanceForm] = useState("");
-  const [otherForm, setOtherForm] = useState("");
-  const [experience, setExperience] = useState("");
+  const [whyNachly, setWhyNachly] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -53,7 +60,7 @@ export default function ApplyChoreographerPage() {
           "";
 
         if (fullName) setName((prev) => prev || fullName);
-        if (user.email) setEmail(user.email);
+        if (user.email) setEmail((prev) => prev || user.email);
       } catch {
         // Optional prefill only.
       }
@@ -62,9 +69,35 @@ export default function ApplyChoreographerPage() {
     void init();
   }, []);
 
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
+
+    if (!name.trim()) errors.push("Full name");
+    if (!email.trim()) errors.push("Email");
+    if (!phone.trim()) errors.push("Phone number");
+    if (danceStyles.length === 0) errors.push("At least one dance style");
+    if (!yearsExperience.trim()) errors.push("Years of experience");
+    if (!driveLink.trim()) errors.push("Portfolio/Google Drive link");
+    if (whyNachly.trim().length < 30) errors.push("Why join Nachly (30+ characters)");
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
+  const toggleDanceStyle = (style: string) => {
+    setDanceStyles((prev) =>
+      prev.includes(style) ? prev.filter((s) => s !== style) : [...prev, style]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -83,15 +116,22 @@ export default function ApplyChoreographerPage() {
         return;
       }
 
-      const specialty = danceForm === "Other" ? otherForm.trim() : danceForm;
+      // Build specialties list
+      const specialties = danceStyles.includes("Other")
+        ? [otherStyle.trim(), ...danceStyles.filter((s) => s !== "Other")]
+        : danceStyles;
+
       const payload = {
         name: name.trim(),
-        email: (email || user.email || "").trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        instagram: instagram.trim(),
+        youtube: youtube.trim(),
         portfolio: driveLink.trim(),
         sampleVideo: driveLink.trim(),
-        experience: experience.trim(),
-        specialties: specialty ? [specialty] : [],
-        bio: "",
+        experience: `Years of Experience: ${yearsExperience}\n\n${whyNachly}`,
+        specialties,
+        bio: whyNachly.trim(),
       };
 
       const response = await fetch("/api/choreographer/apply", {
@@ -119,12 +159,6 @@ export default function ApplyChoreographerPage() {
     }
   };
 
-  const isValid =
-    name.trim() &&
-    driveLink.trim() &&
-    experience.trim().length >= 20 &&
-    (danceForm && (danceForm !== "Other" || otherForm.trim()));
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Top bar */}
@@ -140,7 +174,7 @@ export default function ApplyChoreographerPage() {
             Back
           </Link>
           <Link href="/" className="font-display text-lg font-bold bg-gradient-to-r from-nred-500 to-white bg-clip-text text-transparent">
-            Naachly
+            Nachly
           </Link>
           <div className="w-16" />
         </div>
@@ -161,32 +195,87 @@ export default function ApplyChoreographerPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", delay: 0.1 }}
-                  className="w-16 h-16 mx-auto mb-4 bg-nred-500/10 rounded-full flex items-center justify-center text-nred-500"
+                  className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 rounded-full flex items-center justify-center"
                 >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="3" /><path d="M12 8v6m-4 4l4-4 4 4m-8 0v2m8-2v2" /></svg>
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="text-yellow-400"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+                  </svg>
                 </motion.div>
-                <h1 className="font-display text-3xl sm:text-4xl font-bold mb-3">
-                  Teach on Naachly
+                <h1 className="font-display text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                  Become a Nachly Creator
                 </h1>
                 <p className="text-zinc-400 max-w-md mx-auto">
-                  Share your choreography with thousands of learners. Fill out the form below and we&apos;ll review your application.
+                  Share your choreography with thousands of learners. Our team will review your application within 2-3 days.
                 </p>
               </div>
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Validation Errors */}
+                {validationErrors.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm"
+                  >
+                    <p className="font-semibold mb-2">Please complete the following:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {validationErrors.map((err) => (
+                        <li key={err}>{err}</li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Your Name <span className="text-nred-500">*</span>
+                    Full Name <span className="text-yellow-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
-                    required
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Email <span className="text-yellow-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Phone Number <span className="text-yellow-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 XXXXX XXXXX"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
                   />
                 </div>
 
@@ -195,79 +284,53 @@ export default function ApplyChoreographerPage() {
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Instagram Handle
                   </label>
-                  <input
-                    type="text"
-                    placeholder="@yourhandle"
-                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-500">@</span>
+                    <input
+                      type="text"
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
+                      placeholder="yourhandle"
+                      className="flex-1 px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
+                    />
+                  </div>
                   <p className="text-xs text-zinc-600 mt-1.5">
                     So we can check out your dance content
-                  </p>
-                </div>
-
-                {/* Google Drive Link */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Google Drive Link <span className="text-nred-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={driveLink}
-                    onChange={(e) => setDriveLink(e.target.value)}
-                    placeholder="https://drive.google.com/..."
-                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
-                    required
-                  />
-                  <p className="text-xs text-zinc-600 mt-1.5">
-                    Upload your choreography videos to Google Drive and share the link here. Make sure sharing is set to &quot;Anyone with the link&quot;.
                   </p>
                 </div>
 
                 {/* YouTube / Social Link */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    YouTube or Social Media Link
+                    YouTube Channel or Social Link
                   </label>
                   <input
                     type="url"
-                    placeholder="https://youtube.com/... or any social link"
-                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
+                    value={youtube}
+                    onChange={(e) => setYoutube(e.target.value)}
+                    placeholder="https://youtube.com/... or TikTok/Instagram link"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
                   />
                   <p className="text-xs text-zinc-600 mt-1.5">
                     Share your YouTube channel, dance reels, or any other social media where you showcase your work
                   </p>
                 </div>
 
+                {/* Dance Styles */}
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Experience <span className="text-nred-500">*</span>
+                  <label className="block text-sm font-medium text-zinc-300 mb-3">
+                    Dance Styles <span className="text-yellow-400">*</span>
                   </label>
-                  <textarea
-                    value={experience}
-                    onChange={(e) => setExperience(e.target.value)}
-                    rows={4}
-                    placeholder="Tell us about your dance background, teaching experience, and what styles you specialize in"
-                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
-                    required
-                  />
-                  <p className="text-xs text-zinc-600 mt-1.5">Minimum 20 characters.</p>
-                </div>
-
-                {/* Dance Form */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Dance Form <span className="text-nred-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {DANCE_FORMS.map((form) => (
                       <button
                         key={form}
                         type="button"
-                        onClick={() => setDanceForm(form)}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                          danceForm === form
-                            ? "bg-nred-500 text-white"
-                            : "bg-zinc-900 text-zinc-400 border border-white/10 hover:border-nred-500/40"
+                        onClick={() => toggleDanceStyle(form)}
+                        className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          danceStyles.includes(form)
+                            ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-black"
+                            : "bg-zinc-900 text-zinc-400 border border-white/10 hover:border-zinc-700"
                         }`}
                       >
                         {form}
@@ -276,7 +339,7 @@ export default function ApplyChoreographerPage() {
                   </div>
 
                   {/* Other input */}
-                  {danceForm === "Other" && (
+                  {danceStyles.includes("Other") && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -284,49 +347,105 @@ export default function ApplyChoreographerPage() {
                     >
                       <input
                         type="text"
-                        value={otherForm}
-                        onChange={(e) => setOtherForm(e.target.value)}
-                        placeholder="Specify your dance form..."
-                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-nred-500/50 focus:border-nred-500/50 transition-all"
+                        value={otherStyle}
+                        onChange={(e) => setOtherStyle(e.target.value)}
+                        placeholder="Specify your dance style..."
+                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
                       />
                     </motion.div>
                   )}
                 </div>
 
-                {error && (
-                  <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-200">
-                    {error}
+                {/* Years of Experience */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Years of Experience <span className="text-yellow-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={yearsExperience}
+                    onChange={(e) => setYearsExperience(e.target.value)}
+                    placeholder="e.g., 5 years"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
+                  />
+                </div>
+
+                {/* Google Drive Link */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Portfolio / Google Drive Link <span className="text-yellow-400">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={driveLink}
+                    onChange={(e) => setDriveLink(e.target.value)}
+                    placeholder="https://drive.google.com/... or video link"
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all"
+                  />
+                  <p className="text-xs text-zinc-600 mt-1.5">
+                    Upload your choreography videos to Google Drive and share the link here. Make sure sharing is set to &quot;Anyone with the link&quot;.
                   </p>
+                </div>
+
+                {/* Why join Nachly */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Why do you want to join Nachly? <span className="text-yellow-400">*</span>
+                  </label>
+                  <textarea
+                    value={whyNachly}
+                    onChange={(e) => setWhyNachly(e.target.value)}
+                    rows={4}
+                    placeholder="Tell us why you want to teach on Nachly and what you hope to achieve..."
+                    className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400/60 transition-all resize-none"
+                  />
+                  <p className="text-xs text-zinc-600 mt-1.5">Minimum 30 characters</p>
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+                  >
+                    {error}
+                  </motion.div>
                 )}
 
                 {error.includes("log in") && (
                   <Link
                     href="/login?redirect=%2Fapply-choreographer"
-                    className="inline-flex text-sm text-nred-500 hover:text-nred-400"
+                    className="inline-flex text-sm text-yellow-400 hover:text-yellow-300"
                   >
                     Go to login
                   </Link>
                 )}
 
                 {/* Submit */}
-                <button
+                <motion.button
                   type="submit"
-                  disabled={!isValid || loading}
-                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-                    isValid && !loading
-                      ? "bg-nred-500 hover:bg-nred-600 text-white hover:scale-[1.01] active:scale-[0.99]"
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all ${
+                    !loading
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:shadow-lg hover:shadow-yellow-400/20"
                       : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                   }`}
                 >
                   {loading ? (
                     <span className="inline-flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
                       Submitting...
                     </span>
                   ) : (
                     "Submit Application"
                   )}
-                </button>
+                </motion.button>
+
+                <p className="text-center text-xs text-zinc-600">
+                  We will review your application and get back to you within 2-3 days.
+                </p>
               </form>
             </motion.div>
           ) : (
@@ -334,26 +453,57 @@ export default function ApplyChoreographerPage() {
               key="success"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-20"
+              className="text-center py-12"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.2 }}
-                className="w-20 h-20 mx-auto mb-6 bg-emerald-500/10 rounded-full flex items-center justify-center"
+                className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400/20 to-green-500/10 rounded-full flex items-center justify-center"
               >
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="text-green-400"
+                >
+                  <polyline points="20 6 9 17 4 12" />
                 </svg>
               </motion.div>
-              <h2 className="font-display text-3xl font-bold mb-3">Application Submitted!</h2>
-              <p className="text-zinc-400 max-w-md mx-auto mb-8">
-                Thank you, <span className="text-white font-semibold">{name}</span>! We&apos;ll review your {danceForm === "Other" ? otherForm : danceForm} choreography and get back to you within 48 hours.
+
+              <h2 className="text-3xl font-bold mb-3">Application Submitted!</h2>
+              <p className="text-zinc-400 mb-6">
+                Thank you, <span className="text-white font-semibold">{name}</span>! We&apos;ve received your application and will review it within 2-3 days.
               </p>
+
+              <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-6 mb-8 text-left max-w-md mx-auto">
+                <h3 className="font-semibold mb-3 text-white">What happens next?</h3>
+                <ul className="space-y-3 text-sm text-zinc-400">
+                  <li className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">1</span>
+                    <span>Our team will review your portfolio and experience</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">2</span>
+                    <span>We&apos;ll send you an email with the decision</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">3</span>
+                    <span>If approved, you&apos;ll gain access to the Creator Dashboard</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">4</span>
+                    <span>Start uploading and teaching your choreography!</span>
+                  </li>
+                </ul>
+              </div>
+
               <Link href="/explore">
-                <button className="px-6 py-3 bg-nred-500 hover:bg-nred-600 text-white font-semibold rounded-xl transition-all">
-                  Back to Explore
+                <button className="px-8 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-400 text-black font-bold hover:shadow-lg hover:shadow-yellow-400/20 transition-all">
+                  Back to Nachly
                 </button>
               </Link>
             </motion.div>

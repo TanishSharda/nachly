@@ -58,7 +58,7 @@ function DownloadIcon() {
 
 export default function RecordingStudioTopBar({
   className = "",
-  title = "Naachly Studio",
+  title = "Nachly Studio",
   isRecording,
   hasRecording,
   recordingSeconds,

@@ -17,6 +17,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { compareWithTemporalTolerance } from "@/lib/ai/pose-engine";
 import { extractAdaptiveAngles } from "@/lib/ai/partial-body";
+import SkeletonCanvas from "@/components/practice/SkeletonCanvas";
 import { createClient, isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
@@ -293,7 +294,7 @@ async function generateMergedVideo({ instructorSrc, userBlob }) {
         brandTag.w,
         brandTag.h,
         "rgba(14,14,14,0.98)",
-        "Naachly",
+        "Nachly",
         "#D3C4B8",
         "200 31px Manrope, system-ui",
         "rgba(211,196,184,0.2)",
@@ -423,6 +424,10 @@ export default function RecordPage() {
   const [recordingElapsed, setRecordingElapsed] = useState(0);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
+  const [liveLandmarks, setLiveLandmarks] = useState(null);
+  const [liveComparison, setLiveComparison] = useState(null);
+  const [livePoseScore, setLivePoseScore] = useState(0);
+  const [livePoseMessage, setLivePoseMessage] = useState("Enable the lens to start live pose tracking.");
 
   const instructorRef = useRef(null);
   const webcamRef = useRef(null);
@@ -436,6 +441,7 @@ export default function RecordPage() {
   const audioContextRef = useRef(null);
   const aiStatsRef = useRef({ frameCount: 0, totalScore: 0 });
   const instructorAngleBufferRef = useRef([]);
+  const poseUiLastUpdateRef = useRef(0);
   const recordingRef = useRef(false);
   const startInFlightRef = useRef(false);
   const recordingStartedAtRef = useRef(0);
@@ -784,6 +790,29 @@ export default function RecordPage() {
               aiStatsRef.current.frameCount += 1;
               aiStatsRef.current.totalScore += comparison.overallScore * 100;
             }
+
+            if (ts - poseUiLastUpdateRef.current >= 120) {
+              poseUiLastUpdateRef.current = ts;
+              setLiveLandmarks(userLm);
+              setLiveComparison(comparison);
+              setLivePoseScore(Math.round(comparison.overallScore * 100));
+
+              if (comparison.activeJointCount === 0) {
+                setLivePoseMessage("Step into frame so I can see your joints.");
+              } else if (comparison.overallScore >= 0.8) {
+                setLivePoseMessage("Strong alignment. Keep the rhythm tight.");
+              } else if (comparison.overallScore >= 0.55) {
+                setLivePoseMessage("Good shape. Refine the lines a little more.");
+              } else {
+                setLivePoseMessage("Adjust your posture and stay centered in view.");
+              }
+            }
+          } else if (ts - poseUiLastUpdateRef.current >= 120) {
+            poseUiLastUpdateRef.current = ts;
+            setLiveLandmarks(userLm || null);
+            setLiveComparison(null);
+            setLivePoseScore(0);
+            setLivePoseMessage("Keep your full body in view for better tracking.");
           }
         }
       } catch {
@@ -1042,8 +1071,8 @@ export default function RecordPage() {
         type: blob.type || "video/webm",
       });
 
-      const title = `${choreo?.title || "Naachly"} - Instagram Share`;
-      const text = "Sharing my Naachly dance video to Instagram.";
+      const title = `${choreo?.title || "Nachly"} - Instagram Share`;
+      const text = "Sharing my Nachly dance video to Instagram.";
 
       if (
         typeof navigator !== "undefined" &&
@@ -1209,6 +1238,7 @@ export default function RecordPage() {
               <div className="relative flex-1 overflow-hidden rounded-3xl border border-[#b2b2ab]/20 bg-black shadow-2xl">
                 <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-[#fbf9f4]/85 border border-[#b2b2ab]/30 rounded-full text-[9px] font-bold text-[#725b3f] tracking-widest uppercase">You</div>
                 {cameraEnabled ? (
+                  <>
                   <video
                     ref={webcamRef}
                     autoPlay
@@ -1216,6 +1246,17 @@ export default function RecordPage() {
                     playsInline
                     className="h-full w-full bg-black scale-x-[-1] object-contain"
                   />
+                  <SkeletonCanvas landmarks={liveLandmarks} comparison={liveComparison} mirrored className="scale-x-[-1]" />
+                  <div className="absolute left-4 right-4 top-16 z-10 grid gap-2 sm:left-5 sm:right-5">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                      <span className={`h-2 w-2 rounded-full ${livePoseScore >= 75 ? "bg-emerald-400" : livePoseScore >= 50 ? "bg-amber-300" : "bg-rose-400"}`} />
+                      Pose Score {livePoseScore}%
+                    </div>
+                    <div className="max-w-[92%] rounded-2xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] leading-relaxed text-zinc-100 backdrop-blur-md sm:max-w-[80%]">
+                      {livePoseMessage}
+                    </div>
+                  </div>
+                  </>
                 ) : (
                   <div className="grid h-full place-items-center bg-obsidian-100/50 backdrop-blur-xl">
                     <div className="text-center px-4">
@@ -1231,6 +1272,7 @@ export default function RecordPage() {
             <div className="relative h-full w-full overflow-hidden rounded-3xl border border-[#b2b2ab]/20 bg-black shadow-2xl">
               <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-[#fbf9f4]/85 border border-[#b2b2ab]/30 rounded-full text-[9px] font-bold text-[#725b3f] tracking-widest uppercase">Performance Mode</div>
               {cameraEnabled ? (
+                <>
                 <video
                   ref={webcamRef}
                   autoPlay
@@ -1238,6 +1280,17 @@ export default function RecordPage() {
                   playsInline
                   className="h-full w-full bg-black scale-x-[-1] object-contain"
                 />
+                <SkeletonCanvas landmarks={liveLandmarks} comparison={liveComparison} mirrored className="scale-x-[-1]" />
+                <div className="absolute left-4 right-4 top-16 z-10 grid gap-2 sm:left-5 sm:right-5">
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                    <span className={`h-2 w-2 rounded-full ${livePoseScore >= 75 ? "bg-emerald-400" : livePoseScore >= 50 ? "bg-amber-300" : "bg-rose-400"}`} />
+                    Pose Score {livePoseScore}%
+                  </div>
+                  <div className="max-w-[92%] rounded-2xl border border-white/10 bg-black/45 px-3 py-2 text-[11px] leading-relaxed text-zinc-100 backdrop-blur-md sm:max-w-[80%]">
+                    {livePoseMessage}
+                  </div>
+                </div>
+                </>
               ) : (
                 <div className="grid h-full place-items-center bg-obsidian-100/50 backdrop-blur-xl">
                   <div className="text-center px-4">
@@ -1249,6 +1302,28 @@ export default function RecordPage() {
               )}
             </div>
           )}
+        </div>
+
+        <div className="mt-3 grid gap-3 lg:grid-cols-3 px-1 sm:px-0">
+          <div className="rounded-2xl border border-[#b2b2ab]/25 bg-[#f5f4ed] px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#725b3f]">Live Pose</p>
+            <p className="mt-1 text-lg font-black text-[#1f1f1b]">{cameraEnabled ? `${livePoseScore}%` : "Off"}</p>
+            <p className="mt-1 text-xs text-[#5f6058]">{livePoseMessage}</p>
+          </div>
+          <div className="rounded-2xl border border-[#b2b2ab]/25 bg-[#f5f4ed] px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#725b3f]">Tracking Mode</p>
+            <p className="mt-1 text-lg font-black text-[#1f1f1b]">{isRemixMode ? "AI Practice" : "Recording"}</p>
+            <p className="mt-1 text-xs text-[#5f6058]">
+              {isRemixMode ? "Instructor + your camera are scored together." : "Pose overlay is ready whenever you enable lens."}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#b2b2ab]/25 bg-[#f5f4ed] px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#725b3f]">Detected Frames</p>
+            <p className="mt-1 text-lg font-black text-[#1f1f1b]">{aiStatsRef.current.frameCount}</p>
+            <p className="mt-1 text-xs text-[#5f6058]">
+              {liveComparison?.activeJointCount ? `${liveComparison.activeJointCount} active joints in the last frame` : "Waiting for a clear pose."}
+            </p>
+          </div>
         </div>
 
         {countdown > 0 && (
@@ -1266,7 +1341,7 @@ export default function RecordPage() {
         {showGoFlash && (
           <div className="fixed inset-0 z-[85] grid place-items-center bg-gold/10 backdrop-blur-[2px]">
             <div className="text-center">
-              <p className="text-[10px] tracking-[0.4em] uppercase text-gold/80 mb-4 font-bold">Naachly Academy</p>
+              <p className="text-[10px] tracking-[0.4em] uppercase text-gold/80 mb-4 font-bold">Nachly Academy</p>
               <div className="text-8xl sm:text-9xl font-black text-gold drop-shadow-[0_0_30px_rgba(211,196,184,0.6)] italic">
                 GO
               </div>
@@ -1342,8 +1417,8 @@ export default function RecordPage() {
         )}
 
         {showCenteredResultActions && (
-          <div className="fixed inset-0 z-[88] overflow-y-auto bg-[#f4f1ec] p-4 text-[#1f1f1b] animate-fade-in sm:p-6">
-            <div className="mx-auto w-full max-w-lg pb-[calc(env(safe-area-inset-bottom,0px)+5rem)] sm:pb-12">
+          <div className="fixed inset-0 z-[88] overflow-y-auto bg-[#f4f1ec] p-3 text-[#1f1f1b] animate-fade-in sm:p-6">
+            <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-lg flex-col pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:min-h-[calc(100vh-3rem)] sm:pb-6">
               <div className="mb-6 flex items-center justify-between sm:mb-10">
                 <button
                   type="button"
@@ -1356,70 +1431,70 @@ export default function RecordPage() {
                 <div className="w-6" />
               </div>
 
-              <div className="relative overflow-hidden rounded-[32px] bg-[#f5f4ed] border border-[#b2b2ab]/35 shadow-[0_20px_45px_-30px_rgba(58,42,26,0.8)] group">
+              <div className="relative overflow-hidden rounded-[28px] bg-[#f5f4ed] border border-[#b2b2ab]/35 shadow-[0_20px_45px_-30px_rgba(58,42,26,0.8)] group">
                 {mergedUrl ? (
                   <video src={mergedUrl} className="absolute inset-0 h-full w-full object-cover opacity-25 transition-transform duration-[3s] group-hover:scale-105" muted playsInline loop autoPlay />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-b from-[#f5f4ed]/85 via-[#f5f4ed]/55 to-[#f5f4ed]/90" />
 
-                <div className="relative z-10 flex min-h-[440px] flex-col justify-between p-5 sm:min-h-[500px] sm:p-8">
+                <div className="relative z-10 flex min-h-[300px] flex-col justify-between p-4 sm:min-h-[500px] sm:p-8">
                   <div className="text-center group">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#5e6059]">{isAiPracticeEntry ? "AI Practice Complete" : "Recording Complete"}</span>
-                    <h3 className="mt-2 text-3xl font-semibold tracking-[0.12em] text-[#725b3f] uppercase sm:text-4xl">Naachly</h3>
+                    <span className="text-[9px] uppercase tracking-[0.28em] text-[#5e6059] sm:text-[10px] sm:tracking-[0.3em]">{isAiPracticeEntry ? "AI Practice Complete" : "Recording Complete"}</span>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-[0.1em] text-[#725b3f] uppercase sm:text-4xl">Nachly</h3>
                   </div>
 
-                  <div className="space-y-8">
-                    <div className="flex items-center justify-center gap-3 rounded-2xl bg-[#fff8ed] border border-[#6c513236] px-5 py-4 backdrop-blur-md sm:gap-4 sm:px-8">
-                      <span className="text-base font-semibold tracking-[0.1em] text-[#1f1f1b] sm:text-xl sm:tracking-[0.12em]">{isAiPracticeEntry ? "Your AI practice video is ready to download or share." : "Your video is ready to download or share."}</span>
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-center gap-3 rounded-2xl border border-[#6c513236] bg-[#fff8ed] px-4 py-3 text-center backdrop-blur-md sm:gap-4 sm:px-8 sm:py-4">
+                      <span className="text-sm font-semibold leading-snug tracking-[0.06em] text-[#1f1f1b] sm:text-xl sm:tracking-[0.12em]">{isAiPracticeEntry ? "Your AI practice video is ready to download or share." : "Your video is ready to download or share."}</span>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-3">
+                      <button
+                        type="button"
+                        onClick={() => shareToInstagram()}
+                        disabled={shareBusy}
+                        className="w-full rounded-2xl bg-gradient-to-r from-[#7a5c3a] to-[#9a7852] px-3 py-3 text-[10px] font-bold tracking-[0.14em] uppercase text-[#fffaf3] shadow-[0_18px_36px_-22px_rgba(58,42,26,0.9)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 sm:py-4 sm:text-[12px] sm:tracking-[0.18em]"
+                      >
+                        {shareBusy ? "PREPARING..." : "SHARE TO INSTAGRAM"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={downloadMergedRecording}
+                        className="w-full rounded-2xl border border-[#6c513236] bg-[#fff8ed] px-3 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#725b3f] shadow-[0_14px_30px_-24px_rgba(58,42,26,0.95)] transition hover:bg-[#fdf1df] active:scale-[0.99] sm:py-4 sm:text-[12px] sm:tracking-[0.14em]"
+                      >
+                        DOWNLOAD RECORDING VIDEO
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                      <button
+                        type="button"
+                        onClick={downloadMergedRecording}
+                        className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
+                      >
+                        {isRemixMode ? "Save Remix" : "Save Video"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowPreviewModal(true)}
+                        className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
+                      >
+                        Open Preview
+                      </button>
+                    </div>
+
+                    {uploadedVideoUrl ? (
+                      <button
+                        type="button"
+                        onClick={copyUploadedVideoLink}
+                        className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
+                      >
+                        COPY SHARE LINK
+                      </button>
+                    ) : null}
                   </div>
                 </div>
-              </div>
-
-              <div className="mt-6 space-y-3 sm:mt-10 sm:space-y-4">
-                <button
-                  type="button"
-                  onClick={() => shareToInstagram()}
-                  disabled={shareBusy}
-                  className="w-full rounded-2xl bg-gradient-to-r from-[#7a5c3a] to-[#9a7852] text-[#fffaf3] border border-[#6c513233] py-4 text-[11px] font-bold tracking-[0.16em] uppercase shadow-[0_18px_36px_-22px_rgba(58,42,26,0.9)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60 sm:text-[12px] sm:tracking-[0.18em]"
-                >
-                  {shareBusy ? "PREPARING..." : "SHARE TO INSTAGRAM"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={downloadMergedRecording}
-                  className="w-full rounded-2xl border border-[#6c513236] bg-[#fff8ed] py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-[#725b3f] shadow-[0_14px_30px_-24px_rgba(58,42,26,0.95)] transition hover:bg-[#fdf1df] active:scale-[0.99] sm:text-[12px] sm:tracking-[0.14em]"
-                >
-                  DOWNLOAD RECORDING VIDEO
-                </button>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={downloadMergedRecording}
-                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
-                  >
-                    {isRemixMode ? "Save Remix" : "Save Video"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPreviewModal(true)}
-                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
-                  >
-                    Open Preview
-                  </button>
-                </div>
-
-                {uploadedVideoUrl ? (
-                  <button
-                    type="button"
-                    onClick={copyUploadedVideoLink}
-                    className="w-full rounded-xl border border-[#b2b2ab]/45 bg-white py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1f1f1b] transition hover:bg-[#f8f3ea]"
-                  >
-                    COPY SHARE LINK
-                  </button>
-                ) : null}
               </div>
             </div>
           </div>

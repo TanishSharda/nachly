@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import BrandLogo from "@/components/shared/BrandLogo";
 import { DASHBOARD_NAV_LINKS } from "@/lib/utils/constants";
@@ -40,13 +41,35 @@ const ICONS: Record<string, React.ReactNode> = {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [displayName, setDisplayName] = useState("Dancer");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadProfile() {
+      try {
+        const response = await fetch("/api/choreographer/profile", { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!mounted || !response.ok) return;
+        const firstName = String(payload?.profile?.displayName || "").trim().split(" ")[0];
+        if (firstName) setDisplayName(firstName);
+      } catch {
+        // Keep neutral fallback.
+      }
+    }
+
+    void loadProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <nav className="fixed left-0 top-0 w-[260px] h-screen p-6 flex flex-col gap-10 z-50 bg-obsidian border-r border-gold/10">
       {/* Brand */}
       <Link href="/dashboard" className="flex items-center gap-3 group px-4">
         <BrandLogo size={32} className="group-hover:scale-110 transition-transform" />
-        <span className="text-xl font-light tracking-[0.1em] text-gold uppercase">Naachly</span>
+        <span className="text-xl font-light tracking-[0.1em] text-gold uppercase">Nachly</span>
       </Link>
 
       {/* Nav Links */}
@@ -80,7 +103,7 @@ export default function Sidebar() {
             className="w-10 h-10 rounded-full bg-gold/10"
           />
           <div>
-            <div className="text-[13px] font-semibold text-[#E7E5E5]">Alex T.</div>
+            <div className="text-[13px] font-semibold text-[#E7E5E5]">{displayName}</div>
             <div className="text-[11px] text-[#E7E5E5]/40 tracking-wider">PRO DANCER</div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -7,14 +8,63 @@ import Badge from "@/components/ui/Badge";
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
 
-const mockPayouts = [
-  { period: "March 2026", purchases: 45, gross: 13455, share: 8073, status: "pending" as const },
-  { period: "February 2026", purchases: 38, gross: 11362, share: 6817, status: "paid" as const },
-  { period: "January 2026", purchases: 31, gross: 9269, share: 5561, status: "paid" as const },
-  { period: "December 2025", purchases: 28, gross: 8372, share: 5023, status: "paid" as const },
-];
+type RevenueData = {
+  summary: {
+    totalEarned: number;
+    pendingPayout: number;
+    revenueSplit: number;
+  };
+  streams: {
+    ppv: number;
+    subscriptions: number;
+    workshops: number;
+  };
+  payoutHistory: Array<{ period: string; purchases: number; gross: number; share: number; status: "pending" | "paid" | "processing" }>;
+};
 
 export default function EarningsPage() {
+  const [data, setData] = useState<RevenueData | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadRevenue() {
+      try {
+        const response = await fetch("/api/choreographer/revenue", { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!mounted || !response.ok) {
+          setData({
+            summary: { totalEarned: 0, pendingPayout: 0, revenueSplit: 60 },
+            streams: { ppv: 0, subscriptions: 0, workshops: 0 },
+            payoutHistory: [],
+          });
+          return;
+        }
+        setData({
+          summary: payload.summary || { totalEarned: 0, pendingPayout: 0, revenueSplit: 60 },
+          streams: payload.streams || { ppv: 0, subscriptions: 0, workshops: 0 },
+          payoutHistory: payload.payoutHistory || [],
+        });
+      } catch {
+        if (mounted) {
+          setData({
+            summary: { totalEarned: 0, pendingPayout: 0, revenueSplit: 60 },
+            streams: { ppv: 0, subscriptions: 0, workshops: 0 },
+            payoutHistory: [],
+          });
+        }
+      }
+    }
+
+    loadRevenue();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const summary = data?.summary || { totalEarned: 0, pendingPayout: 0, revenueSplit: 60 };
+  const streams = data?.streams || { ppv: 0, subscriptions: 0, workshops: 0 };
+  const payouts = data?.payoutHistory || [];
+
   return (
     <motion.div initial="hidden" animate="visible" variants={stagger}>
       <motion.div variants={fadeUp} className="mb-8">
@@ -26,18 +76,37 @@ export default function EarningsPage() {
       <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Card className="bg-gradient-wine text-cream-50">
           <p className="text-sm text-cream-200">Total Earned</p>
-          <p className="text-3xl font-display font-bold mt-1">₹25,474</p>
+          <p className="text-3xl font-display font-bold mt-1">₹{summary.totalEarned.toLocaleString("en-IN")}</p>
           <p className="text-xs text-cream-200/70 mt-1">Lifetime earnings</p>
         </Card>
         <Card>
           <p className="text-sm text-dark-400">Pending Payout</p>
-          <p className="text-3xl font-display font-bold text-dark mt-1">₹8,073</p>
+          <p className="text-3xl font-display font-bold text-dark mt-1">₹{summary.pendingPayout.toLocaleString("en-IN")}</p>
           <p className="text-xs text-dark-300 mt-1">Processing by month end</p>
         </Card>
         <Card>
           <p className="text-sm text-dark-400">Revenue Split</p>
-          <p className="text-3xl font-display font-bold text-gold-600 mt-1">60%</p>
+          <p className="text-3xl font-display font-bold text-gold-600 mt-1">{summary.revenueSplit}%</p>
           <p className="text-xs text-dark-300 mt-1">Your share of each purchase</p>
+        </Card>
+      </motion.div>
+
+      {/* Revenue streams */}
+      <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-dark-300">Pay-per-view</p>
+          <p className="text-2xl font-display font-bold text-dark mt-2">₹{streams.ppv.toLocaleString("en-IN")}</p>
+          <p className="text-xs text-dark-300 mt-1">Premium routine unlocks</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-dark-300">Subscriptions</p>
+          <p className="text-2xl font-display font-bold text-dark mt-2">₹{streams.subscriptions.toLocaleString("en-IN")}</p>
+          <p className="text-xs text-dark-300 mt-1">Monthly recurring revenue</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-dark-300">Workshops</p>
+          <p className="text-2xl font-display font-bold text-dark mt-2">₹{streams.workshops.toLocaleString("en-IN")}</p>
+          <p className="text-xs text-dark-300 mt-1">Live session tickets</p>
         </Card>
       </motion.div>
 
@@ -57,19 +126,27 @@ export default function EarningsPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockPayouts.map((p) => (
-                  <tr key={p.period} className="border-b border-dark-50 last:border-none">
-                    <td className="py-3 font-medium text-dark">{p.period}</td>
-                    <td className="py-3 text-dark-500">{p.purchases}</td>
-                    <td className="py-3 text-dark-500">₹{p.gross.toLocaleString("en-IN")}</td>
-                    <td className="py-3 font-semibold text-dark">₹{p.share.toLocaleString("en-IN")}</td>
-                    <td className="py-3">
-                      <Badge variant={p.status === "paid" ? "success" : "warning"}>
-                        {p.status}
-                      </Badge>
+                {payouts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-sm text-dark-400">
+                      No payout history yet. It will appear once transactions are settled.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  payouts.map((p) => (
+                    <tr key={p.period} className="border-b border-dark-50 last:border-none">
+                      <td className="py-3 font-medium text-dark">{p.period}</td>
+                      <td className="py-3 text-dark-500">{p.purchases}</td>
+                      <td className="py-3 text-dark-500">₹{p.gross.toLocaleString("en-IN")}</td>
+                      <td className="py-3 font-semibold text-dark">₹{p.share.toLocaleString("en-IN")}</td>
+                      <td className="py-3">
+                        <Badge variant={p.status === "paid" ? "success" : "warning"}>
+                          {p.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

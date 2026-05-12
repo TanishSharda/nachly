@@ -6,29 +6,34 @@ import MobileTopBar from "@/components/layout/MobileTopBar";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createServerSupabase();
   let navbarUser: { id: string; full_name: string; avatar_url: string | null; role: string } | null = null;
 
-  const { data: userData } = await supabase.auth.getUser();
-  if (userData.user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url, role")
-      .eq("id", userData.user.id)
-      .maybeSingle();
+  try {
+    const supabase = createServerSupabase();
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url, role")
+        .eq("id", userData.user.id)
+        .maybeSingle();
 
-    navbarUser = {
-      id: userData.user.id,
-      full_name:
-        profile?.full_name ||
-        (userData.user.user_metadata?.full_name as string | undefined) ||
-        (userData.user.email?.split("@")[0] ?? "Dancer"),
-      avatar_url:
-        profile?.avatar_url ||
-        (userData.user.user_metadata?.avatar_url as string | undefined) ||
-        null,
-      role: profile?.role || "student",
-    };
+      navbarUser = {
+        id: userData.user.id,
+        full_name:
+          profile?.full_name ||
+          (userData.user.user_metadata?.full_name as string | undefined) ||
+          (userData.user.email?.split("@")[0] ?? "Dancer"),
+        avatar_url:
+          profile?.avatar_url ||
+          (userData.user.user_metadata?.avatar_url as string | undefined) ||
+          null,
+        role: profile?.role || "student",
+      };
+    }
+  } catch {
+    // Supabase may not be configured (e.g., in tests). Gracefully fallback to null.
+    navbarUser = null;
   }
 
   return (

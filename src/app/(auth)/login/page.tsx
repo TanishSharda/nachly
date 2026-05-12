@@ -81,7 +81,7 @@ function LoginForm() {
               className="font-display text-4xl font-bold text-white mb-1"
               whileHover={{ scale: 1.02 }}
             >
-              Naachly
+              Nachly
             </motion.h1>
           </Link>
           <p className="text-zinc-300 text-sm mt-2">Sign in to start dancing</p>
@@ -152,7 +152,7 @@ function LoginForm() {
         </Link>
 
         <p className="mt-8 text-center text-xs text-zinc-400">
-          By continuing, you agree to Naachly&apos;s Terms of Service and Privacy Policy.
+          By continuing, you agree to Nachly&apos;s Terms of Service and Privacy Policy.
         </p>
 
         <div className="mt-4 text-center">

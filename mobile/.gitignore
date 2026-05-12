@@ -1,0 +1,39 @@
+# Expo
+.expo/
+.expo-shared/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.watchmanconfig
+.eslintcache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+.jest/
+coverage/

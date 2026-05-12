@@ -162,7 +162,7 @@ export default function SendFeedbackPage() {
       <header className="mb-8">
         <h1 className="text-gradient-red text-5xl font-extrabold tracking-tight">Share Feedback</h1>
         <p className="text-zinc-400 mt-2 text-lg">
-          Tell us what you want to learn next so Naachly can coach you better.
+          Tell us what you want to learn next so Nachly can coach you better.
         </p>
       </header>
 
@@ -247,7 +247,7 @@ export default function SendFeedbackPage() {
               rows={5}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="What would make Naachly a better dance coach for you?"
+              placeholder="What would make Nachly a better dance coach for you?"
               className="w-full rounded-xl border border-white/10 bg-white/5 text-white px-4 py-3 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-nred-500"
               required
             />

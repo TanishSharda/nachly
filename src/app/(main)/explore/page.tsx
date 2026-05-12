@@ -39,6 +39,9 @@ export default function ExplorePage() {
               <Link href="/flow?style=mix" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Mix
               </Link>
+              <Link href="/subscribe" className="rounded-full border border-[#725b3f]/25 bg-[#725b3f] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#fff7f3] hover:brightness-110">
+                Subscriptions
+              </Link>
             </div>
             <Link
               href="/flow?style=mix"
@@ -57,10 +60,12 @@ export default function ExplorePage() {
       </section>
 
       <section className="bg-[#f5f4ed] px-6 py-16 md:px-12 md:py-24">
+        <h2 className="mb-12 text-4xl font-bold tracking-tight text-[#1f1f1b] md:text-5xl">Explore Dance Styles</h2>
+
         <div className="mb-8 flex items-end justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#8f7f6b]">Discover</p>
-            <h2 className="mt-2 text-4xl font-bold tracking-tight text-[#1f1f1b] md:text-5xl">Bollywood Flow</h2>
+            <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#1f1f1b] md:text-4xl">Bollywood Flow</h3>
           </div>
           <Link href="/flow?style=bollywood" className="text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] hover:opacity-80">
             View Collection &gt;
@@ -98,8 +103,19 @@ export default function ExplorePage() {
               <p className="mt-2 text-sm leading-relaxed text-[#5e6059]">
                 Master the subtle art of facial expressions and storytelling through movement.
               </p>
-              <Link href="/learn/routine-bollywood-bijuria" className="mt-8 inline-flex text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f]">
+              <Link href="/learn/routine-bollywood-first-class" className="mt-8 inline-flex text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f]">
                 Explore Module &gt;
+              </Link>
+            </article>
+
+            <article className="rounded-[1.5rem] border border-[#725b3f]/15 bg-[#725b3f] p-7 text-[#fff7f3]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f1dfcf]">Premium access</p>
+              <h4 className="mt-4 text-2xl font-bold">Unlock routines with a subscription</h4>
+              <p className="mt-2 text-sm leading-relaxed text-[#f7ede3]">
+                Get recurring access to premium routines, workshops, and creator drops.
+              </p>
+              <Link href="/subscribe" className="mt-8 inline-flex rounded-full bg-white px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#725b3f] transition hover:bg-[#f7efe6]">
+                View plans
               </Link>
             </article>
           </div>

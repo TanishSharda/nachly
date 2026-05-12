@@ -45,14 +45,12 @@ function getFlowLearnHref(item) {
 }
 
 function shouldAttachVideoSrc(index, activeIndex) {
-  // Keep only nearby videos connected to the network pipeline.
-  return Math.abs(index - activeIndex) <= 1;
+  // Only attach the active video source to avoid loading multiple large clips at once.
+  return index === activeIndex;
 }
 
 function getVideoPreload(index, activeIndex) {
-  if (index === activeIndex) return "auto";
-  if (index === activeIndex + 1) return "metadata";
-  return "none";
+  return index === activeIndex ? "metadata" : "none";
 }
 
 function getOptimizedVideoAsset(videoUrl) {
@@ -137,6 +135,8 @@ export default function FlowPage() {
   const sectionRefs = useRef([]);
   const touchStartYRef = useRef(null);
   const lastGestureAtRef = useRef(0);
+  const navigationLockRef = useRef(false);
+  const navigationUnlockTimerRef = useRef(null);
 
   const GESTURE_COOLDOWN_MS = 420;
   const WHEEL_THRESHOLD = 28;
@@ -238,7 +238,7 @@ export default function FlowPage() {
         key: orderPayload.keyId,
         amount: orderPayload.amount,
         currency: orderPayload.currency || "INR",
-        name: "Naachly",
+        name: "Nachly",
         description: `Unlock ${styleName}`,
         order_id: orderPayload.orderId,
         method: { upi: true },
@@ -305,12 +305,23 @@ export default function FlowPage() {
     if (!choreos.length) return;
     const bounded = Math.max(0, Math.min(choreos.length - 1, nextIndex));
     if (bounded === activeIndex) return;
+    if (navigationLockRef.current) return;
+
+    navigationLockRef.current = true;
+    if (navigationUnlockTimerRef.current) {
+      clearTimeout(navigationUnlockTimerRef.current);
+    }
 
     setActiveIndex(bounded);
     const section = sectionRefs.current[bounded];
     if (section) {
-      section.scrollIntoView({ behavior: "smooth", block: "start" });
+      section.scrollIntoView({ behavior: "auto", block: "start" });
     }
+
+    navigationUnlockTimerRef.current = setTimeout(() => {
+      navigationLockRef.current = false;
+      navigationUnlockTimerRef.current = null;
+    }, 650);
   }, [activeIndex, choreos.length]);
 
   useEffect(() => {
@@ -410,6 +421,7 @@ export default function FlowPage() {
     if (!choreos.length) return;
     const deltaY = event.deltaY || 0;
     if (Math.abs(deltaY) < WHEEL_THRESHOLD) return;
+    event.preventDefault();
 
     const now = Date.now();
     if (now - lastGestureAtRef.current < GESTURE_COOLDOWN_MS) return;
@@ -458,6 +470,14 @@ export default function FlowPage() {
       navigateToIndex(activeIndex - 1);
     }
   }, [activeIndex, navigateToIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (navigationUnlockTimerRef.current) {
+        clearTimeout(navigationUnlockTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     videoRefs.current.forEach((video, idx) => {
@@ -740,7 +760,7 @@ export default function FlowPage() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onKeyDown={handleKeyDown}
-      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-[#31332e] transition-opacity duration-700 ease-in-out scroll-smooth no-scrollbar touch-pan-y"
+      className="h-[100dvh] overflow-y-auto overflow-x-hidden snap-y snap-mandatory bg-[#31332e] transition-opacity duration-700 ease-in-out no-scrollbar touch-pan-y"
     >
       <AnimatePresence>
         {pendingLearn ? (

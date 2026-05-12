@@ -24,6 +24,7 @@ export default function StyleCoursePage() {
   const routines = MOCK_ROUTINES[styleSlug] || [];
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchased, setPurchased] = useState(false);
+  const formattedUnlockPrice = new Intl.NumberFormat("en-IN").format(Math.max(1, Math.round(Number(style?.price_inr || 0) / 100)));
 
   useEffect(() => {
     let mounted = true;
@@ -76,9 +77,14 @@ export default function StyleCoursePage() {
             <h1 className="relative z-10 font-display text-4xl sm:text-6xl font-extralight text-[#E7E5E5] mb-4 tracking-tight uppercase italic">{style.name}</h1>
             <p className="text-white/85 text-sm sm:text-base max-w-xl mb-5">{style.description}</p>
             {!purchased ? (
-              <Button variant="secondary" size="lg" className="relative z-10 bg-gold text-obsidian px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] rounded-full hover:scale-105 transition-transform border-none" onClick={() => setPurchaseOpen(true)}>
-                {isBollywood ? "Unlock for INR 299 or INR 20/choreo" : "Unlock for INR 199/month"}
-              </Button>
+              <div className="relative z-10 flex flex-wrap gap-3">
+                <Button variant="secondary" size="lg" className="bg-gold text-obsidian px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] rounded-full hover:scale-105 transition-transform border-none" onClick={() => setPurchaseOpen(true)}>
+                  Unlock for INR {formattedUnlockPrice}
+                </Button>
+                <Link href="/subscribe" className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-7 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white transition-colors hover:bg-white/10">
+                  View subscriptions
+                </Link>
+              </div>
             ) : (
               <Badge variant="success" size="md">Purchased</Badge>
             )}

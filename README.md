@@ -1,5 +1,5 @@
-# Naachly
-Naachly is a Next.js dance learning platform with AI-assisted practice flows, drill progression, replay tooling, and Supabase-backed auth/data.
+# Nachly
+Nachly is a Next.js dance learning platform with AI-assisted practice flows, drill progression, replay tooling, and Supabase-backed auth/data.
 
 ## Quick Start
 1. Install dependencies.

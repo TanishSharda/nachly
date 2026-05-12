@@ -154,7 +154,7 @@ export default function SessionResults({
     try {
       const link = document.createElement("a");
       link.href = userPracticeVideoUrl;
-      link.download = `naachly-${routineSlug}-practice-${Date.now()}.webm`;
+      link.download = `nachly-${routineSlug}-practice-${Date.now()}.webm`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

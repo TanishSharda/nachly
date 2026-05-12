@@ -404,8 +404,8 @@ export default function ReelsPage() {
     const learnHref = getScroolLearnHref(item);
     const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${learnHref}` : learnHref;
     const shareData = {
-      title: item.title || "Naachly Choreo",
-      text: "Train with this official choreography on Naachly",
+      title: item.title || "Nachly Choreo",
+      text: "Train with this official choreography on Nachly",
       url: shareUrl,
     };
 
@@ -524,6 +524,7 @@ export default function ReelsPage() {
           <div className="absolute bottom-32 right-6 z-30 flex flex-col gap-6">
             <button
               type="button"
+              aria-label="Like"
               onClick={() => trackAction(item.id, "like")}
               className="flex flex-col items-center gap-1 group"
             >
@@ -535,6 +536,7 @@ export default function ReelsPage() {
 
             <button
               type="button"
+              aria-label={savedMap[item.id] ? "Saved" : "Save"}
               onClick={() => toggleSave(item)}
               className="flex flex-col items-center gap-1 group"
             >
@@ -546,6 +548,7 @@ export default function ReelsPage() {
 
             <button
               type="button"
+              aria-label="Share"
               onClick={() => shareChoreo(item)}
               className="flex flex-col items-center gap-1 group"
             >
@@ -561,6 +564,7 @@ export default function ReelsPage() {
             <div className="flex gap-3">
               <Link
                 href={`/record/${item.id}?mode=remix`}
+                aria-label="Remix"
                 className="flex-1 flex items-center justify-center gap-3 premium-button bg-gold text-obsidian border-none py-4 text-[13px] font-black tracking-[0.25em] uppercase"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
@@ -569,6 +573,7 @@ export default function ReelsPage() {
 
               <Link
                 href={getScroolLearnHref(item)}
+                aria-label="Learn"
                 className="flex-1 flex items-center justify-center gap-2 premium-button bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all py-4 text-[13px] tracking-[0.15em] backdrop-blur-md uppercase"
               >
                 Learn Step by Step

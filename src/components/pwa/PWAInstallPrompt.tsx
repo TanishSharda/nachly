@@ -83,11 +83,11 @@ export default function PWAInstallPrompt() {
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 bg-nred-500/20 rounded-xl flex items-center justify-center shrink-0">
               <div className="relative h-8 w-8 overflow-hidden rounded-lg">
-                <Image src="/brand-logo.svg" alt="Naachly logo" fill sizes="32px" />
+                <Image src="/brand-logo.svg" alt="Nachly logo" fill sizes="32px" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-bold text-white text-sm">Install Naachly</h3>
+              <h3 className="font-display font-bold text-white text-sm">Install Nachly</h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Add to home screen for the full app experience — faster, offline support, no browser bar.
               </p>

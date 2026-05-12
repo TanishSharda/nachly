@@ -1,28 +1,145 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Progress from "@/components/ui/Progress";
 import Button from "@/components/ui/Button";
-import { MOCK_STYLES, MOCK_ROUTINES } from "@/lib/mock-data";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
 
-// Mock: user has purchased Bollywood and Hip Hop
-const purchasedSlugs = ["bollywood", "hip-hop"];
-const progressData: Record<string, number> = {
-  "routine-bollywood-1": 100,
-  "routine-bollywood-2": 65,
-  "routine-bollywood-3": 30,
-  "routine-hip-hop-1": 80,
-  "routine-hip-hop-2": 45,
+type ChoreoItem = {
+  id: string;
+  title: string;
+  routineSlug?: string | null;
+  styleSlug: string;
+  styleName?: string;
+  difficulty?: string;
+  stylePriceInr?: number | null;
+};
+
+type Session = {
+  styleSlug?: string;
+  completion?: number;
+};
+
+type StyleLibrary = {
+  id: string;
+  slug: string;
+  name: string;
+  gradient_from: string;
+  gradient_to: string;
+  routines: Array<{ id: string; title: string; slug: string; difficulty: string; progress: number }>;
+  progress: number;
+};
+
+const STYLE_GRADIENTS: Record<string, { from: string; to: string }> = {
+  bollywood: { from: "#e11d48", to: "#fb7185" },
+  "hip-hop": { from: "#2563eb", to: "#22d3ee" },
+  kathak: { from: "#f59e0b", to: "#f97316" },
+  bhangra: { from: "#16a34a", to: "#84cc16" },
 };
 
 export default function LibraryPage() {
-  const purchasedStyles = MOCK_STYLES.filter((s) => purchasedSlugs.includes(s.slug));
+  const [purchasedSlugs, setPurchasedSlugs] = useState<string[]>([]);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [styles, setStyles] = useState<StyleLibrary[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadLibraryState() {
+      try {
+        const [subscriptionResponse, choreoResponse, sessionsResponse] = await Promise.all([
+          fetch("/api/subscriptions/check", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+          fetch("/api/choreos", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+          fetch("/api/practice-sessions?limit=100", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+        ]);
+
+        const choreos = Array.isArray(choreoResponse?.choreos) ? (choreoResponse.choreos as ChoreoItem[]) : [];
+        const sessions = Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as Session[]) : [];
+
+        const styleMap = new Map<string, StyleLibrary>();
+        for (const choreo of choreos) {
+          const slug = String(choreo.styleSlug || "").trim();
+          if (!slug || !choreo.routineSlug) continue;
+          const gradient = STYLE_GRADIENTS[slug] || { from: "#3f3f46", to: "#71717a" };
+          const existing = styleMap.get(slug) || {
+            id: slug,
+            slug,
+            name: choreo.styleName || slug,
+            gradient_from: gradient.from,
+            gradient_to: gradient.to,
+            routines: [],
+            progress: 0,
+          };
+          if (!existing.routines.some((routine) => routine.slug === choreo.routineSlug)) {
+            existing.routines.push({
+              id: choreo.id,
+              title: choreo.title || "Untitled Routine",
+              slug: String(choreo.routineSlug),
+              difficulty: String(choreo.difficulty || "intermediate"),
+              progress: 0,
+            });
+          }
+          styleMap.set(slug, existing);
+        }
+
+        const sessionProgress = new Map<string, { total: number; count: number }>();
+        for (const session of sessions) {
+          const slug = String(session.styleSlug || "").trim();
+          if (!slug) continue;
+          const completion = Number(session.completion || 0);
+          const current = sessionProgress.get(slug) || { total: 0, count: 0 };
+          current.total += completion;
+          current.count += 1;
+          sessionProgress.set(slug, current);
+        }
+
+        const nextStyles = [...styleMap.values()].map((style) => {
+          const progressMeta = sessionProgress.get(style.slug);
+          const styleProgress = progressMeta && progressMeta.count > 0 ? Math.round(progressMeta.total / progressMeta.count) : 0;
+          return {
+            ...style,
+            progress: styleProgress,
+            routines: style.routines.map((routine) => ({ ...routine, progress: styleProgress })),
+          };
+        });
+
+        const purchaseResults = await Promise.all(
+          nextStyles.map(async (style) => {
+            const response = await fetch(`/api/purchases/check?styleSlug=${encodeURIComponent(style.slug)}`, { cache: "no-store" });
+            const payload = await response.json().catch(() => ({}));
+            return { slug: style.slug, purchased: Boolean(response.ok && payload?.purchased) };
+          })
+        );
+
+        if (!mounted) return;
+
+        setStyles(nextStyles);
+        setSubscriptionActive(Boolean(subscriptionResponse?.active));
+        setPurchasedSlugs(purchaseResults.filter((item) => item.purchased).map((item) => item.slug));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadLibraryState();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const purchasedStyles = useMemo(() => {
+    if (subscriptionActive) return styles;
+    return styles.filter((s) => purchasedSlugs.includes(s.slug));
+  }, [purchasedSlugs, subscriptionActive, styles]);
+
   const hasPurchases = purchasedStyles.length > 0;
 
   return (
@@ -43,6 +160,17 @@ export default function LibraryPage() {
           </div>
         </motion.div>
 
+        {loading ? (
+          <motion.div variants={fadeUp} className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-300">
+            Checking your access...
+          </motion.div>
+        ) : subscriptionActive ? (
+          <motion.div variants={fadeUp} className="mb-5 rounded-2xl border border-[#c4ff00]/20 bg-[#c4ff00]/10 p-4 text-sm text-white">
+            <p className="font-semibold text-[#c4ff00]">Naachly Plus active</p>
+            <p className="mt-1 text-zinc-200">You have subscription access to premium routines and creator drops.</p>
+          </motion.div>
+        ) : null}
+
         {!hasPurchases ? (
           <motion.div variants={fadeUp} className="text-center py-14 app-card rounded-2xl">
             <div className="w-20 h-20 mx-auto mb-4 bg-white/5 rounded-full flex items-center justify-center">
@@ -57,11 +185,8 @@ export default function LibraryPage() {
         ) : (
           <div className="space-y-7">
             {purchasedStyles.map((style) => {
-              const routines = MOCK_ROUTINES[style.slug] || [];
-              const styleProgress =
-                routines.length > 0
-                  ? routines.reduce((sum, r) => sum + (progressData[r.id] || 0), 0) / routines.length
-                  : 0;
+              const routines = style.routines || [];
+              const styleProgress = style.progress || 0;
 
               return (
                 <motion.div key={style.id} variants={fadeUp} className="app-card rounded-2xl p-4 sm:p-5">
@@ -71,14 +196,16 @@ export default function LibraryPage() {
                       <p className="text-xs text-zinc-300">{routines.length} routines</p>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-semibold text-nred-300">{Math.round(styleProgress)}% complete</span>
+                      <span className="text-sm font-semibold text-nred-300">
+                        {subscriptionActive ? "Plus access" : `${Math.round(styleProgress)}% complete`}
+                      </span>
                       <Progress value={styleProgress} size="sm" className="w-28 mt-1" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {routines.slice(0, 6).map((routine) => {
-                      const pct = progressData[routine.id] || 0;
+                      const pct = routine.progress || 0;
                       return (
                         <Link key={routine.id} href={`/explore/${style.slug}/${routine.slug}`}>
                           <Card hover padding="sm" className="h-full border-white/15 bg-[#211c68]/70">

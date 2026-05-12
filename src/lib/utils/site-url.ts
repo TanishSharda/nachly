@@ -1,4 +1,4 @@
-const DEFAULT_PRODUCTION_ORIGIN = "https://naachly.vercel.app";
+const DEFAULT_PRODUCTION_ORIGIN = "https://nachly.vercel.app";
 
 function toOrigin(value: string | undefined): string | null {
   if (!value) return null;

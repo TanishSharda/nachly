@@ -180,17 +180,17 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/35 z-10" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgba(114,91,63,0.33),transparent_45%)] z-10" />
 
-        <div className="absolute left-4 right-4 top-[calc(env(safe-area-inset-top,0px)+0.45rem)] z-20 flex items-start justify-between md:left-6 md:right-6 md:top-8">
+        <div className="absolute left-3 right-3 top-[calc(env(safe-area-inset-top,0px)+0.35rem)] z-20 flex items-start justify-between gap-2 md:left-6 md:right-6 md:top-8">
           <Link href={backHref} className="h-12 w-12 rounded-full border border-white/10 bg-white/10 backdrop-blur-xl grid place-items-center transition active:scale-95 hover:bg-white/15 md:h-14 md:w-14">
             <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           </Link>
-          <div className="max-w-[72vw] text-right">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-white/65">Session 04</p>
-            <h1 className="mt-2 text-3xl font-semibold leading-[0.95] text-white tracking-tight md:text-6xl">{choreo?.title || "Ethereal Foundations"}</h1>
+          <div className="max-w-[72vw] text-right sm:max-w-[68vw]">
+            <p className="text-[9px] uppercase tracking-[0.2em] text-white/65 md:text-[10px] md:tracking-[0.24em]">Session 04</p>
+            <h1 className="mt-1.5 line-clamp-2 text-xl font-semibold leading-[1.04] text-white tracking-tight sm:text-2xl md:mt-2 md:text-6xl md:leading-[0.95]">{choreo?.title || "Ethereal Foundations"}</h1>
             <button
               type="button"
               onClick={handleAiPracticeClick}
-              className="mt-2 inline-flex items-center rounded-full border border-white/20 bg-white/12 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.13em] text-white hover:bg-white/20 transition md:px-3 md:text-[10px]"
+              className="mt-1.5 inline-flex items-center rounded-full border border-white/20 bg-white/12 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.09em] text-white hover:bg-white/20 transition md:mt-2 md:px-3 md:py-1.5 md:text-[10px] md:tracking-[0.13em]"
             >
               Practice with AI
             </button>
@@ -231,8 +231,8 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
 
         </section>
 
-        <section className="absolute inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] z-20 rounded-[20px] border border-white/10 bg-white/10 p-3 backdrop-blur-xl md:inset-x-6 md:bottom-7">
-          <div className="mb-2.5 flex items-center justify-between text-sm text-white/85 tabular-nums">
+        <section className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] z-20 rounded-[18px] border border-white/10 bg-white/10 p-2.5 backdrop-blur-xl md:inset-x-6 md:bottom-7 md:rounded-[20px] md:p-3">
+          <div className="mb-2 flex items-center justify-between text-xs text-white/85 tabular-nums md:mb-2.5 md:text-sm">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -244,49 +244,50 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
             step={0.1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seekTo(Number(event.target.value || 0))}
-            className="mb-2.5 h-1.5 w-full cursor-pointer accent-[#7a5c3a]"
+            className="mb-2 h-1.5 w-full cursor-pointer accent-[#7a5c3a] md:mb-2.5"
           />
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-2">
-              <button type="button" onClick={() => skipBy(-5)} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-white/10 border border-white/15 hover:bg-white/20 transition">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M11 19l-7-7 7-7"/><path d="M20 19l-7-7 7-7"/></svg>
-              </button>
-              <button type="button" onClick={() => skipBy(5)} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-white/10 border border-white/15 hover:bg-white/20 transition">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M3 12a9 9 0 0 1 9-9h4"/><path d="M16 3l3 3-3 3"/><path d="M21 12a9 9 0 0 1-9 9H8"/><path d="M8 21l-3-3 3-3"/></svg>
-              </button>
-            </div>
-
-            <div className="rounded-full border border-white/10 bg-black/35 px-2 py-1.5 md:px-4 md:py-2 backdrop-blur-lg flex items-center gap-1 md:gap-1.5">
-              <span className="hidden md:inline text-[10px] md:text-xs uppercase tracking-tight font-semibold text-white/85">Speed</span>
-              <select
-                value={speed}
-                onChange={(event) => applySpeed(Number(event.target.value || 1))}
-                className="bg-transparent text-sm md:text-base font-semibold text-[#f0ddc2] outline-none border-none"
+          <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between md:gap-2">
+            <div className="grid grid-cols-2 gap-1.5 md:flex md:gap-2">
+              <button
+                type="button"
+                onClick={handleRecordClick}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-[#f0ddc2] px-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-[#2b2118] shadow-[0_16px_30px_rgba(0,0,0,0.2)] transition hover:brightness-105 md:h-10 md:px-3"
               >
-                {SPEED_OPTIONS.map((option) => (
-                  <option key={option} value={option} className="text-black">{option}x</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex shrink-0 gap-1.5 md:gap-2 max-[390px]:flex-col max-[390px]:items-stretch">
-              <button type="button" onClick={toggleFullscreen} className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-full bg-[#725b3f] text-white shadow-[0_20px_40px_rgba(49,51,46,0.2)] hover:brightness-110 transition max-[390px]:self-end">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="md:h-4 md:w-4"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+                Record
               </button>
               <button
                 type="button"
                 onClick={handleAiPracticeClick}
-                className="inline-flex items-center rounded-full border border-white/15 bg-[#725b3f]/85 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.11em] text-white hover:brightness-110 transition md:px-3 md:text-[8px] max-[390px]:w-full max-[390px]:justify-center"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-[#725b3f]/85 px-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-white transition hover:brightness-110 md:h-10 md:px-3"
               >
-                Practice with AI
+                AI Practice
               </button>
-              <button
-                type="button"
-                onClick={handleRecordClick}
-                className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 text-[7px] font-semibold uppercase tracking-[0.11em] text-white hover:bg-white/20 transition md:px-3 md:text-[8px] max-[390px]:w-full max-[390px]:justify-center"
-              >
-                Record
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 md:flex md:items-center md:gap-2">
+              <button type="button" onClick={() => skipBy(-5)} className="flex h-10 w-full items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20 md:w-10">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M11 19l-7-7 7-7"/><path d="M20 19l-7-7 7-7"/></svg>
+              </button>
+
+              <button type="button" onClick={() => skipBy(5)} className="flex h-10 w-full items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20 md:w-10">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white md:h-4 md:w-4"><path d="M3 12a9 9 0 0 1 9-9h4"/><path d="M16 3l3 3-3 3"/><path d="M21 12a9 9 0 0 1-9 9H8"/><path d="M8 21l-3-3 3-3"/></svg>
+              </button>
+
+              <div className="flex h-10 items-center justify-center rounded-full border border-white/10 bg-black/35 px-2 backdrop-blur-lg">
+                <select
+                  value={speed}
+                  onChange={(event) => applySpeed(Number(event.target.value || 1))}
+                  className="w-full bg-transparent text-xs font-semibold text-[#f0ddc2] outline-none border-none"
+                >
+                  {SPEED_OPTIONS.map((option) => (
+                    <option key={option} value={option} className="text-black">{option}x</option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={toggleFullscreen} className="flex h-10 w-full items-center justify-center rounded-full bg-[#725b3f] text-white shadow-[0_20px_40px_rgba(49,51,46,0.2)] transition hover:brightness-110 md:w-10">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="md:h-4 md:w-4"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
               </button>
             </div>
           </div>

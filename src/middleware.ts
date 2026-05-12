@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { canAccessRoute } from "@/lib/auth/roles";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -52,16 +53,26 @@ export async function middleware(request: NextRequest) {
   );
 
   let user = null;
+  let userRole = "student";
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      userRole = profile?.role || "student";
+    }
   } catch {
     // Supabase connection failed — skip auth checks
     return supabaseResponse;
   }
 
   // Protected routes
-  const protectedPaths = ["/library", "/stats", "/profile", "/choreographer"];
+  const protectedPaths = ["/library", "/stats", "/profile", "/choreographer", "/admin"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -70,6 +81,13 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", request.nextUrl.pathname);
+    return attachSupabaseCookies(NextResponse.redirect(url));
+  }
+
+  // Role-based route access
+  if (user && !canAccessRoute(userRole as any, request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
     return attachSupabaseCookies(NextResponse.redirect(url));
   }
 

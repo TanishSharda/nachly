@@ -11,8 +11,8 @@ import BrandLogo from "@/components/shared/BrandLogo";
 const easeOut = [0.16, 1, 0.3, 1] as const;
 const HERO_VIDEO = "/videos/one-night.optimized.mp4";
 const HERO_POSTER = "/videos/one-night.poster.jpg";
-const HERO_VIDEO_ALT = "/videos/bijuria.optimized.mp4";
-const HERO_POSTER_ALT = "/videos/bijuria.poster.jpg";
+const HERO_VIDEO_ALT = "/videos/first-class.optimized.mp4";
+const HERO_POSTER_ALT = "/videos/one-night.poster.jpg";
 const HERO_VIDEO_THIRD = "/videos/first-class.optimized.mp4";
 
 const WAITLIST_COUNT = process.env.NEXT_PUBLIC_WAITLIST_COUNT;
@@ -24,7 +24,7 @@ const heroBadges = ["Trending drops", "Step-by-step", "Creator-led"];
 const whyLove = [
   {
     title: "Learn trending dances faster",
-    description: "Skip endless tutorials. Naachly turns viral dances into learnable steps.",
+    description: "Skip endless tutorials. Nachly turns viral dances into learnable steps.",
   },
   {
     title: "Guided breakdowns",
@@ -105,7 +105,7 @@ const features = [
 
 const faqs = [
   {
-    question: "Is Naachly beginner-friendly?",
+    question: "Is Nachly beginner-friendly?",
     answer: "Yes. Start slow, loop sections, and build confidence at your pace.",
   },
   {
@@ -117,7 +117,7 @@ const faqs = [
     answer: "We are building an accessible option for dance learners everywhere.",
   },
   {
-    question: "When does Naachly launch?",
+    question: "When does Nachly launch?",
     answer: "We are rolling out soon. Join the waitlist to be first.",
   },
 ];
@@ -287,9 +287,12 @@ export default function HomePage() {
         >
           <Link href="/" className="flex items-center gap-3">
             <BrandLogo size={28} />
-            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Naachly</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Nachly</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link href="/for-choreographers" className="hidden sm:inline-flex rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
+              For Creators
+            </Link>
             <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
               Log In
             </Link>
@@ -310,7 +313,7 @@ export default function HomePage() {
               Learn Dance Like You Scroll.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5f554b] sm:text-lg">
-              Discover viral choreography, practice step-by-step, and level up your moves. Naachly turns short-form dances into real skills.
+              Discover viral choreography, practice step-by-step, and level up your moves. Nachly turns short-form dances into real skills.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-2">
@@ -409,7 +412,7 @@ export default function HomePage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">App preview</p>
           <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">See it in motion</h2>
           <p className="mt-3 max-w-2xl text-sm text-[#6b6056]">
-            Real choreography clips, real practice flow. This is what Naachly feels like.
+            Real choreography clips, real practice flow. This is what Nachly feels like.
           </p>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {appPreviews.map((item) => (
@@ -494,11 +497,11 @@ export default function HomePage() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Problem and solution</p>
               <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Watching dance is not learning dance</h2>
               <p className="mt-5 text-base leading-relaxed text-[#5f554b]">
-                Naachly bridges the gap between passive scrolling and real practice. You get structure, repetition, and progress so dances actually stick.
+                Nachly bridges the gap between passive scrolling and real practice. You get structure, repetition, and progress so dances actually stick.
               </p>
             </div>
             <BentoCard>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">Naachly fixes it</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">Nachly fixes it</p>
               <ul className="mt-4 space-y-3 text-sm text-[#5f554b]">
                 <li>Breakdowns built for repetition</li>
                 <li>Practice tools you control</li>
@@ -566,6 +569,45 @@ export default function HomePage() {
               </BentoCard>
             </motion.div>
           ))}
+        </motion.div>
+      </section>
+
+      {/* For Choreographers Section */}
+      <section className="section-padding mt-16">
+        <motion.div {...sectionReveal()}>
+          <div className="rounded-[2.5rem] border border-[#6c513236] bg-gradient-to-br from-[#2b241b] to-[#1a1610] p-8 sm:p-10">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#a38260]">For choreographers</p>
+                <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#f8f5ef] sm:text-4xl">Teach dance. Build your brand. Earn.</h2>
+                <p className="mt-4 text-sm leading-relaxed text-[#8a7d70]">
+                  Join a growing community of verified choreographers. Upload like Instagram, structure professional tutorials, reach global learners, and monetize your expertise with a 60% revenue share.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/for-choreographers" className="inline-flex h-11 items-center rounded-full bg-[#7a5c3a] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_30px_-15px_rgba(122,92,58,0.5)]">
+                    Learn More
+                  </Link>
+                  <Link href="/apply-choreographer" className="inline-flex h-11 items-center rounded-full border border-[#6c513260] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#a38260] transition hover:bg-white/5">
+                    Apply Now
+                  </Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: "🎬", title: "Upload", desc: "Record or upload choreography with creator tools" },
+                  { icon: "📚", title: "Teach", desc: "Build step-by-step lessons and tutorials" },
+                  { icon: "📊", title: "Grow", desc: "Track views, learners, and AI scores" },
+                  { icon: "💰", title: "Earn", desc: "60% revenue share on every purchase" },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-[#6c513230] bg-white/[0.03] p-4">
+                    <span className="text-2xl">{item.icon}</span>
+                    <p className="mt-2 text-sm font-semibold text-[#f8f5ef]">{item.title}</p>
+                    <p className="mt-1 text-xs text-[#8a7d70]">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </motion.div>
       </section>
 
@@ -658,13 +700,16 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-3">
               <BrandLogo size={28} />
-              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Naachly</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Nachly</span>
             </div>
             <p className="mt-3 max-w-sm text-sm text-[#6b6056]">A modern dance learning app built for the scroll generation.</p>
           </div>
           <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">
             <Link href="/flow?style=mix">Flow</Link>
             <Link href="/explore">Explore</Link>
+            <Link href="/for-choreographers">For Creators</Link>
+            <Link href="/subscribe">Subscriptions</Link>
+            <Link href="/apply-choreographer">Apply</Link>
             <Link href="/login">Login</Link>
             <Link href="/download-app">App</Link>
           </div>

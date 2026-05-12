@@ -12,6 +12,7 @@ const footerLinks = {
   Platform: [
     { label: "How it Works", href: "/#how-it-works" },
     { label: "Pricing", href: "/#pricing" },
+    { label: "Subscriptions", href: "/subscribe" },
     { label: "Become a Choreographer", href: "/choreographer/apply" },
   ],
   Company: [

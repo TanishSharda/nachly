@@ -230,6 +230,48 @@ export default function RoutineDetailPage() {
                 ) : null}
 
                 <div className="space-y-3">
+                  <Link href={`/explore/${styleSlug}`} className="block">
+                    <div className="p-4 rounded-xl border-2 border-gold/25 hover:border-gold/40 transition-colors group bg-gold/5">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center group-hover:bg-gold/20 transition-colors">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAB308" strokeWidth="2" strokeLinecap="round">
+                            <path d="M12 2l3 7h7l-5.5 4.2L18 21l-6-4-6 4 1.5-7.8L2 9h7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white">Unlock this style</h4>
+                          <p className="text-xs text-zinc-300">Pay once for the full style collection</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-zinc-300">
+                        Open the style page to purchase access to every routine in {style.name}.
+                      </p>
+                    </div>
+                  </Link>
+
+                  <Link href="/subscribe" className="block">
+                    <div className="p-4 rounded-xl border-2 border-white/10 hover:border-white/20 transition-colors group bg-white/5">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center group-hover:bg-white/15 transition-colors">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round">
+                            <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                            <path d="M4 7h3a2 2 0 0 0 2-2V2" />
+                            <path d="M4 17h3a2 2 0 0 1 2 2v3" />
+                            <path d="M20 17h-3a2 2 0 0 0-2 2v3" />
+                            <path d="M9 12h6" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white">Go premium</h4>
+                          <p className="text-xs text-zinc-300">Subscription access across the app</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-zinc-300">
+                        Get recurring access to premium routines, workshops, and creator drops.
+                      </p>
+                    </div>
+                  </Link>
+
                   <Link
                     href={`/explore/${styleSlug}/${routineSlug}/learn`}
                     className="block"

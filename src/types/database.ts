@@ -64,6 +64,9 @@ export interface Routine {
     | "published";
   caption?: string | null;
   community_video_url?: string | null;
+  access_type?: "free" | "ppv" | "subscription";
+  price_inr?: number | null;
+  subscription_tier?: string | null;
   ai_overall_score?: number | null;
   ai_score_breakdown?: {
     timing?: number;
@@ -141,6 +144,47 @@ export interface Purchase {
   style?: DanceStyle;
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  interval_months: number;
+  price_inr: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: "pending" | "active" | "cancelled" | "expired" | "failed";
+  amount_inr: number;
+  order_id: string | null;
+  payment_id: string | null;
+  payment_provider: string | null;
+  payment_payload: Record<string, unknown> | null;
+  started_at: string | null;
+  ends_at: string | null;
+  created_at: string;
+  updated_at: string;
+  plan?: SubscriptionPlan;
+}
+
+export interface RoutinePurchase {
+  id: string;
+  user_id: string;
+  routine_id: string;
+  amount_inr: number;
+  status: "pending" | "completed" | "refunded" | "failed";
+  order_id: string | null;
+  payment_id: string | null;
+  payment_provider: string | null;
+  payment_payload: Record<string, unknown> | null;
+  created_at: string;
+  routine?: Routine;
+}
+
 export interface UserProgress {
   id: string;
   user_id: string;
@@ -201,6 +245,19 @@ export interface Payout {
   created_at: string;
 }
 
+export interface Workshop {
+  id: string;
+  choreographer_id: string;
+  title: string;
+  description: string | null;
+  start_at: string;
+  duration_minutes: number;
+  price_inr: number;
+  capacity: number;
+  status: "scheduled" | "completed" | "cancelled";
+  created_at: string;
+}
+
 export interface UserStreak {
   user_id: string;
   current_streak: number;
@@ -219,6 +276,9 @@ export interface ChoreoSubmission {
   video_url: string;
   style_slug: string;
   difficulty: "beginner" | "intermediate" | "advanced";
+  access_type?: "free" | "ppv" | "subscription";
+  price_inr?: number | null;
+  subscription_tier?: string | null;
   checklist_full_body_visible: boolean;
   checklist_stable_camera: boolean;
   checklist_good_lighting: boolean;

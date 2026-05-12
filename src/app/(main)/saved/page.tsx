@@ -54,8 +54,8 @@ export default function SavedPage() {
     <main className="min-h-screen bg-[#fbf9f4] px-4 py-6 text-[#31332e]">
       <div className="mx-auto w-full max-w-6xl">
         <div className="mb-10">
-          <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-[#725b3f]">Your Collection</span>
-          <h1 className="mt-1 text-4xl md:text-5xl font-extrabold tracking-tight text-[#1f1f1b]">Saved</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#1f1f1b]">Saved For Practice</h1>
+          <p className="mt-2 text-zinc-600">Your collection of choreographies to master</p>
           <div className="mt-4 h-1 w-16 rounded-full bg-[#725b3f]" />
         </div>
 

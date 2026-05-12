@@ -80,7 +80,7 @@ export default function PurchaseModal({ open, onClose, style, onPurchaseComplete
         key: orderPayload.keyId,
         amount: orderPayload.amount,
         currency: orderPayload.currency || "INR",
-        name: "Naachly",
+        name: "Nachly",
         description: `Unlock ${style.name}`,
         order_id: orderPayload.orderId,
         method: {
