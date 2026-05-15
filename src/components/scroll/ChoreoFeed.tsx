@@ -76,6 +76,17 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
               <span>•</span>
               <span>{post.difficulty_level}</span>
             </div>
+            <div>
+              {post.source === 'routine' ? (
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
+                  Performance
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/6 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/80">
+                  Submission
+                </span>
+              )}
+            </div>
             <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff7ef] backdrop-blur-md">
               <span>{formatCount(post.views_count)} views</span>
             </div>

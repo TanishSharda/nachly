@@ -9,14 +9,14 @@ const submissionCreateSchema = z.object({
   videoUrl: z.string().trim().url().max(2000),
   styleSlug: z.enum(["hip-hop", "bhangra", "kathak", "zumba", "bollywood", "contemporary"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
-  lessonParts: z.array(z.record(z.unknown())).optional(),
+  lessonParts: z.array(z.unknown()).optional(),
   hashtags: z.array(z.string().min(1).max(40)).optional(),
   musicCredit: z.string().trim().max(200).optional().or(z.literal("")),
   thumbnailUrl: z.string().trim().max(2000).optional().or(z.literal("")),
-  slowMoMarkers: z.array(z.record(z.unknown())).optional(),
+  slowMoMarkers: z.array(z.unknown()).optional(),
   trimStartSeconds: z.number().nonnegative().optional(),
   trimEndSeconds: z.number().nonnegative().optional(),
-  captionOverlays: z.array(z.record(z.unknown())).optional(),
+  captionOverlays: z.array(z.unknown()).optional(),
   videoDurationSeconds: z.number().nonnegative().optional(),
   accessType: z.enum(["free", "ppv", "subscription"]).optional(),
   priceInr: z.number().nonnegative().optional(),
@@ -27,6 +27,7 @@ const submissionCreateSchema = z.object({
     stableCamera: z.boolean(),
     goodLighting: z.boolean(),
   }),
+  publishNow: z.boolean().optional(),
 });
 
 const draftUpsertSchema = z.object({
@@ -37,14 +38,14 @@ const draftUpsertSchema = z.object({
   videoUrl: z.string().trim().url().max(2000),
   styleSlug: z.enum(["hip-hop", "bhangra", "kathak", "zumba", "bollywood", "contemporary"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
-  lessonParts: z.array(z.record(z.unknown())).optional(),
+  lessonParts: z.array(z.unknown()).optional(),
   hashtags: z.array(z.string().min(1).max(40)).optional(),
   musicCredit: z.string().trim().max(200).optional().or(z.literal("")),
   thumbnailUrl: z.string().trim().max(2000).optional().or(z.literal("")),
-  slowMoMarkers: z.array(z.record(z.unknown())).optional(),
+  slowMoMarkers: z.array(z.unknown()).optional(),
   trimStartSeconds: z.number().nonnegative().optional(),
   trimEndSeconds: z.number().nonnegative().optional(),
-  captionOverlays: z.array(z.record(z.unknown())).optional(),
+  captionOverlays: z.array(z.unknown()).optional(),
   videoDurationSeconds: z.number().nonnegative().optional(),
   accessType: z.enum(["free", "ppv", "subscription"]).optional(),
   priceInr: z.number().nonnegative().optional(),
@@ -271,84 +272,168 @@ export async function POST(request: Request) {
 
   const parsed = submissionCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid submission payload" }, { status: 400 });
-  }
-
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return missingSupabaseConfigResponse();
-  }
-
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-
-  const input = parsed.data;
-  const checklistPassed =
-    input.checklist.fullBodyVisible && input.checklist.stableCamera && input.checklist.goodLighting;
-
-  if (!checklistPassed) {
+    console.error("[/api/choreos/submissions] Validation errors:", parsed.error.issues);
     return NextResponse.json(
-      {
-        error: "Submission blocked by quality checklist",
-        message: "Your choreography is close to being featured",
-        suggestions: checklistSuggestions(input.checklist),
-        cta: "Re-record & Improve",
-      },
-      { status: 422 }
+      { 
+        error: "Invalid submission payload",
+        details: parsed.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join("; ")
+      }, 
+      { status: 400 }
     );
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  try {
 
-  const submissionPayload = {
-    user_id: user.id,
-    title: input.title,
-    description: input.description,
-    caption: input.caption || null,
-    video_url: input.videoUrl,
-    style_slug: input.styleSlug,
-    difficulty: input.difficulty,
-    lesson_parts: input.lessonParts ?? [],
-    hashtags: input.hashtags ?? [],
-    music_credit: input.musicCredit || null,
-    thumbnail_url: input.thumbnailUrl || null,
-    slow_mo_markers: input.slowMoMarkers ?? [],
-    trim_start_seconds: input.trimStartSeconds ?? null,
-    trim_end_seconds: input.trimEndSeconds ?? null,
-    caption_overlays: input.captionOverlays ?? [],
-    video_duration_seconds: input.videoDurationSeconds ?? null,
-    access_type: input.accessType ?? "free",
-    price_inr: input.priceInr ?? 0,
-    subscription_tier: input.subscriptionTier || null,
-    checklist_full_body_visible: input.checklist.fullBodyVisible,
-    checklist_stable_camera: input.checklist.stableCamera,
-    checklist_good_lighting: input.checklist.goodLighting,
-    checklist_passed: true,
-    submission_status: "pending_review",
-    ai_status: "queued",
-    submitted_at: new Date().toISOString(),
-    tier: "community",
-    improvement_suggestions: [],
-  };
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return missingSupabaseConfigResponse();
+    }
 
-  const query = input.draftId
-    ? db.from("choreo_submissions").update(submissionPayload).eq("id", input.draftId).eq("user_id", user.id)
-    : db.from("choreo_submissions").insert(submissionPayload);
+    const supabase = createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data, error } = await query.select("id,submission_status,ai_status,tier,submitted_at").single();
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
 
-  if (error) {
-    return NextResponse.json({ error: "Failed to create choreography submission" }, { status: 500 });
+    const input = parsed.data;
+    const checklistPassed =
+      input.checklist.fullBodyVisible && input.checklist.stableCamera && input.checklist.goodLighting;
+
+    if (!checklistPassed) {
+      return NextResponse.json(
+        {
+          error: "Submission blocked by quality checklist",
+          message: "Your choreography is close to being featured",
+          suggestions: checklistSuggestions(input.checklist),
+          cta: "Re-record & Improve",
+        },
+        { status: 422 }
+      );
+    }
+
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+
+    // Some auth users may not yet have a profiles row; ensure it exists before FK-dependent inserts.
+    const { data: existingProfile, error: profileLookupError } = await db
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileLookupError) {
+      console.error("[/api/choreos/submissions] Profile lookup error:", profileLookupError);
+      return NextResponse.json(
+        {
+          error: "Failed to verify creator profile",
+          detail: profileLookupError.message,
+          code: profileLookupError.code,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!existingProfile) {
+      const rawName =
+        (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()) ||
+        (typeof user.user_metadata?.name === "string" && user.user_metadata.name.trim()) ||
+        (typeof user.email === "string" && user.email.split("@")[0]) ||
+        "Naachly User";
+
+      const { error: createProfileError } = await db.from("profiles").insert({
+        id: user.id,
+        full_name: rawName,
+        role: "student",
+      });
+
+      if (createProfileError) {
+        console.error("[/api/choreos/submissions] Profile auto-create error:", createProfileError);
+        return NextResponse.json(
+          {
+            error: "Failed to initialize creator profile",
+            detail: createProfileError.message,
+            code: createProfileError.code,
+            hint: createProfileError.hint,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    const now = new Date().toISOString();
+
+    const submissionPayload = {
+      user_id: user.id,
+      title: input.title,
+      description: input.description,
+      caption: input.caption || null,
+      video_url: input.videoUrl,
+      style_slug: input.styleSlug,
+      difficulty: input.difficulty,
+      lesson_parts: input.lessonParts ?? [],
+      hashtags: input.hashtags ?? [],
+      music_credit: input.musicCredit || null,
+      thumbnail_url: input.thumbnailUrl || null,
+      slow_mo_markers: input.slowMoMarkers ?? [],
+      trim_start_seconds: input.trimStartSeconds ?? null,
+      trim_end_seconds: input.trimEndSeconds ?? null,
+      caption_overlays: input.captionOverlays ?? [],
+      video_duration_seconds: input.videoDurationSeconds ?? null,
+      access_type: input.accessType ?? "free",
+      price_inr: input.priceInr ?? 0,
+      subscription_tier: input.subscriptionTier || null,
+      checklist_full_body_visible: input.checklist.fullBodyVisible,
+      checklist_stable_camera: input.checklist.stableCamera,
+      checklist_good_lighting: input.checklist.goodLighting,
+      checklist_passed: true,
+      submission_status: input.publishNow ? "approved" : "pending_review",
+      ai_status: input.publishNow ? "skipped" : "queued",
+      submitted_at: now,
+      published_at: input.publishNow ? now : null,
+      tier: "community",
+      improvement_suggestions: [],
+    };
+
+    const query = input.draftId
+      ? db.from("choreo_submissions").update(submissionPayload).eq("id", input.draftId).eq("user_id", user.id)
+      : db.from("choreo_submissions").insert(submissionPayload);
+
+    console.log("[/api/choreos/submissions] Payload:", JSON.stringify(submissionPayload, null, 2));
+    console.log("[/api/choreos/submissions] Query type:", input.draftId ? "update" : "insert");
+
+    const { data, error } = await query.select("id,submission_status,ai_status,tier,submitted_at,published_at,title,video_url").single();
+
+    if (error) {
+      console.error("[/api/choreos/submissions] Database error - Code:", error.code);
+      console.error("[/api/choreos/submissions] Database error - Message:", error.message);
+      console.error("[/api/choreos/submissions] Database error - Details:", error.details);
+      console.error("[/api/choreos/submissions] Database error - Hint:", error.hint);
+      console.error("[/api/choreos/submissions] Full error:", JSON.stringify(error, null, 2));
+      return NextResponse.json(
+        {
+          error: "Failed to create choreography submission",
+          detail: error.message,
+          code: error.code,
+          hint: error.hint,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      submission: data,
+      message: "Submission received and queued for AI evaluation.",
+    });
+  } catch (err: any) {
+    console.error("[/api/choreos/submissions] Unhandled error:", err);
+    return NextResponse.json(
+      {
+        error: "Unexpected server error while creating choreography submission",
+        detail: err?.message || "Unknown error",
+      },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    submission: data,
-    message: "Submission received and queued for AI evaluation.",
-  });
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
 import Link from 'next/link';
 
 interface Application {
@@ -18,83 +17,21 @@ export default function AdminApplicationsClient(props: {
   dbRows: Application[]; 
   sheetRows: any[] 
 }) {
-  const [dbRows, setDbRows] = useState(props.dbRows);
-  const [loading, setLoading] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const handleApprove = async (applicationId: string) => {
-    setLoading(applicationId);
-    setMessage(null);
-    try {
-      const res = await fetch('/api/choreographer/apply/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId, decision: 'approve' }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setMessage(`✅ Application approved! Choreographer role granted.`);
-        // Update local state
-        setDbRows(dbRows.map(r => 
-          r.id === applicationId ? { ...r, status: 'approved' } : r
-        ));
-      } else {
-        setMessage(`❌ Error: ${result.error}`);
-      }
-    } catch (err) {
-      setMessage(`❌ Error: ${err}`);
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const handleReject = async (applicationId: string) => {
-    setLoading(applicationId);
-    setMessage(null);
-    try {
-      const res = await fetch('/api/choreographer/apply/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          applicationId, 
-          decision: 'reject',
-          reason: 'Application rejected by admin'
-        }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setMessage(`✅ Application rejected.`);
-        // Update local state
-        setDbRows(dbRows.map(r => 
-          r.id === applicationId ? { ...r, status: 'rejected' } : r
-        ));
-      } else {
-        setMessage(`❌ Error: ${result.error}`);
-      }
-    } catch (err) {
-      setMessage(`❌ Error: ${err}`);
-    } finally {
-      setLoading(null);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Choreographer Applications</h1>
+          <h1 className="text-2xl font-bold">Legacy Creator Applications</h1>
           <Link href="/explore" className="text-sm text-zinc-400 hover:text-zinc-300">← Back</Link>
         </div>
 
-        {message && (
-          <div className="mb-4 p-4 rounded bg-zinc-900 border border-zinc-800">
-            <p className="text-sm">{message}</p>
-          </div>
-        )}
+        <div className="mb-4 rounded-xl border border-yellow-400/20 bg-yellow-500/10 p-3 text-xs text-yellow-100">
+          Creator onboarding is now instant for all users. This view is kept for historical records only.
+        </div>
 
         <section className="mb-10">
-          <h2 className="text-lg font-semibold mb-4">Pending & Recent Applications</h2>
-          {dbRows.length === 0 ? (
+          <h2 className="text-lg font-semibold mb-4">Historical Application Records</h2>
+          {props.dbRows.length === 0 ? (
             <p className="text-zinc-400">No submissions found.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -112,7 +49,7 @@ export default function AdminApplicationsClient(props: {
                   </tr>
                 </thead>
                 <tbody>
-                  {dbRows.map((r: Application) => (
+                  {props.dbRows.map((r: Application) => (
                     <tr key={r.id} className="border-b border-white/5 hover:bg-zinc-900/50">
                       <td className="py-3 px-3 text-xs text-zinc-400 font-mono">{r.id.slice(0, 8)}</td>
                       <td className="py-3 px-3 text-xs text-zinc-300">{r.user_id.slice(0, 8)}</td>
@@ -141,28 +78,7 @@ export default function AdminApplicationsClient(props: {
                       <td className="py-3 px-3 text-xs text-zinc-400">
                         {new Date(r.created_at).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-3 text-xs flex gap-2">
-                        {r.status === 'pending' ? (
-                          <>
-                            <button
-                              onClick={() => handleApprove(r.id)}
-                              disabled={loading === r.id}
-                              className="px-2 py-1 rounded bg-green-600/80 hover:bg-green-600 disabled:opacity-50 font-medium"
-                            >
-                              {loading === r.id ? '...' : 'Approve'}
-                            </button>
-                            <button
-                              onClick={() => handleReject(r.id)}
-                              disabled={loading === r.id}
-                              className="px-2 py-1 rounded bg-red-600/80 hover:bg-red-600 disabled:opacity-50 font-medium"
-                            >
-                              {loading === r.id ? '...' : 'Reject'}
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-zinc-500">—</span>
-                        )}
-                      </td>
+                      <td className="py-3 px-3 text-xs text-zinc-500">Archived</td>
                     </tr>
                   ))}
                 </tbody>

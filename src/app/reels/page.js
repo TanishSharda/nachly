@@ -6,9 +6,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { MOCK_ROUTINES } from "@/lib/mock-data";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
-const SCROOL_CACHE_KEY = "naachly_scrool_feed_cache_v1";
+const SCROLL_CACHE_KEY = "naachly_scroll_feed_cache_v1";
 
-function getScroolLearnHref(item) {
+function getScrollLearnHref(item) {
   if (item?.styleSlug && item?.routineSlug) {
     return `/explore/${item.styleSlug}/${item.routineSlug}/learn`;
   }
@@ -78,7 +78,7 @@ export default function ReelsPage() {
 
       if (typeof window !== "undefined") {
         try {
-          const cached = window.sessionStorage.getItem(SCROOL_CACHE_KEY);
+          const cached = window.sessionStorage.getItem(SCROLL_CACHE_KEY);
           if (cached) {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0 && mounted) {
@@ -104,7 +104,7 @@ export default function ReelsPage() {
         setChoreos(list);
         if (typeof window !== "undefined") {
           try {
-            window.sessionStorage.setItem(SCROOL_CACHE_KEY, JSON.stringify(list));
+            window.sessionStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(list));
           } catch {
             // Non-blocking cache write.
           }
@@ -113,9 +113,9 @@ export default function ReelsPage() {
         console.error(err);
         if (!mounted) return;
         if (!hasWarmCache) {
-          setError("Failed to load scrool videos. Check data provider config and try again.");
+          setError("Failed to load scroll videos. Check data provider config and try again.");
         } else {
-          setUiMessage("Showing last loaded scrool. Refresh to retry live feed.");
+          setUiMessage("Showing last loaded scroll. Refresh to retry live feed.");
         }
       } finally {
         if (mounted) setLoading(false);
@@ -401,7 +401,7 @@ export default function ReelsPage() {
   }, []);
 
   const shareChoreo = useCallback(async (item) => {
-    const learnHref = getScroolLearnHref(item);
+    const learnHref = getScrollLearnHref(item);
     const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${learnHref}` : learnHref;
     const shareData = {
       title: item.title || "Nachly Choreo",
@@ -572,7 +572,7 @@ export default function ReelsPage() {
               </Link>
 
               <Link
-                href={getScroolLearnHref(item)}
+                href={getScrollLearnHref(item)}
                 aria-label="Learn"
                 className="flex-1 flex items-center justify-center gap-2 premium-button bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all py-4 text-[13px] tracking-[0.15em] backdrop-blur-md uppercase"
               >

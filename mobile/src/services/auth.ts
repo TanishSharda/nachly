@@ -3,12 +3,15 @@
  * Shared with web app - connects to same Supabase backend
  */
 
+import { Linking } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
-import type { AuthUser } from './types';
+import type { AuthUser } from '../types';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const MOBILE_OAUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_OAUTH_REDIRECT_URI || 'nachly://auth/callback';
+const OAUTH_TIMEOUT_MS = 90_000;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -18,6 +21,47 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     detectSessionInUrl: false,
   },
 });
+
+function waitForDeepLink(expectedPrefix: string, timeoutMs: number) {
+  return new Promise<string>((resolve, reject) => {
+    let finished = false;
+
+    const cleanup = () => {
+      subscription.remove();
+      clearTimeout(timeout);
+    };
+
+    const resolveIfMatch = (url: string | null | undefined) => {
+      if (!url || finished || !url.startsWith(expectedPrefix)) {
+        return;
+      }
+
+      finished = true;
+      cleanup();
+      resolve(url);
+    };
+
+    const subscription = Linking.addEventListener('url', ({ url }: { url: string }) => {
+      resolveIfMatch(url);
+    });
+
+    const timeout = setTimeout(() => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+      cleanup();
+      reject(new Error('Google sign-in timed out. Please try again.'));
+    }, timeoutMs);
+
+    Linking.getInitialURL()
+      .then(resolveIfMatch)
+      .catch(() => {
+        // Ignore initial URL read failures and keep waiting for the deep link.
+      });
+  });
+}
 
 export class MobileAuthService {
   /**
@@ -68,11 +112,34 @@ export class MobileAuthService {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
+        options: {
+          redirectTo: MOBILE_OAUTH_REDIRECT_URI,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
       });
 
       if (error) throw error;
 
-      return { session: data, error: null };
+      const authUrl = data?.url;
+      if (!authUrl) {
+        throw new Error('Google sign-in did not return an authentication URL.');
+      }
+
+      const canOpen = await Linking.canOpenURL(authUrl);
+      if (!canOpen) {
+        throw new Error('Unable to open Google sign-in in the browser.');
+      }
+
+      await Linking.openURL(authUrl);
+
+      const callbackUrl = await waitForDeepLink(MOBILE_OAUTH_REDIRECT_URI, OAUTH_TIMEOUT_MS);
+      const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(callbackUrl);
+
+      if (exchangeError) throw exchangeError;
+
+      return { session: sessionData.session, error: null };
     } catch (error) {
       return { session: null, error };
     }

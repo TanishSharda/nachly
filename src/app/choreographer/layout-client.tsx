@@ -98,9 +98,9 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
             })}
           </nav>
           <div className="border-t border-white/10 pt-4">
-            <Link href="/apply-choreographer" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition">
+            <Link href="/choreographer/create" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-              Creator Help
+              Creator Guide
             </Link>
           </div>
         </aside>

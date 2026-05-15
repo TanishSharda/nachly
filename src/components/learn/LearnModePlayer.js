@@ -44,7 +44,7 @@ function getLearnVideoSources(videoUrl) {
   ];
 }
 
-export default function LearnModePlayer({ choreo, backHref = "/scroll", practiceHref }) {
+export default function LearnModePlayer({ choreo, backHref = "/scroll", practiceHref, mode }) {
   const router = useRouter();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,6 +56,9 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
   const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
+  const moves = choreo?.moves || [];
+  const isStepwiseMode = mode === "stepwise";
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const recordHref = useMemo(() => {
     if (practiceHref) return practiceHref;
     if (choreo?.id) return `/record/${encodeURIComponent(choreo.id)}?mode=remix`;
@@ -79,6 +82,15 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
       } catch {
         // Ignore storage write errors.
       }
+
+      // Auto-pause at end of step in stepwise mode
+      if (isStepwiseMode && moves && moves[currentMoveIndex]) {
+        const end = (moves[currentMoveIndex].end || moves[currentMoveIndex].end_time || 0);
+        if (end && now >= end - 0.15) {
+          video.pause();
+          setIsPlaying(false);
+        }
+      }
     };
 
     const onLoadedMetadata = () => {
@@ -93,6 +105,15 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
         }
       } catch {
         // Ignore storage read errors.
+      }
+
+      // If opened in stepwise mode, seek to the first move start
+      if (isStepwiseMode && moves && moves.length > 0) {
+        const firstStart = moves[0].start || moves[0].start_time || 0;
+        video.currentTime = firstStart;
+        setCurrentTime(firstStart);
+        setIsPlaying(false);
+        setCurrentMoveIndex(0);
       }
     };
 
@@ -132,6 +153,42 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     } else {
       video.pause();
     }
+  };
+
+  const playCurrentMove = () => {
+    const video = videoRef.current;
+    if (!video || !moves || !moves[currentMoveIndex]) return;
+    const m = moves[currentMoveIndex];
+    const start = m.start || m.start_time || 0;
+    video.currentTime = start;
+    video.play().catch(() => {});
+    setIsPlaying(true);
+  };
+
+  const gotoNextMove = () => {
+    if (!moves || moves.length === 0) return;
+    const next = Math.min(moves.length - 1, currentMoveIndex + 1);
+    setCurrentMoveIndex(next);
+    const video = videoRef.current;
+    const start = moves[next].start || moves[next].start_time || 0;
+    if (video) {
+      video.currentTime = start;
+      setCurrentTime(start);
+    }
+    setIsPlaying(false);
+  };
+
+  const gotoPrevMove = () => {
+    if (!moves || moves.length === 0) return;
+    const prev = Math.max(0, currentMoveIndex - 1);
+    setCurrentMoveIndex(prev);
+    const video = videoRef.current;
+    const start = moves[prev].start || moves[prev].start_time || 0;
+    if (video) {
+      video.currentTime = start;
+      setCurrentTime(start);
+    }
+    setIsPlaying(false);
   };
 
   const seekTo = (time) => {
@@ -198,14 +255,25 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
         </div>
 
         <div className="absolute inset-0 z-10 grid place-items-center pointer-events-none">
-          <button onClick={togglePlayPause} className="pointer-events-auto relative grid h-24 w-24 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition hover:scale-105 active:scale-95 md:h-32 md:w-32">
-            <span className="absolute inset-0 rounded-full bg-[#fdddb9]/20 blur-xl" />
-            {isPlaying ? (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
-            ) : (
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><path d="M8 5v14l11-7z" /></svg>
-            )}
-          </button>
+          {isStepwiseMode && moves && moves.length > 0 ? (
+            <div className="pointer-events-auto relative grid place-items-center gap-3 p-4 rounded-xl bg-black/40 backdrop-blur-md">
+              <span className="text-sm text-white/90">Step {currentMoveIndex + 1} of {moves.length}</span>
+              <div className="flex items-center gap-3">
+                <button onClick={gotoPrevMove} className="inline-flex items-center justify-center h-12 w-12 rounded-full border border-white/10 bg-white/6 text-white hover:bg-white/10">◀</button>
+                <button onClick={playCurrentMove} className="inline-flex items-center justify-center h-16 w-36 rounded-full border border-white/20 bg-white/10 text-white font-semibold">{isPlaying ? 'Playing' : 'Play Step'}</button>
+                <button onClick={gotoNextMove} className="inline-flex items-center justify-center h-12 w-12 rounded-full border border-white/10 bg-white/6 text-white hover:bg-white/10">▶</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={togglePlayPause} className="pointer-events-auto relative grid h-24 w-24 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition hover:scale-105 active:scale-95 md:h-32 md:w-32">
+              <span className="absolute inset-0 rounded-full bg-[#fdddb9]/20 blur-xl" />
+              {isPlaying ? (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+              ) : (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="relative z-10 text-white"><path d="M8 5v14l11-7z" /></svg>
+              )}
+            </button>
+          )}
         </div>
 
         <section className="absolute inset-0 z-0">

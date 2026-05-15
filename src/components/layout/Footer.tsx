@@ -13,7 +13,7 @@ const footerLinks = {
     { label: "How it Works", href: "/#how-it-works" },
     { label: "Pricing", href: "/#pricing" },
     { label: "Subscriptions", href: "/subscribe" },
-    { label: "Become a Choreographer", href: "/choreographer/apply" },
+    { label: "Creator Studio", href: "/choreographer/create" },
   ],
   Company: [
     { label: "About", href: "/about" },

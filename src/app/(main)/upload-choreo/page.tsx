@@ -11,7 +11,7 @@ import TrimTimeline from "@/components/dashboard/TrimTimeline";
 import ThumbnailPicker from "@/components/dashboard/ThumbnailPicker";
 import CaptionEditor, { type CaptionOverlay } from "@/components/dashboard/CaptionEditor";
 import SlowMoTimeline, { type SlowMoMarker } from "@/components/dashboard/SlowMoTimeline";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 type Style = "hip-hop" | "bhangra" | "kathak" | "zumba" | "bollywood" | "contemporary";
 type Difficulty = "beginner" | "intermediate" | "advanced";
@@ -136,7 +136,6 @@ export default function UploadChoreoPage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ id: string; status: string; tier: string; message: string } | null>(null);
 
-  const storageBucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "";
   const creatorWizardKey = "naachly_creator_wizard_preset";
   const isLocalVideo = videoUrl.startsWith("blob:");
   const canSaveDraft =
@@ -370,74 +369,76 @@ export default function UploadChoreoPage() {
 
   const uploadVideoToSupabase = useCallback(async () => {
     if (!videoFile) return;
-    if (!isSupabaseConfigured() || !storageBucket) {
-      setUploadWarning("Configure a Supabase storage bucket to upload files.");
-      return;
-    }
     setUploadingVideo(true);
     setUploadProgress(0);
     setUploadWarning("");
     try {
-      const supabase = createClient();
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id || "guest";
-      const path = `choreos/${userId}/${Date.now()}-${videoFile.name}`;
-      const { error: uploadError } = await supabase.storage.from(storageBucket).upload(
-        path,
-        videoFile,
-        {
-          cacheControl: "3600",
-          upsert: true,
-          onUploadProgress: (event: { loaded: number; total: number }) => {
-            if (!event?.total) return;
-            setUploadProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
-          },
-        } as any
-      );
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from(storageBucket).getPublicUrl(path);
-      if (urlData?.publicUrl) {
-        setVideoUrl(urlData.publicUrl);
+      setUploadProgress(20);
+      const formData = new FormData();
+      formData.append("file", videoFile);
+      if (draftId) formData.append("choreographyId", draftId);
+
+      const response = await fetch("/api/choreographer/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(String(payload?.error || payload?.message || `Upload failed (${response.status})`));
+      }
+
+      const uploadedUrl = String(payload?.file?.url || "");
+      if (uploadedUrl) {
+        setVideoUrl(uploadedUrl);
         setVideoFile(null);
         setUploadProgress(100);
+      } else {
+        throw new Error("Upload succeeded but URL was not returned");
       }
-    } catch {
-      setUploadWarning("Video upload failed. Check storage configuration and permissions.");
+    } catch (err: any) {
+      const reason = err?.message ? ` (${err.message})` : "";
+      setUploadWarning(`Video upload failed. Check storage configuration and permissions.${reason}`);
     } finally {
       setUploadingVideo(false);
     }
-  }, [videoFile, storageBucket]);
+  }, [videoFile, draftId]);
 
   const uploadThumbnailToSupabase = useCallback(async (dataUrl: string) => {
-    if (!isSupabaseConfigured() || !storageBucket) {
-      setUploadWarning("Configure a Supabase storage bucket to upload thumbnails.");
-      return;
-    }
     setThumbnailUploading(true);
     setUploadWarning("");
     try {
-      const supabase = createClient();
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id || "guest";
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const path = `thumbnails/${userId}/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage.from(storageBucket).upload(path, blob, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: "image/jpeg",
+      const file = new File([blob], `thumbnail-${Date.now()}.jpg`, { type: "image/jpeg" });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      if (draftId) formData.append("choreographyId", draftId);
+
+      const response = await fetch("/api/choreographer/upload", {
+        method: "POST",
+        body: formData,
       });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from(storageBucket).getPublicUrl(path);
-      if (urlData?.publicUrl) {
-        setThumbnailUrl(urlData.publicUrl);
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(String(payload?.error || payload?.message || `Thumbnail upload failed (${response.status})`));
       }
-    } catch {
-      setUploadWarning("Thumbnail upload failed. Check storage configuration and permissions.");
+
+      const uploadedUrl = String(payload?.file?.url || "");
+      if (uploadedUrl) {
+        setThumbnailUrl(uploadedUrl);
+      } else {
+        throw new Error("Thumbnail upload succeeded but URL was not returned");
+      }
+    } catch (err: any) {
+      const reason = err?.message ? ` (${err.message})` : "";
+      setUploadWarning(`Thumbnail upload failed. Check storage configuration and permissions.${reason}`);
     } finally {
       setThumbnailUploading(false);
     }
-  }, [storageBucket]);
+  }, [draftId]);
 
   useEffect(() => {
     loadDrafts();
@@ -681,33 +682,53 @@ export default function UploadChoreoPage() {
       return;
     }
     try {
+      const payload = {
+        title: title.trim(), description: description.trim(), caption: "",
+        videoUrl: videoUrl.trim(), styleSlug, difficulty,
+        checklist: { fullBodyVisible: fullBody, stableCamera: stableCam, goodLighting: goodLight },
+        lessonParts, hashtags, musicCredit: musicCredit.trim(),
+        accessType,
+        priceInr,
+        subscriptionTier: subscriptionTier.trim(),
+        thumbnailUrl: thumbnailUrl.trim(),
+        slowMoMarkers,
+        trimStartSeconds,
+        trimEndSeconds,
+        captionOverlays,
+        videoDurationSeconds,
+        draftId: draftId || undefined,
+        publishNow: true,
+      };
+      console.log("[handlePublish] Sending payload:", payload);
       const response = await fetch("/api/choreos/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(), description: description.trim(), caption: "",
-          videoUrl: videoUrl.trim(), styleSlug, difficulty,
-          checklist: { fullBodyVisible: fullBody, stableCamera: stableCam, goodLighting: goodLight },
-          lessonParts, hashtags, musicCredit: musicCredit.trim(),
-          accessType,
-          priceInr,
-          subscriptionTier: subscriptionTier.trim(),
-          thumbnailUrl: thumbnailUrl.trim(),
-          slowMoMarkers,
-          trimStartSeconds,
-          trimEndSeconds,
-          captionOverlays,
-          videoDurationSeconds,
-          draftId: draftId || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) { setError(payload?.error || payload?.message || "Submission failed"); return; }
+      console.log("[handlePublish] Response status:", response.status);
+      const rawBody = await response.text();
+      let data: any = {};
+      if (rawBody) {
+        try {
+          data = JSON.parse(rawBody);
+          console.log("[handlePublish] Response JSON:", data);
+        } catch {
+          console.error("[handlePublish] Failed to parse JSON, raw text:", rawBody);
+        }
+      }
+      if (!response.ok) {
+        const suggestions = (data?.suggestions || []).join(" ");
+        const details = [data?.error, data?.message, data?.detail, data?.code, data?.hint, data?.details, suggestions].filter(Boolean).join(" | ");
+        console.error("[handlePublish] Full error response:", JSON.stringify(data, null, 2));
+        console.error("[handlePublish] Error details:", details);
+        setError(details || `Submission failed (HTTP ${response.status})`);
+        return;
+      }
       setResult({
-        id: payload?.submission?.id || "",
-        status: payload?.submission?.submission_status || "pending_review",
-        tier: payload?.submission?.tier || "community",
-        message: payload?.message || "Submission queued for AI evaluation",
+        id: data?.submission?.id || "",
+        status: data?.submission?.submission_status || "pending_review",
+        tier: data?.submission?.tier || "community",
+        message: data?.message || "Submission queued for AI evaluation",
       });
       // Clear the wizard preset after successful submission
       try {
@@ -715,7 +736,11 @@ export default function UploadChoreoPage() {
       } catch {
         // Ignore cleanup errors
       }
-    } catch { setError("Could not submit choreography right now."); }
+    } catch (err: any) {
+      console.error("[handlePublish] Catch error:", err);
+      const detail = err?.message ? ` | ${err.message}` : "";
+      setError(`Failed to submit choreography${detail}`);
+    }
     finally { setSubmitting(false); }
   }, [title, description, videoUrl, styleSlug, difficulty, fullBody, stableCam, goodLight, lessonParts, hashtags, musicCredit, accessType, priceInr, subscriptionTier, thumbnailUrl, slowMoMarkers, trimStartSeconds, trimEndSeconds, captionOverlays, videoDurationSeconds, draftId, isLocalVideo]);
 
@@ -898,9 +923,6 @@ export default function UploadChoreoPage() {
                     >
                       {uploadingVideo ? "Uploading…" : "Upload to Cloud"}
                     </button>
-                    {!storageBucket && (
-                      <span className="text-[11px] text-zinc-500">Set NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET to enable uploads.</span>
-                    )}
                   </div>
                   {uploadingVideo && (
                     <div className="mt-3">

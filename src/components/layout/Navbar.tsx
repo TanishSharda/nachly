@@ -40,7 +40,7 @@ function getNavLinks(user: NavbarProps["user"]): NavLink[] {
 
   // Add admin-specific links
   if (user?.role === "admin") {
-    baseLinks.push({ label: "Admin", href: "/admin/dashboard", minRole: "admin" });
+    baseLinks.push({ label: "Admin", href: "/admin/applications", minRole: "admin" });
   }
 
   return baseLinks;

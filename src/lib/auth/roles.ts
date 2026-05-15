@@ -1,6 +1,6 @@
 /**
  * Role definitions and permissions for Nachly
- * Role hierarchy: USER → CHOREOGRAPHER → ADMIN
+ * Unified model: every authenticated user can learn and create.
  */
 
 export type UserRole = 'student' | 'choreographer' | 'admin';
@@ -39,8 +39,8 @@ const PERMISSIONS: Record<UserRole, RolePermissions> = {
     canRecord: true,
     canViewLibrary: true,
     canViewStats: true,
-    canCreate: false,
-    canViewDashboard: false,
+    canCreate: true,
+    canViewDashboard: true,
     canViewAdmin: false,
   },
   choreographer: {
@@ -99,8 +99,9 @@ export function canAccessRoute(role: UserRole, routePath: string): boolean {
   if (routePath.startsWith('/record')) return permissions.canRecord;
   if (routePath.startsWith('/library')) return permissions.canViewLibrary;
   if (routePath.startsWith('/stats')) return permissions.canViewStats;
+  if (routePath.startsWith('/choreographer/apply')) return true;
   if (routePath.startsWith('/choreographer/create')) return permissions.canCreate;
-  if (routePath.startsWith('/choreographer/dashboard')) return permissions.canViewDashboard;
+  if (routePath.startsWith('/choreographer')) return permissions.canViewDashboard;
   if (routePath.startsWith('/admin')) return permissions.canViewAdmin;
 
   return true; // Public routes

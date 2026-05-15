@@ -104,7 +104,7 @@ function buildMobileNavItems(userRole?: string): MobileNavItem[] {
   if (userRole === "admin") {
     baseItems.push({
       label: "Admin",
-      href: "/admin/dashboard",
+      href: "/admin/applications",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M12 6v12M6 12h12" />

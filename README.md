@@ -119,3 +119,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## E2E publish smoke test
+
+Quick script to insert an approved submission (service role key required) and verify it appears in the feed:
+
+```bash
+# Example (local):
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+export BASE_URL="http://localhost:3000"
+npm run e2e:publish-check
+```
+
+The script will upsert a test profile, insert a submission with `submission_status = 'approved'`, then poll `/api/choreos/feed` to confirm the item is visible.

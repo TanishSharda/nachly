@@ -1,33 +1,37 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import ChoreoFeed from "@/components/scroll/ChoreoFeed";
-import { getChoreographyFeed } from "@/lib/supabase/queries/choreos";
-import { getMockChoreographyFeed } from "@/lib/mock-choreography-feed";
 
-export const metadata: Metadata = {
-  title: "Scroll | Nachly",
-  description: "Infinite choreography reels for dance discovery and practice.",
-};
+export default function ScrollPage() {
+  const searchParams = useSearchParams();
+  const style = (searchParams.get("style") || "").trim().toLowerCase();
+  const difficulty = (searchParams.get("difficulty") || "").trim().toLowerCase();
 
-export default async function ScrollPage({
-  searchParams,
-}: {
-  searchParams?: { style?: string; difficulty?: string };
-}) {
-  const style = (searchParams?.style || "").trim().toLowerCase();
-  const difficulty = (searchParams?.difficulty || "").trim().toLowerCase();
+  const [initialPosts, setInitialPosts] = useState<any[]>([]);
 
-  const { posts, error } = await getChoreographyFeed({
-    limit: 8,
-    offset: 0,
-    style: style || undefined,
-    difficulty: difficulty || undefined,
-  });
+  useEffect(() => {
+    const fetchInitial = async () => {
+      const params = new URLSearchParams();
+      params.set("limit", "8");
+      if (style) params.set("style", style);
+      if (difficulty) params.set("difficulty", difficulty);
 
-  const initialPosts = posts.length
-    ? posts
-    : getMockChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).posts;
+      try {
+        const res = await fetch(`/api/choreos/feed?${params.toString()}`);
+        const json = await res.json();
+        setInitialPosts(json.posts || []);
+      } catch (err) {
+        console.error("/scroll: failed to load feed", err);
+        setInitialPosts([]);
+      }
+    };
+
+    void fetchInitial();
+  }, [style, difficulty]);
 
   const title = difficulty === "all" || !difficulty ? "Infinite reels. Structured learning." : `${difficulty[0].toUpperCase()}${difficulty.slice(1)} reels`;
 
@@ -63,7 +67,6 @@ export default async function ScrollPage({
               </div>
             </div>
 
-            {error ? <p className="mt-4 text-sm text-red-700">{error}</p> : null}
           </motion.div>
         </div>
       </section>

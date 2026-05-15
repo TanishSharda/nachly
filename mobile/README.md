@@ -24,7 +24,10 @@ Create `.env` file in the mobile directory:
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_OAUTH_REDIRECT_URI=nachly://auth/callback
 ```
+
+For Google Sign-In, add the same redirect URI in the Supabase Auth provider settings and keep the app scheme set to `nachly` in `app.json`.
 
 3. **Start development server**
 ```bash
@@ -135,6 +138,13 @@ npm run start
 rm -rf .expo
 npm run start -- -c
 ```
+
+### Google OAuth Redirect Issues
+If Google login opens in the browser but does not return to the app:
+
+1. Confirm `EXPO_PUBLIC_OAUTH_REDIRECT_URI` matches the redirect URI in Supabase.
+2. Make sure the custom scheme `nachly://` is configured in the installed build.
+3. Rebuild the dev client or production app after changing the scheme.
 
 ### Build Issues
 ```bash

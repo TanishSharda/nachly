@@ -61,6 +61,33 @@ function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_
   return normalized[0]?.url || "";
 }
 
+function mapSubmissionToChoreo(row: {
+  id: string;
+  title: string | null;
+  description: string | null;
+  caption: string | null;
+  video_url: string | null;
+  style_slug: string | null;
+  tier: string | null;
+  ai_overall_score: number | null;
+  ai_tags: string[] | null;
+  submission_status?: string | null;
+}) {
+  return {
+    id: row.id,
+    title: row.title || "Untitled Choreo",
+    video: row.video_url || "",
+    caption: row.caption || row.description || "",
+    style: row.style_slug || "unknown",
+    tier: row.tier || "community",
+    score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
+    tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
+    moves: [],
+    source: "submission",
+    submission_status: row.submission_status || null,
+  };
+}
+
 function missingSupabaseConfigResponse() {
   return NextResponse.json(
     {
@@ -81,76 +108,106 @@ export async function GET(_: Request, context: { params: { id: string } }) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
-  const routineSelect =
-    "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)";
+  try {
+    const supabase = createServerSupabase();
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
 
-  const { data: rowById, error: idLookupError } = await db
-    .from("routines")
-    .select(routineSelect)
-    .eq("id", id)
-    .eq("is_published", true)
-    .eq("is_approved", true)
-    .maybeSingle();
+    const { data: submissionRow, error: submissionError } = await db
+      .from("choreo_submissions")
+      .select("id,title,description,caption,video_url,style_slug,tier,ai_overall_score,ai_tags,submission_status")
+      .eq("id", id)
+      .eq("submission_status", "approved")
+      .maybeSingle();
 
-  if (idLookupError) {
-    if (idLookupError.code === "PGRST205" || idLookupError.message?.includes("Could not find the table")) {
-      return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
+    if (submissionError) {
+      if (submissionError.code === "PGRST205" || submissionError.message?.includes("Could not find the table")) {
+        return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
+      }
+      // If there's an error but it's not a table not found error, log it but continue to routines
+      console.error("Submission query error:", submissionError);
     }
 
-    return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
+    if (submissionRow) {
+      return NextResponse.json({ choreo: mapSubmissionToChoreo(submissionRow) });
+    }
+  } catch (err) {
+    console.error("Submission fetch error:", err);
+    // Continue to routines
   }
 
-  let row = rowById;
+  try {
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : createServerSupabase();
+    const routineSelect =
+      "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)";
 
-  if (!row) {
-    const { data: rowBySlug, error: slugLookupError } = await db
+    const { data: rowById, error: idLookupError } = await db
       .from("routines")
       .select(routineSelect)
-      .eq("slug", id)
+      .eq("id", id)
       .eq("is_published", true)
       .eq("is_approved", true)
       .maybeSingle();
 
-    if (slugLookupError) {
-      if (slugLookupError.code === "PGRST205" || slugLookupError.message?.includes("Could not find the table")) {
+    if (idLookupError) {
+      if (idLookupError.code === "PGRST205" || idLookupError.message?.includes("Could not find the table")) {
         return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
       }
-
-      return NextResponse.json({ error: "Failed to fetch choreography" }, { status: 500 });
+      console.error("Routine query error (by id):", idLookupError);
     }
 
-    row = rowBySlug;
-  }
+    let row = rowById;
 
-  if (!row) {
+    if (!row) {
+      const { data: rowBySlug, error: slugLookupError } = await db
+        .from("routines")
+        .select(routineSelect)
+        .eq("slug", id)
+        .eq("is_published", true)
+        .eq("is_approved", true)
+        .maybeSingle();
+
+      if (slugLookupError) {
+        if (slugLookupError.code === "PGRST205" || slugLookupError.message?.includes("Could not find the table")) {
+          return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
+        }
+        console.error("Routine query error (by slug):", slugLookupError);
+      }
+
+      row = rowBySlug;
+    }
+
+    if (!row) {
+      return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
+    }
+
+    const dbVideo = pickPreferredVideoUrl(row.routine_videos || []);
+    const video = dbVideo || "";
+
+    const moves = [...(row.routine_steps || [])]
+      .sort((a, b) => (a.step_number || 0) - (b.step_number || 0))
+      .map((step) => ({
+        id: step.id || String(step.step_number),
+        name: step.label || `Move ${step.step_number || ""}`,
+        start: Number(step.start_time || 0),
+        end: Number(step.end_time || 0),
+      }));
+
+    return NextResponse.json({
+      choreo: {
+        id: row.id,
+        title: row.title || "Untitled Choreo",
+        video,
+        caption: row.description || "",
+        style: row.dance_styles?.slug || "unknown",
+        tier: row.submission_tier || "community",
+        score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
+        tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
+        moves,
+      },
+    });
+  } catch (err) {
+    console.error("Choreography fetch error:", err);
+    // Return mock data as fallback on any unexpected error
     return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
   }
-
-  const dbVideo = pickPreferredVideoUrl(row.routine_videos || []);
-  const video = dbVideo || "";
-
-  const moves = [...(row.routine_steps || [])]
-    .sort((a, b) => (a.step_number || 0) - (b.step_number || 0))
-    .map((step) => ({
-      id: step.id || String(step.step_number),
-      name: step.label || `Move ${step.step_number || ""}`,
-      start: Number(step.start_time || 0),
-      end: Number(step.end_time || 0),
-    }));
-
-  return NextResponse.json({
-    choreo: {
-      id: row.id,
-      title: row.title || "Untitled Choreo",
-      video,
-      caption: row.description || "",
-      style: row.dance_styles?.slug || "unknown",
-      tier: row.submission_tier || "community",
-      score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
-      tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
-      moves,
-    },
-  });
 }

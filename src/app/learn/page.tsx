@@ -15,7 +15,7 @@ function TutorialPreview({
   creator,
   style,
   difficulty,
-  duration,
+  status,
   description,
 }: {
   id: string;
@@ -23,7 +23,7 @@ function TutorialPreview({
   creator: string;
   style: string;
   difficulty: string;
-  duration: number;
+  status: string;
   description: string;
 }) {
   return (
@@ -34,7 +34,7 @@ function TutorialPreview({
           <h2 className="mt-2 text-2xl font-black tracking-tight text-[#241811]">{title}</h2>
         </div>
         <span className="rounded-full border border-[#6c513220] bg-[#f7f1e8] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#725b3f]">
-          {duration}s
+          {status}
         </span>
       </div>
 
@@ -46,9 +46,9 @@ function TutorialPreview({
         <span className="rounded-full border border-[#6c513220] bg-white px-3 py-1.5">Step-by-step</span>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          href={`/learn/${id}`}
+          href={`/learn/${id}?mode=stepwise`}
           className="inline-flex items-center justify-center rounded-full bg-[#7a5c3a] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-[#fff7ef] transition hover:brightness-105"
         >
           Open player
@@ -99,11 +99,11 @@ export default async function LearnTabPage() {
               key={item.id}
               id={item.id}
               title={item.title}
-              creator={item.creator_name || "Featured choreographer"}
-              style={item.dance_style}
-              difficulty={item.difficulty_level}
-              duration={item.tutorial?.duration_seconds || item.demo_reel?.duration_seconds || 0}
-              description={item.description}
+              creator={item.creator_name || item.choreographer_name || "Featured choreographer"}
+              style={item.style_slug || item.style || "unknown"}
+              difficulty={item.difficulty || item.difficulty_level || "beginner"}
+              status={item.submission_status || item.tier || "approved"}
+              description={item.description || item.caption || "Open the player to learn this routine."}
             />
           ))}
         </div>

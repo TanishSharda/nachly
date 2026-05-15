@@ -77,8 +77,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Strategy 1: Cache-first for non-Next static assets (images, fonts, video, custom JS/CSS)
-  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|avif|woff2?|mp4|webm)$/)) {
+  // Strategy 1: Cache-first for non-Next static assets (images, fonts, custom JS/CSS)
+  // But skip video files since they use HTTP range requests (206 responses) which Cache API doesn't support
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|avif|woff2?)$/)) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
@@ -91,6 +92,17 @@ self.addEventListener("fetch", (event) => {
             return response;
           })
       )
+    );
+    return;
+  }
+
+  // Strategy 1b: Network-first for video files (they use range requests / 206 responses)
+  if (url.pathname.match(/\.(mp4|webm)$/)) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // If offline, no cached video available - that's okay for streaming
+        return new Response("Video unavailable offline", { status: 503 });
+      })
     );
     return;
   }

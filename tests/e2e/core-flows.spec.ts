@@ -162,3 +162,23 @@ test.describe("Creator wizard flow", () => {
     await expect(stepIndicator).toBeVisible();
   });
 });
+
+test.describe("Access routing smoke", () => {
+  test("admin root redirects unauthenticated users to login", async ({ page }) => {
+    await page.goto("/admin");
+    await page.waitForURL(/\/login/, { waitUntil: "domcontentloaded" });
+    expect(page.url()).toContain("/login");
+  });
+
+  test("choreographer root redirects unauthenticated users to login", async ({ page }) => {
+    await page.goto("/choreographer");
+    await page.waitForURL(/\/login/, { waitUntil: "domcontentloaded" });
+    expect(page.url()).toContain("/login");
+  });
+
+  test("legacy choreographer dashboard alias is protected", async ({ page }) => {
+    await page.goto("/choreographer/dashboard");
+    await page.waitForURL(/\/login/, { waitUntil: "domcontentloaded" });
+    expect(page.url()).toContain("/login");
+  });
+});

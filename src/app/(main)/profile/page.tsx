@@ -260,7 +260,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="section-padding py-10">
-        <p className="text-center text-zinc-300">Loading profile...</p>
+        <p className="text-center text-[#7e7468]">Loading profile...</p>
       </div>
     );
   }
@@ -274,8 +274,8 @@ export default function ProfilePage() {
       >
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold app-accent-text">Profile</h1>
-            <p className="mt-1 text-sm text-zinc-300">Your account, progress, and practice history.</p>
+            <h1 className="font-display text-3xl font-bold text-[#2d241a]">Profile</h1>
+            <p className="mt-1 text-sm text-[#7e7468]">Your account, progress, and practice history.</p>
           </div>
           <Link
             href="/choreographer/apply"
@@ -287,36 +287,36 @@ export default function ProfilePage() {
 
         <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card className="app-card border-white/15 tap-feedback">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Saved dances</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Saved dances</p>
             <div className="mt-3 flex items-end justify-between gap-3">
               <div>
-                <p className="text-3xl font-black text-white">{savedCount}</p>
-                <p className="mt-1 text-xs text-zinc-400">Reels queued for later</p>
+                <p className="text-3xl font-black text-[#2d241a]">{savedCount}</p>
+                <p className="mt-1 text-xs text-[#8a7d70]">Reels queued for later</p>
               </div>
               <CircularProgress value={Math.min(100, savedCount * 10)} size={68} strokeWidth={6} color="gold">
-                <span className="text-xs font-semibold text-white">{savedCount}</span>
+                <span className="text-xs font-semibold text-[#2d241a]">{savedCount}</span>
               </CircularProgress>
             </div>
           </Card>
 
           <Card className="app-card border-white/15 tap-feedback">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Practice sessions</p>
-            <p className="mt-3 text-3xl font-black text-white">{practiceCount}</p>
-            <p className="mt-1 text-xs text-zinc-400">{formatMinutes(totalPracticeMinutes * 60)} practiced</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Practice sessions</p>
+            <p className="mt-3 text-3xl font-black text-[#2d241a]">{practiceCount}</p>
+            <p className="mt-1 text-xs text-[#8a7d70]">{formatMinutes(totalPracticeMinutes * 60)} practiced</p>
             <Progress value={Math.min(100, practiceCount * 10)} size="sm" color="green" className="mt-4" />
           </Card>
 
           <Card className="app-card border-white/15 tap-feedback">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Current streak</p>
-            <p className="mt-3 text-3xl font-black text-white">{currentStreak}d</p>
-            <p className="mt-1 text-xs text-zinc-400">Practice on consecutive days</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Current streak</p>
+            <p className="mt-3 text-3xl font-black text-[#2d241a]">{currentStreak}d</p>
+            <p className="mt-1 text-xs text-[#8a7d70]">Practice on consecutive days</p>
             <Progress value={Math.min(100, currentStreak * 20)} size="sm" color="wine" className="mt-4" />
           </Card>
 
           <Card className="app-card border-white/15 tap-feedback">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Best score</p>
-            <p className="mt-3 text-3xl font-black text-white">{topScore}%</p>
-            <p className="mt-1 text-xs text-zinc-400">Highest accuracy, consistency, or completion</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Best score</p>
+            <p className="mt-3 text-3xl font-black text-[#2d241a]">{topScore}%</p>
+            <p className="mt-1 text-xs text-[#8a7d70]">Highest accuracy, consistency, or completion</p>
             <Progress value={topScore} size="sm" color="green" className="mt-4" />
           </Card>
         </div>
@@ -325,29 +325,29 @@ export default function ProfilePage() {
           <Card className="app-card border-white/15 tap-feedback p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Practice summary</p>
-                <h2 className="mt-1 text-xl font-bold text-white">Progress at a glance</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Practice summary</p>
+                <h2 className="mt-1 text-xl font-bold text-[#2d241a]">Progress at a glance</h2>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-300">
+              <span className="rounded-full border border-[#6c51321f] bg-white/60 px-3 py-1 text-xs font-semibold text-[#7e7468]">
                 {likedCount} liked
               </span>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Average completion</p>
-                <p className="mt-2 text-2xl font-black text-white">{averageCompletion}%</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#8a7d70]">Average completion</p>
+                <p className="mt-2 text-2xl font-black text-[#2d241a]">{averageCompletion}%</p>
                 <Progress value={averageCompletion} size="sm" color="wine" className="mt-3" />
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Top score</p>
-                <p className="mt-2 text-2xl font-black text-white">{topScore}%</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#8a7d70]">Top score</p>
+                <p className="mt-2 text-2xl font-black text-[#2d241a]">{topScore}%</p>
                 <Progress value={topScore} size="sm" color="green" className="mt-3" />
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Practice minutes</p>
-                <p className="mt-2 text-2xl font-black text-white">{Math.round(totalPracticeMinutes)}</p>
-                <p className="mt-2 text-xs text-zinc-400">Minutes logged in practice sessions</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#8a7d70]">Practice minutes</p>
+                <p className="mt-2 text-2xl font-black text-[#2d241a]">{Math.round(totalPracticeMinutes)}</p>
+                <p className="mt-2 text-xs text-[#8a7d70]">Minutes logged in practice sessions</p>
               </div>
             </div>
           </Card>
@@ -355,10 +355,10 @@ export default function ProfilePage() {
           <Card className="app-card border-white/15 tap-feedback p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Learning path</p>
-                <h2 className="mt-1 text-xl font-bold text-white">Most practiced routines</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a7d70]">Learning path</p>
+                <h2 className="mt-1 text-xl font-bold text-[#2d241a]">Most practiced routines</h2>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-300">
+              <span className="rounded-full border border-[#6c51321f] bg-white/60 px-3 py-1 text-xs font-semibold text-[#7e7468]">
                 {statsLoading ? "syncing" : "live"}
               </span>
             </div>
@@ -368,15 +368,15 @@ export default function ProfilePage() {
                 <div key={routine.routineId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-white">{routine.title}</p>
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-400">{routine.styleSlug} • {routine.sessions} sessions</p>
+                      <p className="text-sm font-semibold text-[#2d241a]">{routine.title}</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-[#8a7d70]">{routine.styleSlug} • {routine.sessions} sessions</p>
                     </div>
                     <span className="text-sm font-semibold text-[#c4ff00]">{routine.progress}%</span>
                   </div>
                   <Progress value={routine.progress} size="sm" color={routine.progress >= 80 ? "green" : "wine"} className="mt-3" />
                 </div>
               )) : (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-300">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[#7e7468]">
                   Start a practice session to unlock routine progress here.
                 </div>
               )}
@@ -395,8 +395,8 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">
             <Avatar name={name} size="lg" />
             <div>
-              <h2 className="font-display font-bold text-white text-lg">{name}</h2>
-              <p className="text-sm text-zinc-300">{email}</p>
+              <h2 className="font-display font-bold text-[#2d241a] text-lg">{name}</h2>
+              <p className="text-sm text-[#7e7468]">{email}</p>
             </div>
           </div>
 

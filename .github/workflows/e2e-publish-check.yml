@@ -1,0 +1,40 @@
+name: E2E Publish Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [vercel-deploy-trigger]
+
+jobs:
+  e2e_publish_check:
+    name: E2E: publish and check feed
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BASE_URL: ${{ secrets.BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run E2E publish-check
+        run: |
+          # fallback to public site if BASE_URL not provided
+          BASE_URL=${BASE_URL:-https://nachly.in}
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY secrets. Failing workflow.";
+            exit 2;
+          fi
+          echo "Running publish-and-check against $BASE_URL";
+          npm run e2e:publish-check

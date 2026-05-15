@@ -61,6 +61,7 @@ export default function LearnModePage() {
   const searchParams = useSearchParams();
   const mistakeRangesRaw = searchParams.get("mistakes");
   const slowModeDefault = searchParams.get("slow") === "1";
+  const modeParam = searchParams.get("mode");
   const parsedMistakeSteps = useMemo(
     () => (routine ? parseMistakeSteps(routine.id, mistakeRangesRaw) : []),
     [routine, mistakeRangesRaw]
@@ -72,7 +73,7 @@ export default function LearnModePage() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [phase, setPhase] = useState<LearnPhase>("watching");
+  const [phase, setPhase] = useState<LearnPhase>(modeParam === "stepwise" ? "paused-between-steps" : "watching");
   const [playbackSpeed, setPlaybackSpeed] = useState(slowModeDefault ? 0.75 : 1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);

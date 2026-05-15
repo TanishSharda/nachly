@@ -18,6 +18,9 @@ function LoginForm() {
   const authErrorCode = searchParams.get("error");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const authErrorMap: Record<string, string> = {
     auth_failed: "Google login failed. Please try again.",
@@ -67,6 +70,39 @@ function LoginForm() {
     }
   }
 
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    if (!isSupabaseConfigured()) {
+      await new Promise((r) => setTimeout(r, 1200));
+      setLoading(false);
+      router.push(redirect);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Login successful, redirect
+      router.push(redirect);
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <motion.div
@@ -99,22 +135,90 @@ function LoginForm() {
           </div>
         )}
 
-        <motion.button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white hover:bg-zinc-100 text-zinc-800 font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
-        >
-          {loading ? (
-            <Spinner />
-          ) : (
-            <>
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-800">G</span>
-              Continue with Google
-            </>
-          )}
-        </motion.button>
+        {!showEmailForm ? (
+          <>
+            <motion.button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white hover:bg-zinc-100 text-zinc-800 font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
+            >
+              {loading ? (
+                <Spinner />
+              ) : (
+                <>
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-800">G</span>
+                  Continue with Google
+                </>
+              )}
+            </motion.button>
+
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-zinc-600">OR</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <motion.button
+              onClick={() => setShowEmailForm(true)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all border border-white/20"
+            >
+              Sign in with Email
+            </motion.button>
+          </>
+        ) : (
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm text-zinc-300 mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-zinc-300 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+                required
+              />
+            </div>
+
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? <Spinner /> : "Sign In"}
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => {
+                setShowEmailForm(false);
+                setError("");
+                setEmail("");
+                setPassword("");
+              }}
+              className="w-full py-2 px-6 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+            >
+              Back to other options
+            </motion.button>
+          </form>
+        )}
 
         {error && (
           <motion.div
@@ -126,30 +230,85 @@ function LoginForm() {
           </motion.div>
         )}
 
-        <p className="mt-6 text-center text-sm text-zinc-300">
-          New here? Google will create your account automatically.
-        </p>
+        ) : (
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm text-zinc-300 mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+                required
+              />
+            </div>
 
-        <div className="flex items-center gap-4 my-8">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-xs text-zinc-600">OR</span>
-          <div className="flex-1 h-px bg-white/10" />
-        </div>
+            <div>
+              <label className="block text-sm text-zinc-300 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
+                required
+              />
+            </div>
 
-        <Link
-          href="/explore"
-          onClick={() => {
-            getOrCreateGuestId();
-          }}
-        >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-6 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-medium rounded-xl transition-all border border-white/10"
-          >
-            Continue as Guest
-          </motion.button>
-        </Link>
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? <Spinner /> : "Sign In"}
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={() => {
+                setShowEmailForm(false);
+                setError("");
+                setEmail("");
+                setPassword("");
+              }}
+              className="w-full py-2 px-6 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+            >
+              Back to other options
+            </motion.button>
+          </form>
+        )}
+
+        {!showEmailForm && (
+          <>
+            <p className="mt-6 text-center text-sm text-zinc-300">
+              New here? Google will create your account automatically.
+            </p>
+
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-zinc-600">OR</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <Link
+              href="/explore"
+              onClick={() => {
+                getOrCreateGuestId();
+              }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3 px-6 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-medium rounded-xl transition-all border border-white/10"
+              >
+                Continue as Guest
+              </motion.button>
+            </Link>
+          </>
+        )}
 
         <p className="mt-8 text-center text-xs text-zinc-400">
           By continuing, you agree to Nachly&apos;s Terms of Service and Privacy Policy.

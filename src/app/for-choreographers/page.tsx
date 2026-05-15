@@ -106,7 +106,7 @@ export default function ForChoreographersPage() {
             <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
               Log In
             </Link>
-            <Link href="/apply-choreographer" className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110">
+            <Link href="/choreographer/create" className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110">
               Become a Creator
             </Link>
           </div>
@@ -128,7 +128,7 @@ export default function ForChoreographersPage() {
             Upload choreography, build structured tutorials, reach thousands of learners, and earn from your expertise. The creator economy meets dance education.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/apply-choreographer" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
+            <Link href="/choreographer/create" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
               Apply to Create
             </Link>
             <a href="#how-it-works" className="inline-flex h-12 items-center justify-center rounded-full border border-[#6c513236] bg-white/70 px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
@@ -288,7 +288,7 @@ export default function ForChoreographersPage() {
               Join a growing community of verified choreographers earning from their expertise. Applications reviewed within 48 hours.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/apply-choreographer" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-8 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
+              <Link href="/choreographer/create" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-8 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
                 Become a Creator
               </Link>
               <Link href="/subscribe" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
@@ -316,7 +316,7 @@ export default function ForChoreographersPage() {
             <Link href="/">For Learners</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
-            <Link href="/apply-choreographer">Apply</Link>
+            <Link href="/choreographer/create">Apply</Link>
             <Link href="/login">Login</Link>
           </div>
         </div>

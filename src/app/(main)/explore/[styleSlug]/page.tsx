@@ -150,7 +150,7 @@ export default function StyleCoursePage() {
               <p className="text-zinc-300 max-w-md mx-auto mb-6">
                 {style.name} choreographies are being crafted by expert instructors. Check back soon!
               </p>
-              <Link href="/apply-choreographer">
+              <Link href="/choreographer/create">
                 <button className="px-8 py-3.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gold hover:text-obsidian transition-all">
                   Want to teach {style.name}? Apply here
                 </button>

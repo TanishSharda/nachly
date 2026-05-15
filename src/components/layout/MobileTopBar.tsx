@@ -13,7 +13,6 @@ export default function MobileTopBar({ initial }: MobileTopBarProps) {
     pathname.startsWith("/learn") ||
     pathname.startsWith("/record") ||
     pathname.startsWith("/scroll") ||
-    pathname.startsWith("/scrool") ||
     pathname.startsWith("/reels");
 
   if (hideOnImmersiveRoute) {

@@ -587,8 +587,8 @@ export default function HomePage() {
                   <Link href="/for-choreographers" className="inline-flex h-11 items-center rounded-full bg-[#7a5c3a] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_30px_-15px_rgba(122,92,58,0.5)]">
                     Learn More
                   </Link>
-                  <Link href="/apply-choreographer" className="inline-flex h-11 items-center rounded-full border border-[#6c513260] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#a38260] transition hover:bg-white/5">
-                    Apply Now
+                  <Link href="/choreographer/create" className="inline-flex h-11 items-center rounded-full border border-[#6c513260] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#a38260] transition hover:bg-white/5">
+                    Start Creating
                   </Link>
                 </div>
               </div>
@@ -709,7 +709,7 @@ export default function HomePage() {
             <Link href="/explore">Explore</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
-            <Link href="/apply-choreographer">Apply</Link>
+            <Link href="/choreographer/create">Apply</Link>
             <Link href="/login">Login</Link>
             <Link href="/download-app">App</Link>
           </div>
