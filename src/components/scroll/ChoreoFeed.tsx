@@ -114,7 +114,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
 
             <div className="flex flex-col gap-2 lg:min-w-[220px]">
               <Link
-                href={`/learn/${post.id}`}
+                href="/learn"
                 className="inline-flex items-center justify-center rounded-2xl bg-[#f4eadb] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-[#372515] transition hover:bg-white"
               >
                 Learn Tab

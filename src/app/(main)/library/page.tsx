@@ -74,7 +74,7 @@ export default function LibraryPage() {
             name: choreo.styleName || slug,
             gradient_from: gradient.from,
             gradient_to: gradient.to,
-              routines: [] as Array<{ id: string; title: string; slug: string; difficulty: string; progress: number }>,
+            routines: [],
             progress: 0,
           };
           if (!existing.routines.some((routine) => routine.slug === choreo.routineSlug)) {
@@ -86,7 +86,7 @@ export default function LibraryPage() {
               progress: 0,
             });
           }
-          styleMap.set(slug, existing as StyleLibrary);
+          styleMap.set(slug, existing);
         }
 
         const sessionProgress = new Map<string, { total: number; count: number }>();

@@ -113,6 +113,15 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                {user?.role !== "choreographer" && user?.role !== "admin" ? (
+                  <Link href="/become-creator">
+                    <Button size="sm">Start Teaching</Button>
+                  </Link>
+                ) : (
+                  <Link href="/choreographer">
+                    <Button variant="ghost" size="sm">Creator Dashboard</Button>
+                  </Link>
+                )}
                 <button type="button" onClick={handleProfileClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Avatar src={user.avatar_url} name={user.full_name} size="sm" />
                   <span className="text-sm font-medium text-[#2d241a]">{user.full_name}</span>
@@ -189,6 +198,15 @@ export default function Navbar({ user }: NavbarProps) {
                 <div className="pt-2 border-t border-[#6c51321f] space-y-2">
                   {user ? (
                     <>
+                      {user?.role !== "choreographer" && user?.role !== "admin" ? (
+                        <Link href="/become-creator" onClick={() => setMobileOpen(false)} className="block">
+                          <Button size="sm" className="w-full">Start Teaching</Button>
+                        </Link>
+                      ) : (
+                        <Link href="/choreographer" onClick={() => setMobileOpen(false)} className="block">
+                          <Button variant="ghost" size="sm" className="w-full">Creator Dashboard</Button>
+                        </Link>
+                      )}
                       <button
                         type="button"
                         onClick={handleProfileClick}

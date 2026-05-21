@@ -12,7 +12,7 @@ interface StyleCardProps {
 }
 
 export default function StyleCard({ style }: StyleCardProps) {
-  const routineCount: number = 0;
+  const routineCount = 0;
   const isBollywood = style.slug === "bollywood";
 
   return (

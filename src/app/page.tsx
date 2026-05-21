@@ -662,7 +662,7 @@ export default function HomePage() {
                 Start Learning
               </button>
               <Link
-                href="/flow?style=mix"
+                href="/scroll?style=mix"
                 className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]"
               >
                 Explore the Feed
@@ -705,7 +705,7 @@ export default function HomePage() {
             <p className="mt-3 max-w-sm text-sm text-[#6b6056]">A modern dance learning app built for the scroll generation.</p>
           </div>
           <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">
-            <Link href="/flow?style=mix">Flow</Link>
+            <Link href="/scroll?style=mix">Flow</Link>
             <Link href="/explore">Explore</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>

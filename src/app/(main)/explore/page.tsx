@@ -30,13 +30,13 @@ export default function ExplorePage() {
               The kinetic gallery of movement. Elevate your practice through an editorial experience of Indian classical and contemporary dance.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              <Link href="/flow?style=bollywood" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/scroll?style=bollywood" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Bollywood
               </Link>
-              <Link href="/flow?style=bhangra" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/scroll?style=bhangra" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Bhangra
               </Link>
-              <Link href="/flow?style=mix" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/scroll?style=mix" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Mix
               </Link>
               <Link href="/subscribe" className="rounded-full border border-[#725b3f]/25 bg-[#725b3f] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#fff7f3] hover:brightness-110">
@@ -44,7 +44,7 @@ export default function ExplorePage() {
               </Link>
             </div>
             <Link
-              href="/flow?style=mix"
+              href="/scroll?style=mix"
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#725b3f] px-7 py-3 text-sm font-semibold text-[#fff7f3] transition hover:brightness-110"
             >
               Start Today&apos;s Lesson
@@ -67,13 +67,13 @@ export default function ExplorePage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#8f7f6b]">Discover</p>
             <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#1f1f1b] md:text-4xl">Bollywood Flow</h3>
           </div>
-          <Link href="/flow?style=bollywood" className="text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] hover:opacity-80">
+            <Link href="/scroll?style=bollywood" className="text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] hover:opacity-80">
             View Collection &gt;
           </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-[1.8fr_1fr]">
-          <Link href="/flow?style=bollywood" className="group relative block overflow-hidden rounded-[2rem] bg-[#e3e3db]">
+            <Link href="/scroll?style=bollywood" className="group relative block overflow-hidden rounded-[2rem] bg-[#e3e3db]">
             <img src={CARD_MAIN} alt="Midnight Monsoon Ritual" className="h-[360px] w-full object-cover transition duration-700 group-hover:scale-105 md:h-[520px]" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 text-white md:bottom-8 md:left-8">

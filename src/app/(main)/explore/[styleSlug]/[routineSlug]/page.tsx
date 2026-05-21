@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { getChoreographyFeed, getChoreographyPost, getChoreographySaves, postChoreographySave } from "@/lib/api/choreos";
+import { getChoreographyFeed, getChoreographyPost } from "@/lib/api/choreos";
 import { motion } from "framer-motion";
 import { use } from "react";
 import Badge from "@/components/ui/Badge";
@@ -178,7 +178,7 @@ export default function RoutineDetailPage() {
 
             <motion.div variants={fadeUp}>
               <div className="flex flex-wrap items-center gap-3 mb-4">
-                <Badge variant={difficultyColors[routine.difficulty as keyof typeof difficultyColors]} size="md">
+                <Badge variant={difficultyColors[routine.difficulty]} size="md">
                   {routine.difficulty}
                 </Badge>
                 <Badge variant="outline" size="md" className="text-zinc-200 border-white/20">
