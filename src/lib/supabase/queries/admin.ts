@@ -27,7 +27,7 @@ export interface CreatorQualityScore {
  * Get platform overview stats
  */
 export async function getPlatformStats() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   try {
     // Get user counts
@@ -97,7 +97,7 @@ export async function getPlatformStats() {
  * Get user → choreographer conversion funnel
  */
 export async function getConversionFunnel() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   try {
     const { count: totalUsers } = await supabase
@@ -132,7 +132,7 @@ export async function getConversionFunnel() {
  * Get revenue breakdown by creator and content type
  */
 export async function getRevenueBreakdown() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   try {
     // Revenue by creator
@@ -167,7 +167,7 @@ export async function getRevenueBreakdown() {
 export async function calculateCreatorQualityScore(
   choreographerId: string
 ): Promise<{ score: CreatorQualityScore | null; error: unknown }> {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   try {
     // Get creator posts
@@ -246,7 +246,7 @@ export async function calculateCreatorQualityScore(
  * Suspend choreographer
  */
 export async function suspendChoreographer(choreographerId: string, reason: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('choreographer_moderation')
@@ -271,7 +271,7 @@ export async function suspendChoreographer(choreographerId: string, reason: stri
  * Reinstate choreographer
  */
 export async function reinstateChoreographer(choreographerId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('choreographer_moderation')
@@ -300,7 +300,7 @@ export async function flagContentForModeration(
   reason: string,
   reportedBy?: string
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('content_moderation_queue')
@@ -326,7 +326,7 @@ export async function flagContentForModeration(
  * Get content moderation queue
  */
 export async function getModerationQueue(options: { limit?: number; offset?: number } = {}) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { limit = 20, offset = 0 } = options;
 
   const { data, error } = await supabase

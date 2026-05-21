@@ -53,14 +53,14 @@ function isAdmin(profile: { role?: string } | null | undefined) {
 }
 
 async function loadCurrentUser() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return { supabase, user };
 }
 
-export async function GET(_: Request, context: { params: { id: string } }) {
+export async function GET(_: Request, context: any) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -97,7 +97,7 @@ export async function GET(_: Request, context: { params: { id: string } }) {
   return NextResponse.json({ submission: data });
 }
 
-export async function PATCH(request: Request, context: { params: { id: string } }) {
+export async function PATCH(request: Request, context: any) {
   let body: unknown;
   try {
     body = await request.json();

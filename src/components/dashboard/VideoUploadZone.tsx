@@ -16,7 +16,7 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
   const [dragging, setDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [mode, setMode] = useState<"upload" | "url">("upload");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [fileMeta, setFileMeta] = useState<{ name: string; size: number } | null>(null);
 
   const handleFile = useCallback((file: File) => {

@@ -20,7 +20,13 @@ function missingSupabaseConfigResponse() {
   );
 }
 
-async function countFor(db: ReturnType<typeof createServiceRoleClient> | ReturnType<typeof createServerSupabase>, choreoId: string) {
+type EngagementRow = {
+  interaction_type: string;
+};
+
+type SupabaseClientLike = Awaited<ReturnType<typeof createServerSupabase>> | ReturnType<typeof createServiceRoleClient>;
+
+async function countFor(db: SupabaseClientLike, choreoId: string) {
   const { data, error } = await db
     .from("choreo_engagement_events")
     .select("interaction_type")
@@ -32,7 +38,7 @@ async function countFor(db: ReturnType<typeof createServiceRoleClient> | ReturnT
   }
 
   const counts = { like: 0, comment: 0, try_this: 0, view_stats: 0 };
-  (data || []).forEach((row) => {
+  (data || []).forEach((row: EngagementRow) => {
     const key = row.interaction_type as keyof typeof counts;
     if (counts[key] !== undefined) counts[key] += 1;
   });
@@ -55,7 +61,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ metrics: {} });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -115,7 +121,7 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

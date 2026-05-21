@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import { getChoreographyFeed } from "@/lib/supabase/queries/choreos";
-import { getMockChoreographyFeed } from "@/lib/mock-choreography-feed";
 
 export const metadata: Metadata = {
   title: "Learn | Nachly",
@@ -66,7 +65,7 @@ function TutorialPreview({
 
 export default async function LearnTabPage() {
   const { posts } = await getChoreographyFeed({ limit: 8, offset: 0 });
-  const items = posts.length ? posts : getMockChoreographyFeed({ limit: 8 }).posts;
+  const items = posts || [];
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#efe5d4_0%,#fbf8f2_32%,#f6f0e5_100%)] text-[#241811]">

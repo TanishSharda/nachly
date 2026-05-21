@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 
 interface CalibrationScreenProps {
   cameraReady: boolean;
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   stream: MediaStream | null;
   cameraStatus: "idle" | "requesting" | "ready" | "error";
   cameraIssue: {

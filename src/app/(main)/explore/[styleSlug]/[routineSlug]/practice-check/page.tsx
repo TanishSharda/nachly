@@ -18,7 +18,7 @@ export default function PracticePreflightPage() {
 
   const runCameraCheck = async () => {
     const secureContext = window.isSecureContext ? "Yes" : "No";
-    const mediaDevicesAvailable = navigator.mediaDevices?.getUserMedia ? "Yes" : "No";
+    const mediaDevicesAvailable = typeof navigator.mediaDevices?.getUserMedia === "function" ? "Yes" : "No";
     const userAgent = navigator.userAgent;
 
     setResult({

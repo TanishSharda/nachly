@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { getChoreographyFeed } from "@/lib/api/choreos";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import BrandLogo from "@/components/shared/BrandLogo";
@@ -64,12 +65,10 @@ export default function HomePageNew() {
   useEffect(() => {
     async function prefetchFlow() {
       try {
-        const response = await fetch("/api/choreos?tier=official");
-        if (response.ok) {
-          const payload = await response.json();
-          if (Array.isArray(payload?.choreos)) {
-            window.sessionStorage.setItem("nachly_flow_feed_cache_v1", JSON.stringify(payload.choreos));
-          }
+        const data = await getChoreographyFeed({ tier: "official", limit: 24 });
+        const posts = Array.isArray(data?.posts) ? data.posts : [];
+        if (posts.length > 0) {
+          window.sessionStorage.setItem("nachly_flow_feed_cache_v1", JSON.stringify(posts));
         }
       } catch {
         // Silent failure is okay for prefetching.

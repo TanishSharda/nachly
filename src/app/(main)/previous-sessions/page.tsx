@@ -5,6 +5,7 @@ import Link from "next/link";
 import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
+import { getChoreographyPost } from "@/lib/api/choreos";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
 type AttemptRecord = {
@@ -34,12 +35,9 @@ async function fetchTitleByChoreoId(choreoId: string): Promise<string> {
   if (!choreoId) return "Untitled Choreo";
 
   try {
-    const response = await fetch(`/api/choreos/${encodeURIComponent(choreoId)}`, { cache: "no-store" });
-    if (response.ok) {
-      const payload = await response.json();
-      const title = payload?.choreo?.title;
-      if (title && typeof title === "string") return title;
-    }
+    const post = await getChoreographyPost(choreoId);
+    const title = post?.title || post?.choreo?.title;
+    if (title && typeof title === "string") return title;
   } catch {
     // Ignore and try fallback below.
   }

@@ -12,6 +12,13 @@ import ThumbnailPicker from "@/components/dashboard/ThumbnailPicker";
 import CaptionEditor, { type CaptionOverlay } from "@/components/dashboard/CaptionEditor";
 import SlowMoTimeline, { type SlowMoMarker } from "@/components/dashboard/SlowMoTimeline";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  getChoreographySubmissions,
+  getChoreographySubmission,
+  patchChoreographySubmission,
+  postChoreographySubmission,
+  deleteChoreographySubmission,
+} from "@/lib/api/choreos";
 
 type Style = "hip-hop" | "bhangra" | "kathak" | "zumba" | "bollywood" | "contemporary";
 type Difficulty = "beginner" | "intermediate" | "advanced";
@@ -229,13 +236,8 @@ export default function UploadChoreoPage() {
     setDraftsLoading(true);
     setDraftError("");
     try {
-      const response = await fetch("/api/choreos/submissions?status=draft");
-      const payload = await response.json();
-      if (!response.ok) {
-        setDraftError(payload?.error || "Failed to load drafts");
-        return;
-      }
-      setDrafts(payload?.submissions || []);
+      const submissions = await getChoreographySubmissions();
+      setDrafts(submissions || []);
     } catch {
       setDraftError("Failed to load drafts");
     } finally {
@@ -246,11 +248,9 @@ export default function UploadChoreoPage() {
   const loadLatestDraft = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
     try {
-      const response = await fetch("/api/choreos/submissions?status=draft&latest=1");
-      const payload = await response.json();
-      if (response.ok && payload?.draft) {
-        applyDraft(payload.draft as DraftRecord);
-      }
+      const drafts = await getChoreographySubmissions();
+      const latest = Array.isArray(drafts) && drafts.length ? drafts[0] : null;
+      if (latest) applyDraft(latest as DraftRecord);
     } catch {
       // Ignore draft load errors.
     }
@@ -259,11 +259,8 @@ export default function UploadChoreoPage() {
   const loadDraftById = useCallback(async (id: string) => {
     if (!isSupabaseConfigured()) return;
     try {
-      const response = await fetch(`/api/choreos/submissions?status=draft&id=${id}`);
-      const payload = await response.json();
-      if (response.ok && payload?.draft) {
-        applyDraft(payload.draft as DraftRecord);
-      }
+      const draft = await getChoreographySubmission(id);
+      if (draft) applyDraft(draft as DraftRecord);
     } catch {
       setDraftError("Failed to load selected draft");
     }
@@ -275,40 +272,31 @@ export default function UploadChoreoPage() {
     setSavingDraft(true);
     setUploadWarning("");
     try {
-      const response = await fetch("/api/choreos/submissions", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: draftId || undefined,
-          title: title.trim(),
-          description: description.trim(),
-          caption: "",
-          videoUrl: videoUrl.trim(),
-          styleSlug,
-          difficulty,
-          lessonParts,
-          hashtags,
-          musicCredit: musicCredit.trim(),
-          accessType,
-          priceInr,
-          subscriptionTier: subscriptionTier.trim(),
-          thumbnailUrl: thumbnailUrl.trim(),
-          slowMoMarkers,
-          trimStartSeconds,
-          trimEndSeconds,
-          captionOverlays,
-          videoDurationSeconds,
-        }),
+      const payload = await patchChoreographySubmission({
+        id: draftId || undefined,
+        title: title.trim(),
+        description: description.trim(),
+        caption: "",
+        videoUrl: videoUrl.trim(),
+        styleSlug,
+        difficulty,
+        lessonParts,
+        hashtags,
+        musicCredit: musicCredit.trim(),
+        accessType,
+        priceInr,
+        subscriptionTier: subscriptionTier.trim(),
+        thumbnailUrl: thumbnailUrl.trim(),
+        slowMoMarkers,
+        trimStartSeconds,
+        trimEndSeconds,
+        captionOverlays,
+        videoDurationSeconds,
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setUploadWarning(payload?.error || "Draft save failed");
-        return;
-      }
       if (payload?.draft?.id) setDraftId(payload.draft.id);
       setLastSavedAt(new Date().toISOString());
-    } catch {
-      setUploadWarning("Draft save failed");
+    } catch (err: any) {
+      setUploadWarning(err?.message || "Draft save failed");
     } finally {
       setSavingDraft(false);
     }
@@ -329,15 +317,7 @@ export default function UploadChoreoPage() {
     const nextTitle = draftTitleInput.trim();
     if (!nextTitle) return;
     try {
-      const response = await fetch("/api/choreos/submissions", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildDraftPayload(draft, { title: nextTitle })),
-      });
-      if (!response.ok) {
-        setDraftError("Could not rename draft");
-        return;
-      }
+      await patchChoreographySubmission(buildDraftPayload(draft, { title: nextTitle }));
       setDrafts((prev) => prev.map((item) => (item.id === draft.id ? { ...item, title: nextTitle } : item)));
       cancelRenameDraft();
     } catch {
@@ -351,13 +331,7 @@ export default function UploadChoreoPage() {
     if (!confirmDelete) return;
     setDeletingDraftId(draft.id);
     try {
-      const response = await fetch(`/api/choreos/submissions?id=${draft.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        setDraftError("Could not delete draft");
-        return;
-      }
+      await deleteChoreographySubmission(draft.id);
       setDrafts((prev) => prev.filter((item) => item.id !== draft.id));
       if (draftId === draft.id) resetDraft();
     } catch {
@@ -700,30 +674,7 @@ export default function UploadChoreoPage() {
         publishNow: true,
       };
       console.log("[handlePublish] Sending payload:", payload);
-      const response = await fetch("/api/choreos/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      console.log("[handlePublish] Response status:", response.status);
-      const rawBody = await response.text();
-      let data: any = {};
-      if (rawBody) {
-        try {
-          data = JSON.parse(rawBody);
-          console.log("[handlePublish] Response JSON:", data);
-        } catch {
-          console.error("[handlePublish] Failed to parse JSON, raw text:", rawBody);
-        }
-      }
-      if (!response.ok) {
-        const suggestions = (data?.suggestions || []).join(" ");
-        const details = [data?.error, data?.message, data?.detail, data?.code, data?.hint, data?.details, suggestions].filter(Boolean).join(" | ");
-        console.error("[handlePublish] Full error response:", JSON.stringify(data, null, 2));
-        console.error("[handlePublish] Error details:", details);
-        setError(details || `Submission failed (HTTP ${response.status})`);
-        return;
-      }
+      const data = await postChoreographySubmission(payload);
       setResult({
         id: data?.submission?.id || "",
         status: data?.submission?.submission_status || "pending_review",

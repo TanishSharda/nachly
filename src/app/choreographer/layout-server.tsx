@@ -7,7 +7,7 @@ export default async function ChoreographerLayout({
 }: { 
   children: React.ReactNode 
 }) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   
   // Check authentication
   const { data: { user } = { user: null } } = await supabase.auth.getUser();

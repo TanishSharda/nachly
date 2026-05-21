@@ -19,7 +19,7 @@ interface WizardPreset {
  */
 export async function GET() {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -69,7 +69,7 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE() {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

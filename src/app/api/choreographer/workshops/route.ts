@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ workshops: [], fallback: true });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

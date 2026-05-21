@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { getChoreographyFeed } from "@/lib/api/choreos";
 import ChoreoFeed from "@/components/scroll/ChoreoFeed";
 
 export default function ScrollPage() {
@@ -15,15 +16,9 @@ export default function ScrollPage() {
 
   useEffect(() => {
     const fetchInitial = async () => {
-      const params = new URLSearchParams();
-      params.set("limit", "8");
-      if (style) params.set("style", style);
-      if (difficulty) params.set("difficulty", difficulty);
-
       try {
-        const res = await fetch(`/api/choreos/feed?${params.toString()}`);
-        const json = await res.json();
-        setInitialPosts(json.posts || []);
+        const { posts } = await getChoreographyFeed({ style: style || undefined, difficulty: difficulty || undefined, limit: 8, offset: 0 });
+        setInitialPosts(Array.isArray(posts) ? posts : []);
       } catch (err) {
         console.error("/scroll: failed to load feed", err);
         setInitialPosts([]);

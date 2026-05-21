@@ -41,7 +41,7 @@ export default function RoutineCard({ routine, styleSlug, index }: RoutineCardPr
 
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant={difficultyColors[routine.difficulty]} size="sm">
+              <Badge variant={difficultyColors[routine.difficulty as keyof typeof difficultyColors]} size="sm">
               {routine.difficulty}
             </Badge>
           </div>

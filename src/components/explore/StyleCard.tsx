@@ -5,14 +5,14 @@ import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import type { DanceStyle } from "@/types/database";
-import { MOCK_ROUTINES } from "@/lib/mock-data";
+// NOTE: routine counts are now provided by the live feed API; mock removed.
 
 interface StyleCardProps {
   style: DanceStyle;
 }
 
 export default function StyleCard({ style }: StyleCardProps) {
-  const routineCount = MOCK_ROUTINES[style.slug]?.length ?? 0;
+  const routineCount: number = 0;
   const isBollywood = style.slug === "bollywood";
 
   return (

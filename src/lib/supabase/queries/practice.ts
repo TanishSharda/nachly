@@ -49,7 +49,7 @@ export async function createPracticeSession(
   userId: string,
   choreographyPostId: string
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('practice_sessions')
@@ -77,7 +77,7 @@ export async function getUserPracticeSessions(
   userId: string,
   options: { limit?: number; offset?: number } = {}
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { limit = 20, offset = 0 } = options;
 
   const { data, error } = await supabase
@@ -99,7 +99,7 @@ export async function getUserPracticeSessions(
  * Get single practice session
  */
 export async function getPracticeSession(sessionId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('practice_sessions')
@@ -122,7 +122,7 @@ export async function completePracticeSession(
   sessionId: string,
   overallScore: number
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('practice_sessions')
@@ -158,7 +158,7 @@ export async function recordPracticeAttempt(
   },
   videoUrl: string
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('practice_attempts')
@@ -191,7 +191,7 @@ export async function getUserProgress(
   userId: string,
   choreographyPostId: string
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('user_progress')
@@ -217,7 +217,7 @@ export async function updateUserProgress(
   choreographyPostId: string,
   data: { best_score?: number; completed_practices?: number }
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const existing = await getUserProgress(userId, choreographyPostId);
 
@@ -266,7 +266,7 @@ export async function updateUserProgress(
  * Get user's practice statistics
  */
 export async function getUserPracticeStats(userId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('user_progress')

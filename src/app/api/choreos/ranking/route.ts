@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const styleFilter = (searchParams.get("style") || "").trim().toLowerCase();
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
 
   let query = db

@@ -5,27 +5,70 @@
 
 import { createServerSupabase, createServiceRoleClient } from '../server';
 
-function getReadOnlySupabaseClient() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : createServerSupabase();
+async function getReadOnlySupabaseClient() {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : await createServerSupabase();
 }
 
 export interface ChoreographyFeedItem {
   id: string;
-  user_id: string;
+  // source ids
+  user_id?: string;
+  choreographer_id?: string;
+
+  // canonical fields
   title: string;
-  description: string;
-  video_url: string;
-  style_slug: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  submission_status: string;
-  tier: string;
-  engagement_score: number;
-  view_count: number;
-  like_count: number;
-  created_at: string;
-  updated_at: string;
-  creator_name?: string;
+  description?: string | null;
+  video_url?: string | null;
+
+  // style / difficulty
+  style_slug?: string | null;
+  dance_style?: string | null;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced' | null;
+  difficulty_level?: string | null;
+
+  // status / metadata
+  submission_status?: string | null;
+  status?: string | null;
+  tier?: string | null;
+  published_at?: string | null;
+
+  // engagement
+  engagement_score?: number;
+  view_count?: number;
+  views_count?: number;
+  like_count?: number;
+  saves_count?: number;
+
+  // timestamps
+  created_at?: string | null;
+  updated_at?: string | null;
+
+  // creator
+  creator_name?: string | null;
   creator_avatar_url?: string | null;
+  choreographer_name?: string | null;
+
+  // Optional normalized media fields used by the feed UI
+  demo_reel?: {
+    id?: string;
+    choreography_post_id?: string;
+    video_url?: string | null;
+    thumbnail_url?: string | null;
+    duration_seconds?: number | null;
+    music_credit?: string | null;
+    created_at?: string | null;
+  } | null;
+  tutorial?: {
+    id?: string;
+    choreography_post_id?: string;
+    video_url?: string | null;
+    duration_seconds?: number | null;
+    created_at?: string | null;
+  } | null;
+  // additional UI aliases
+  style?: string | null;
+  caption?: string | null;
+  source?: string | null;
 }
 
 /**
@@ -43,7 +86,7 @@ export async function getChoreographyFeed(
   const { limit = 20, offset = 0, style, difficulty } = options;
 
   try {
-    const supabase = getReadOnlySupabaseClient();
+    const supabase = await getReadOnlySupabaseClient();
     // Fetch approved submissions
     let submissionsQuery = supabase
       .from('choreo_submissions')
@@ -87,7 +130,9 @@ export async function getChoreographyFeed(
       tier: s.tier || s.submission_tier || 'community',
       engagement_score: s.engagement_score || 0,
       view_count: s.view_count || 0,
+      views_count: s.view_count || 0,
       like_count: s.like_count || 0,
+      saves_count: s.saves_count || 0,
       creator_name: s.creator_name || null,
       demo_reel: null,
       tutorial: { video_url: s.video_url, duration_seconds: null },
@@ -103,14 +148,17 @@ export async function getChoreographyFeed(
         title: r.title,
         description: r.description || r.caption || '',
         video_url: preferred ? preferred.video_url : '',
-        style_slug: r.dance_styles?.slug || null,
+        // dance_styles comes from PostgREST nested select and is an array
+        style_slug: r.dance_styles?.[0]?.slug || null,
         difficulty: r.difficulty || null,
         submission_status: 'published',
         tier: r.submission_tier || 'community',
         engagement_score: 0,
-        view_count: 0,
-        like_count: 0,
-        creator_name: r.profiles?.full_name || null,
+        view_count: r.view_count || 0,
+        views_count: r.view_count || 0,
+        like_count: r.like_count || 0,
+        saves_count: r.saves_count || 0,
+        creator_name: r.profiles?.[0]?.full_name || r.profiles?.full_name || null,
         demo_reel: null,
         tutorial,
         source: 'routine',
@@ -134,7 +182,7 @@ export async function getChoreographyFeed(
  */
 export async function getChoreographyPost(id: string) {
   try {
-    const supabase = getReadOnlySupabaseClient();
+    const supabase = await getReadOnlySupabaseClient();
 
     const { data, error } = await supabase
       .from('choreo_submissions')
@@ -158,7 +206,7 @@ export async function getChoreographyPost(id: string) {
  * Get choreographer's submissions (all statuses for creator dashboard)
  */
 export async function getChoreographerPosts(choreographerId: string, status?: string) {
-  const supabase = getReadOnlySupabaseClient();
+  const supabase = await getReadOnlySupabaseClient();
 
   let query = supabase
     .from('choreo_submissions')

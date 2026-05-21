@@ -10,7 +10,7 @@ const postSchema = z.object({
   consistency: z.number().min(0).max(100),
   completion: z.number().min(0).max(100),
   durationMs: z.number().int().min(0),
-  bodyPartScores: z.record(z.number()).optional(),
+  bodyPartScores: z.record(z.string(), z.number()).optional(),
   difficultyLevel: z.string().trim().max(40).optional(),
 });
 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid routine id" }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -72,10 +72,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
   }
 
-  const sessions = (data || []).map((row) => ({
+  const sessions = (data || []).map((row: any) => ({
     routineId: row.routine_id,
     routineTitle: row.routines?.title || "Untitled Routine",
-    styleSlug: row.routines?.dance_styles?.slug || "unknown",
+    styleSlug: row.routines?.dance_styles?.[0]?.slug || row.routines?.dance_styles?.slug || "unknown",
     accuracy: Number(row.accuracy_score || 0),
     consistency: Number(row.consistency_score || 0),
     completion: Number(row.completion_pct || 0),
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

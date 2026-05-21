@@ -11,7 +11,7 @@ interface UploadOptions {
 
 interface UploadResult {
   path: string;
-  url: string;
+  url: string | null;
   size: number;
   type: string;
 }
@@ -66,14 +66,14 @@ export async function uploadChoreographerFile(
       throw new Error(`Storage error: ${error.message}`);
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // supabase client types for getPublicUrl can be narrow; access defensively
+    const publicResult: any = supabase.storage
       .from(CHOREOGRAPHER_BUCKET)
-      .getPublicUrl(data.path);
+      .getPublicUrl(data?.path || filePath);
 
     return {
       path: data.path,
-      url: urlData.publicUrl,
+      url: publicResult?.data?.publicUrl ?? null,
       size: file.size,
       type: file.type,
     };
@@ -124,7 +124,7 @@ export async function listChoreographyFiles(
   supabase: SupabaseClient,
   userId: string,
   choreographyId: string
-): Promise<Array<{ name: string; id: string; updated_at: string; metadata?: Record<string, any> }>> {
+): Promise<Array<{ name: string; id: string | null; updated_at: string; metadata?: Record<string, any> }>> {
   const { data, error } = await supabase.storage
     .from(CHOREOGRAPHER_BUCKET)
     .list(`${userId}/published/${choreographyId}`, {
@@ -137,7 +137,12 @@ export async function listChoreographyFiles(
     throw new Error(`List failed: ${error.message}`);
   }
 
-  return data || [];
+  return (data || []).map((file) => ({
+    name: file.name,
+    id: file.id,
+    updated_at: file.updated_at ?? new Date(0).toISOString(),
+    metadata: file.metadata ?? undefined,
+  }));
 }
 
 /**

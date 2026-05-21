@@ -6,6 +6,14 @@ const reactionTypes = ["loved_it", "hard", "practicing", "fast_moves"] as const;
 
 type ReactionType = (typeof reactionTypes)[number];
 
+type ReactionRow = {
+  reaction_type: string;
+  choreo_id?: string;
+  user_id?: string | null;
+};
+
+type SupabaseClientLike = Awaited<ReturnType<typeof createServerSupabase>> | ReturnType<typeof createServiceRoleClient>;
+
 const postSchema = z.object({
   choreoId: z.string().trim().min(1).max(160),
   reaction: z.enum(reactionTypes),
@@ -32,7 +40,7 @@ function emptyCounts() {
 }
 
 async function countFor(
-  db: ReturnType<typeof createServiceRoleClient> | ReturnType<typeof createServerSupabase>,
+  db: SupabaseClientLike,
   choreoId: string
 ) {
   const { data, error } = await db
@@ -43,7 +51,7 @@ async function countFor(
   if (error) return emptyCounts();
 
   const counts = emptyCounts();
-  (data || []).forEach((row) => {
+  (data || []).forEach((row: ReactionRow) => {
     const key = row.reaction_type as ReactionType;
     if (counts[key] !== undefined) counts[key] += 1;
   });
@@ -67,7 +75,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ reactions: {} });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -125,7 +133,7 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

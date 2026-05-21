@@ -2,14 +2,9 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { getChoreographySaves, postChoreographySave } from "@/lib/api/choreos";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  getStyleBySlug,
-  getRoutineBySlug,
-  getMockSteps,
-  getRoutineVideoUrl,
-} from "@/lib/mock-data";
 import { cn } from "@/lib/utils/cn";
 import { notFound } from "next/navigation";
 
@@ -21,7 +16,26 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-type LearnStep = ReturnType<typeof getMockSteps>[number];
+type LearnStep = any;
+
+function generateSteps(durationSeconds: number, stepInterval = 10) {
+  const totalDuration = Math.max(0, Math.floor(durationSeconds || 90));
+  const stepCount = Math.max(1, Math.ceil(totalDuration / stepInterval));
+  return Array.from({ length: stepCount }, (_, i) => {
+    const startTime = i * stepInterval;
+    const endTime = Math.min((i + 1) * stepInterval, totalDuration);
+    return {
+      id: `step-${i + 1}`,
+      routine_id: null,
+      step_number: i + 1,
+      label: `Step ${i + 1}`,
+      start_time: startTime,
+      end_time: endTime,
+      description: `Practice this ${Math.round(endTime - startTime)}s segment.`,
+      created_at: new Date().toISOString(),
+    };
+  });
+}
 
 function parseMistakeSteps(routineId: string, rangesRaw: string | null): LearnStep[] {
   if (!rangesRaw) return [];
@@ -56,8 +70,8 @@ export default function LearnModePage() {
     styleSlug: string;
     routineSlug: string;
   }>();
-  const style = getStyleBySlug(styleSlug);
-  const routine = getRoutineBySlug(styleSlug, routineSlug);
+  const [style, setStyle] = useState<any | null>(null);
+  const [routine, setRoutine] = useState<any | null>(null);
   const searchParams = useSearchParams();
   const mistakeRangesRaw = searchParams.get("mistakes");
   const slowModeDefault = searchParams.get("slow") === "1";
@@ -69,7 +83,7 @@ export default function LearnModePage() {
   const isMistakeSession = parsedMistakeSteps.length > 0;
 
   // Steps are generated dynamically once we know the real video duration
-  const [steps, setSteps] = useState<LearnStep[]>(() => (routine ? getMockSteps(routine.id) : []));
+  const [steps, setSteps] = useState<LearnStep[]>(() => (routine ? [] : []));
 
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -85,13 +99,16 @@ export default function LearnModePage() {
 
   // Self-camera state
   const [cameraOn, setCameraOn] = useState(false);
-  const webcamRef = useRef<HTMLVideoElement>(null);
+  const webcamRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const timeCheckRef = useRef<ReturnType<typeof setInterval>>();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const timeCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const videoUrl = routine ? getRoutineVideoUrl(routine.id) : null;
+  const videoUrl = (() => {
+    const perf = (routine?.routine_videos || []).find((v: any) => v.video_type === "performance");
+    return perf?.video_url || routine?.video_url || null;
+  })();
 
   useEffect(() => {
     if (!routine) return;
@@ -100,10 +117,8 @@ export default function LearnModePage() {
 
     async function loadSavedState() {
       try {
-        const response = await fetch("/api/choreos/saves", { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
-        const isRoutineSaved = (payload?.saves || []).some((entry: { choreoId?: string }) => entry?.choreoId === routine.id);
+        const saves = await getChoreographySaves();
+        const isRoutineSaved = (saves || []).some((entry: { choreoId?: string }) => entry?.choreoId === routine?.id);
         if (mounted) setIsSaved(isRoutineSaved);
       } catch {
         // Non-blocking on learn mode.
@@ -121,24 +136,14 @@ export default function LearnModePage() {
 
     setSavePending(true);
     try {
-      const response = await fetch("/api/choreos/saves", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          choreoId: routine.id,
-          title: routine.title,
-          videoUrl: videoUrl || "",
-          styleSlug,
-          difficulty: routine.difficulty,
-          caption: routine.description,
-        }),
+      const payload = await postChoreographySave({
+        choreoId: routine.id,
+        title: routine.title,
+        videoUrl: videoUrl || "",
+        styleSlug,
+        difficulty: routine.difficulty,
+        caption: routine.description,
       });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setSaveMessage(payload?.error || "Unable to update saved status");
-        return;
-      }
 
       setIsSaved(Boolean(payload?.saved));
       setSaveMessage(payload?.saved ? "Saved for practice later" : "Removed from saved");
@@ -152,7 +157,7 @@ export default function LearnModePage() {
   useEffect(() => {
     if (!routine) return;
 
-    setSteps(isMistakeSession ? parsedMistakeSteps : getMockSteps(routine.id));
+    setSteps(isMistakeSession ? parsedMistakeSteps : []);
     setCurrentStep(0);
     setCompletedSteps(new Set());
     setReplayCount(0);
@@ -185,7 +190,7 @@ export default function LearnModePage() {
             Math.min(Math.ceil(realDuration), step.start_time + 1)
           ),
         }))
-      : getMockSteps(routine.id, realDuration);
+      : generateSteps(realDuration);
     setSteps(newSteps);
   }, [routine, isMistakeSession, parsedMistakeSteps]);
 

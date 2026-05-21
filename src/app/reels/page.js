@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { MOCK_ROUTINES } from "@/lib/mock-data";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
+import {
+  getChoreographyFeed,
+  getChoreographyEngagement,
+  getChoreographyReactions,
+  getChoreographySaves,
+  postChoreographyEngagement,
+  postChoreographySave,
+  postChoreographyReaction,
+} from "@/lib/api/choreos";
 
 const SCROLL_CACHE_KEY = "naachly_scroll_feed_cache_v1";
 
@@ -12,14 +20,6 @@ function getScrollLearnHref(item) {
   if (item?.styleSlug && item?.routineSlug) {
     return `/explore/${item.styleSlug}/${item.routineSlug}/learn`;
   }
-
-  for (const [styleSlug, routines] of Object.entries(MOCK_ROUTINES || {})) {
-    const matched = (routines || []).find((routine) => routine.id === item?.id || routine.slug === item?.slug);
-    if (matched) {
-      return `/explore/${styleSlug}/${matched.slug}/learn`;
-    }
-  }
-
   return `/learn/${item.id}?mode=stepwise`;
 }
 
@@ -28,14 +28,9 @@ async function fetchChoreos() {
 
   if (isSupabaseConfigured()) {
     try {
-      const response = await fetch("/api/choreos?tier=official", { cache: "no-store" });
-      if (response.ok) {
-        const payload = await response.json();
-        if (Array.isArray(payload?.choreos)) {
-          return payload.choreos;
-        }
-      }
-      supabaseRequestFailed = !response.ok;
+      const data = await getChoreographyFeed({ tier: "official", limit: 200 });
+      if (Array.isArray(data?.posts)) return data.posts;
+      supabaseRequestFailed = true;
     } catch {
       supabaseRequestFailed = true;
     }
@@ -215,12 +210,10 @@ export default function ReelsPage() {
 
     async function loadEngagement() {
       try {
-        const ids = choreos.map((item) => item.id).filter(Boolean).join(",");
-        const response = await fetch(`/api/choreos/engagement?ids=${encodeURIComponent(ids)}`, { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
+        const ids = choreos.map((item) => item.id).filter(Boolean);
+        const metrics = await getChoreographyEngagement(ids);
         if (!mounted) return;
-        setEngagementMap(payload?.metrics || {});
+        setEngagementMap(metrics || {});
       } catch {
         // Non-blocking for feed.
       }
@@ -228,12 +221,10 @@ export default function ReelsPage() {
 
     async function loadReactions() {
       try {
-        const ids = choreos.map((item) => item.id).filter(Boolean).join(",");
-        const response = await fetch(`/api/choreos/reactions?ids=${encodeURIComponent(ids)}`, { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
+        const ids = choreos.map((item) => item.id).filter(Boolean);
+        const reactions = await getChoreographyReactions(ids);
         if (!mounted) return;
-        setReactionMap(payload?.reactions || {});
+        setReactionMap(reactions || {});
       } catch {
         // Non-blocking for feed.
       }
@@ -241,11 +232,9 @@ export default function ReelsPage() {
 
     async function loadSaves() {
       try {
-        const response = await fetch("/api/choreos/saves", { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
+        const saves = await getChoreographySaves();
         const set = {};
-        (payload?.saves || []).forEach((entry) => {
+        (saves || []).forEach((entry) => {
           if (entry?.choreoId) set[entry.choreoId] = true;
         });
         if (!mounted) return;
@@ -302,22 +291,12 @@ export default function ReelsPage() {
 
   const trackAction = useCallback(async (choreoId, action) => {
     try {
-      const response = await fetch("/api/choreos/engagement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          choreoId,
-          action,
-          mode: action === "like" ? "toggle" : "track",
-          anonKey: getOrCreateGuestId(),
-        }),
+      const payload = await postChoreographyEngagement({
+        choreoId,
+        action,
+        mode: action === "like" ? "toggle" : "track",
+        anonKey: getOrCreateGuestId(),
       });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setUiMessage(payload?.error || "Action unavailable right now");
-        return;
-      }
 
       const counts = payload?.counts;
       if (!counts) return;
@@ -339,24 +318,14 @@ export default function ReelsPage() {
 
   const toggleSave = useCallback(async (item) => {
     try {
-      const response = await fetch("/api/choreos/saves", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          choreoId: item.id,
-          title: item.title,
-          videoUrl: item.video,
-          styleSlug: item.styleSlug || item.style,
-          difficulty: item.difficulty,
-          caption: item.caption,
-        }),
+      const payload = await postChoreographySave({
+        choreoId: item.id,
+        title: item.title,
+        videoUrl: item.video,
+        styleSlug: item.styleSlug || item.style,
+        difficulty: item.difficulty,
+        caption: item.caption,
       });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setUiMessage(payload?.error || "Unable to update saved choreos");
-        return;
-      }
 
       setSavedMap((prev) => ({ ...prev, [item.id]: Boolean(payload?.saved) }));
       setUiMessage(payload?.saved ? "Saved for practice later" : "Removed from saved");
@@ -367,22 +336,7 @@ export default function ReelsPage() {
 
   const submitReaction = useCallback(async (choreoId, reaction) => {
     try {
-      const response = await fetch("/api/choreos/reactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          choreoId,
-          reaction,
-          anonKey: getOrCreateGuestId(),
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setUiMessage(payload?.error || "Unable to save reaction");
-        return;
-      }
-
+      const payload = await postChoreographyReaction({ choreoId, reaction, anonKey: getOrCreateGuestId() });
       setReactionMap((prev) => ({
         ...prev,
         [choreoId]: {

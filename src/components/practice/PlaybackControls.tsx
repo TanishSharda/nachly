@@ -41,12 +41,12 @@ export default function PlaybackControls({
 }: PlaybackControlsProps) {
   const [visible, setVisible] = useState(true);
   const [hovering, setHovering] = useState(false);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const progressRef = useRef<HTMLDivElement>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
 
   const resetHideTimer = useCallback(() => {
     setVisible(true);
-    clearTimeout(hideTimerRef.current);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
       if (!hovering) setVisible(false);
     }, 3000);
@@ -59,7 +59,7 @@ export default function PlaybackControls({
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("touchstart", handleMove);
     return () => {
-      clearTimeout(hideTimerRef.current);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("touchstart", handleMove);
     };

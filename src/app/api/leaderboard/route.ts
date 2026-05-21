@@ -106,7 +106,7 @@ export async function GET() {
     return NextResponse.json({ leaderboard: [], me: null });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

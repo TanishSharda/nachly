@@ -55,6 +55,12 @@ export default function SubscriptionModal({ open, onClose, plan, onSubscribeComp
     setError("");
     setStep("processing");
 
+    if (!plan) {
+      setError("No plan selected.");
+      setStep("confirm");
+      return;
+    }
+
     try {
       if (!amountPaise || amountPaise < 100) {
         setError("Invalid subscription price. Please try again later.");
@@ -146,7 +152,7 @@ export default function SubscriptionModal({ open, onClose, plan, onSubscribeComp
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={step === "success" ? undefined : `Subscribe to ${plan.name}`}>
+    <Modal open={open} onClose={handleClose} title={step === "success" ? undefined : `Subscribe to ${plan?.name}`}>
       {step === "confirm" && (
         <div>
           <div className="rounded-xl border border-dark-100 bg-cream-100 p-4 mb-6">

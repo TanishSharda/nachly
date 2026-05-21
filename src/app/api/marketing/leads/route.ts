@@ -16,7 +16,7 @@ const leadSchema = z.object({
   source: z.string().trim().min(2).max(80).default("homepage"),
   page: z.string().trim().min(1).max(120).default("/"),
   guestKey: z.string().trim().min(4).max(80).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 function missingSupabaseConfigResponse() {
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -65,7 +65,7 @@ export async function createChoreographerApplication(
     teaching_experience?: string;
   }
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data: application, error } = await supabase
     .from('choreographer_applications')
@@ -89,7 +89,7 @@ export async function createChoreographerApplication(
  * Get choreographer application
  */
 export async function getChoreographerApplication(userId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('choreographer_applications')
@@ -111,7 +111,7 @@ export async function getChoreographerApplication(userId: string) {
  * Get pending choreographer applications (for admin)
  */
 export async function getPendingApplications(options: { limit?: number; offset?: number } = {}) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { limit = 20, offset = 0 } = options;
 
   const { data, error } = await supabase
@@ -133,7 +133,7 @@ export async function getPendingApplications(options: { limit?: number; offset?:
  * Get creator analytics for a post
  */
 export async function getPostAnalytics(postId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('choreographer_submissions')
@@ -153,7 +153,7 @@ export async function getPostAnalytics(postId: string) {
  * Get creator's aggregate analytics
  */
 export async function getCreatorAnalytics(choreographerId: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('choreographer_submissions')
@@ -185,7 +185,7 @@ export async function getCreatorAnalytics(choreographerId: string) {
  * Get creator earnings for a period
  */
 export async function getCreatorEarnings(choreographerId: string, period?: string) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   let query = supabase
     .from('creator_earnings')
@@ -215,7 +215,7 @@ export async function requestCreatorPayout(
   amount: number,
   bankDetails?: Record<string, unknown>
 ) {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data, error } = await supabase
     .from('creator_payouts')

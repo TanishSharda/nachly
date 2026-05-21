@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getChoreographyLikes } from "@/lib/api/choreos";
 
 type LikedItem = {
   choreoId: string;
@@ -33,16 +34,9 @@ export default function LikedPage() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch("/api/choreos/likes", { cache: "no-store" });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          if (!mounted) return;
-          setError(payload?.error || "Unable to load liked sessions");
-          return;
-        }
-
+        const likes = await getChoreographyLikes();
         if (!mounted) return;
-        setItems(Array.isArray(payload?.likes) ? payload.likes : []);
+        setItems(Array.isArray(likes) ? likes : []);
       } catch {
         if (mounted) setError("Unable to load liked sessions");
       } finally {

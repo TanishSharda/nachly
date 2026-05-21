@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getChoreographyFeed } from "@/lib/supabase/queries/choreos";
-import { getMockChoreographyFeed } from "@/lib/mock-choreography-feed";
 
 function parsePositiveInt(value: string | null, fallback: number) {
   const parsed = Number.parseInt(value || "", 10);
@@ -21,14 +20,14 @@ export async function GET(request: Request) {
     difficulty: difficulty || undefined,
   });
 
-  if (error || !posts.length) {
-    return NextResponse.json(getMockChoreographyFeed({ limit, offset, style, difficulty }));
+  if (error) {
+    return NextResponse.json({ posts: [], hasMore: false, nextOffset: offset, error: error });
   }
 
   return NextResponse.json({
     posts,
-    hasMore: posts.length === limit,
-    nextOffset: offset + posts.length,
+    hasMore: (posts || []).length === limit,
+    nextOffset: offset + ((posts || []).length || 0),
     fallback: false,
   });
 }

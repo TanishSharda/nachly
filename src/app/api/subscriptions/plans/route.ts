@@ -33,7 +33,7 @@ export async function GET() {
     return NextResponse.json({ plans: fallbackPlans, fallback: true });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("subscription_plans")
     .select("id,name,description,interval_months,price_inr,is_active")

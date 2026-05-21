@@ -2,10 +2,10 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { getChoreographyFeed, getChoreographyPost } from "@/lib/api/choreos";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
-import { getStyleBySlug, getRoutineBySlug, getRoutineVideoUrl } from "@/lib/mock-data";
 import { notFound } from "next/navigation";
 import CalibrationScreen from "@/components/practice/CalibrationScreen";
 import SkeletonCanvas from "@/components/practice/SkeletonCanvas";
@@ -239,8 +239,34 @@ export default function PracticeModePage() {
     routineSlug: string;
   }>();
   const searchParams = useSearchParams();
-  const style = getStyleBySlug(styleSlug);
-  const routine = getRoutineBySlug(styleSlug, routineSlug);
+  const [style, setStyle] = useState<any | null>(null);
+  const [routine, setRoutine] = useState<any | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const feedJson = await getChoreographyFeed({ style: styleSlug || undefined, limit: 150 });
+        const posts = Array.isArray(feedJson?.posts) ? feedJson.posts : [];
+        const found = posts.find((p: any) => p.routineSlug === routineSlug || p.slug === routineSlug || p.id === routineSlug);
+        if (found && mounted) {
+          setStyle({ name: found.styleName || found.style || styleSlug });
+          const id = found.id;
+          const post = await getChoreographyPost(id) || found;
+          if (mounted) setRoutine(post);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void load();
+    return () => { mounted = false; };
+  }, [styleSlug, routineSlug]);
+
+  function getRoutineVideoUrlFromRoutine(r: any) {
+    if (!r) return null;
+    return r.videoUrl || r.video_url || (Array.isArray(r?.videos) && r.videos[0]?.url) || null;
+  }
   const drillFocusParam = searchParams.get("drillFocus");
   const drillFocus =
     drillFocusParam === "arms" || drillFocusParam === "legs" || drillFocusParam === "posture"
@@ -298,17 +324,17 @@ export default function PracticeModePage() {
     generatedDrillId: string | null;
   } | null>(null);
 
-  const webcamVideoRef = useRef<HTMLVideoElement>(null);
-  const instructorVideoRef = useRef<HTMLVideoElement>(null);
+  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+  const instructorVideoRef = useRef<HTMLVideoElement | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordedVideoUrlRef = useRef<string | null>(null);
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioEngineRef = useRef<AudioEngine | null>(null);
   const voiceCoachRef = useRef<VoiceCoach | null>(null);
-  const distanceCheckRef = useRef<ReturnType<typeof setInterval>>();
+  const distanceCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoStartRequestedRef = useRef(false);
   const autoStartPhaseStartedRef = useRef(false);
   const drillReadySinceRef = useRef<number | null>(null);
@@ -665,8 +691,8 @@ export default function PracticeModePage() {
   const finishSession = useCallback(async () => {
     stopDetection();
     stopUserRecording();
-    clearInterval(elapsedTimerRef.current);
-    clearInterval(distanceCheckRef.current);
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    if (distanceCheckRef.current) clearInterval(distanceCheckRef.current);
 
     // Cleanup audio and voice
     audioEngineRef.current?.disconnect();
@@ -786,6 +812,8 @@ export default function PracticeModePage() {
           : undefined;
       void saveSessionToServer({
         routineId: routine.id,
+        routineTitle: routine.title,
+        styleSlug,
         accuracy,
         consistency,
         completion,
@@ -921,7 +949,7 @@ export default function PracticeModePage() {
   }, [clearRecordedVideoUrl, drillTarget]);
 
   // --- Start detection + engines when dancing begins ---
-  const videoUrl = routine ? getRoutineVideoUrl(routine.id) : null;
+  const videoUrl = routine ? getRoutineVideoUrlFromRoutine(routine) : null;
 
   // Warm up MediaPipe so camera-to-score startup is faster on slower networks.
   useEffect(() => {
@@ -999,16 +1027,16 @@ export default function PracticeModePage() {
 
       return () => {
         clearTimeout(detectTimer);
-        clearInterval(elapsedTimerRef.current);
+        if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
         clearInterval(timeInterval);
-        clearInterval(distanceCheckRef.current);
+        if (distanceCheckRef.current) clearInterval(distanceCheckRef.current);
       };
     }
 
     return () => {
       clearTimeout(detectTimer);
-      clearInterval(elapsedTimerRef.current);
-      clearInterval(distanceCheckRef.current);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      if (distanceCheckRef.current) clearInterval(distanceCheckRef.current);
       stopUserRecording();
     };
   }, [phase, cameraReady, startDetection, routine?.duration_seconds, startUserRecording, stopUserRecording, videoUrl]);
@@ -1045,7 +1073,9 @@ export default function PracticeModePage() {
         setDistanceGuide(guide);
       }
     }, 2000);
-    return () => clearInterval(distanceCheckRef.current);
+    return () => {
+      if (distanceCheckRef.current) clearInterval(distanceCheckRef.current);
+    };
   }, [phase, landmarks]);
 
   // Voice coaching on feedback messages
@@ -1165,7 +1195,7 @@ export default function PracticeModePage() {
             {/* Instructor video stays mounted; only layout changes to avoid pause/reset on swap */}
             <VideoStage
               ref={instructorVideoRef}
-              videoUrl={routine ? getRoutineVideoUrl(routine.id) : null}
+              videoUrl={routine ? getRoutineVideoUrlFromRoutine(routine) : null}
               gradientFrom={style.gradient_from}
               gradientTo={style.gradient_to}
               playbackRate={speed}

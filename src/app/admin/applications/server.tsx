@@ -3,12 +3,12 @@ import { readApplicationsFromSheet } from '@/lib/fallbacks/googleSheets';
 import AdminApplicationsClient from './client';
 
 export default async function AdminApplicationsPage() {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   // Fetch DB submissions
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
   
-  let dbRows = [];
+  let dbRows: any[] = [];
   try {
     const { data } = await db
       .from('choreographer_applications')
@@ -21,7 +21,7 @@ export default async function AdminApplicationsPage() {
   }
 
   // Fetch Sheet submissions (fallback)
-  let sheetRows = [];
+  let sheetRows: any[] = [];
   try {
     const saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_SERVICE_ACCOUNT;
     const sheetId = process.env.CHOREO_APPS_SPREADSHEET_ID;

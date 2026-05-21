@@ -14,7 +14,7 @@ interface VideoStageProps {
   onEnded?: () => void;
 }
 
-const VideoStage = forwardRef<HTMLVideoElement, VideoStageProps>(
+const VideoStage = forwardRef<HTMLVideoElement | null, VideoStageProps>(
   (
     {
       videoUrl,
@@ -27,8 +27,8 @@ const VideoStage = forwardRef<HTMLVideoElement, VideoStageProps>(
     },
     ref
   ) => {
-    const internalRef = useRef<HTMLVideoElement>(null);
-    useImperativeHandle(ref, () => internalRef.current!);
+    const internalRef = useRef<HTMLVideoElement | null>(null);
+    useImperativeHandle(ref, () => internalRef.current as HTMLVideoElement);
 
     // Set playback rate imperatively
     useEffect(() => {

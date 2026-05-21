@@ -31,7 +31,7 @@ export async function GET() {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

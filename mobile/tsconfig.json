@@ -1,0 +1,13 @@
+{
+  "extends": "./node_modules/expo/tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "types": ["node", "react-native"],
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "skipLibCheck": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "expo-env.d.ts", ".expo/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

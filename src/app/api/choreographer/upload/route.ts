@@ -18,7 +18,7 @@ interface UploadResponse {
 
 export async function POST(request: NextRequest): Promise<NextResponse<UploadResponse>> {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
     
     // Get authenticated user

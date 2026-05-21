@@ -141,7 +141,7 @@ export default function WorkshopsPage() {
                     <p className="text-sm font-semibold text-[#c4ff00]">₹{Math.round(workshop.price_inr / 100)}</p>
                     <p className="text-[10px] text-zinc-500">{workshop.capacity} seats</p>
                   </div>
-                  <Badge variant={workshop.status === "scheduled" ? "info" : "success"}>{workshop.status}</Badge>
+                  <Badge variant={workshop.status === "scheduled" ? "default" : "success"}>{workshop.status}</Badge>
                 </div>
               </div>
             ))

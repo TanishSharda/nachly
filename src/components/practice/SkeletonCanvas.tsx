@@ -19,7 +19,7 @@ export default function SkeletonCanvas({
   showShadowGuide = false,
   className = "",
 }: SkeletonCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;

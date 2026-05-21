@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import BrandLogo from "@/components/shared/BrandLogo";
 import { SITE_NAME } from "@/lib/utils/constants";

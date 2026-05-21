@@ -25,7 +25,7 @@ export async function GET() {
     return NextResponse.json({ ...fallback, fallback: true });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

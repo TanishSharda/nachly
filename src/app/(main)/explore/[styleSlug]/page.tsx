@@ -2,9 +2,9 @@
 
 import { useParams, notFound } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getChoreographyFeed } from "@/lib/api/choreos";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { getStyleBySlug, MOCK_ROUTINES } from "@/lib/mock-data";
 import PurchaseModal from "@/components/explore/PurchaseModal";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -20,20 +20,34 @@ const stagger = {
 
 export default function StyleCoursePage() {
   const { styleSlug } = useParams<{ styleSlug: string }>();
-  const style = getStyleBySlug(styleSlug);
-  const routines = MOCK_ROUTINES[styleSlug] || [];
+  const [style, setStyle] = useState<any | null>({ name: styleSlug, description: "" });
+  const [routines, setRoutines] = useState<any[]>([]);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchased, setPurchased] = useState(false);
-  const formattedUnlockPrice = new Intl.NumberFormat("en-IN").format(Math.max(1, Math.round(Number(style?.price_inr || 0) / 100)));
+
+  const formattedUnlockPrice = new Intl.NumberFormat("en-IN").format(
+    Math.max(1, Math.round(Number(style?.price_inr || 19900) / 100))
+  );
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadPurchaseStatus() {
+    async function loadFeedAndPurchase() {
+      try {
+        const feedJson = await getChoreographyFeed({ style: styleSlug || undefined, limit: 150 });
+        const posts = Array.isArray(feedJson?.posts) ? feedJson.posts : [];
+        if (mounted) {
+          setRoutines(posts);
+          setStyle((prev: any) => ({ ...(prev || {}), name: styleSlug, description: prev?.description || "" }));
+        }
+      } catch {
+        // ignore
+      }
+
       try {
         const response = await fetch(`/api/purchases/check?styleSlug=${encodeURIComponent(styleSlug)}`, { cache: "no-store" });
         if (!response.ok) return;
-        const payload = await response.json();
+        const payload = await response.json().catch(() => ({}));
         if (!mounted) return;
         setPurchased(Boolean(payload?.purchased));
       } catch {
@@ -41,7 +55,7 @@ export default function StyleCoursePage() {
       }
     }
 
-    void loadPurchaseStatus();
+    void loadFeedAndPurchase();
     return () => {
       mounted = false;
     };
@@ -67,9 +81,7 @@ export default function StyleCoursePage() {
         </motion.div>
 
         <motion.div variants={fadeUp} className="rounded-2xl overflow-hidden app-card mb-6">
-          <div
-            className="p-6 sm:p-10 relative overflow-hidden bg-obsidian-100/40 border border-white/5 rounded-[32px] shadow-2xl"
-          >
+          <div className="p-6 sm:p-10 relative overflow-hidden bg-obsidian-100/40 border border-white/5 rounded-[32px] shadow-2xl">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(211,196,184,0.1),rgba(211,196,184,0))]" />
             <Badge variant="accent" size="md" className="relative z-10 bg-gold/10 text-gold border-gold/20 mb-4 px-4 py-1.5 uppercase tracking-widest text-[9px] font-bold">
               {routines.length} {routines.length === 1 ? "routine" : "routines"}
@@ -103,40 +115,40 @@ export default function StyleCoursePage() {
                   <div className="app-card rounded-2xl overflow-hidden h-full">
                     <div className="p-4 bg-white/5 border-b border-white/10 flex items-start justify-between gap-3">
                       <div>
-                          <p className="text-[11px] text-zinc-300">Routine #{i + 1}</p>
+                        <p className="text-[11px] text-zinc-300">Routine #{i + 1}</p>
                         <h3 className="font-semibold text-white text-lg leading-tight">{routine.title}</h3>
                       </div>
-                        <Badge variant="outline" size="sm" className="capitalize text-zinc-200 border-white/20">
+                      <Badge variant="outline" size="sm" className="capitalize text-zinc-200 border-white/20">
                         {routine.difficulty}
                       </Badge>
                     </div>
                     <div className="p-4">
                       <p className="text-sm text-zinc-300 line-clamp-2 mb-3">{routine.description}</p>
                       <div className="grid gap-2">
-                      <div className="grid grid-cols-3 gap-2">
-                        <Link href={`/explore/${styleSlug}/${routine.slug}/learn`} className="block">
-                          <button className="w-full py-2.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
-                            Learn
-                          </button>
-                        </Link>
-                        <Link href={`/explore/${styleSlug}/${routine.slug}/practice`} className="block">
-                          <button className="w-full py-2.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
-                            Practice
-                          </button>
-                        </Link>
-                        <Link href={`/record/${routine.id}?mode=remix`} className="block">
-                          <button className="w-full py-2.5 rounded-lg bg-gold text-obsidian text-[10px] font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-glow">
-                            Remix
-                          </button>
-                        </Link>
-                      </div>
-                      <div className="mt-3">
-                        <Link href={`/explore/${styleSlug}/${routine.slug}`}>
-                          <button className="w-full rounded-full border border-white/10 bg-transparent text-[9px] font-bold uppercase tracking-[0.2em] py-2 text-zinc-400 hover:text-white transition-colors">
-                            View Full Details
-                          </button>
-                        </Link>
-                      </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Link href={`/explore/${styleSlug}/${routine.slug}/learn`} className="block">
+                            <button className="w-full py-2.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
+                              Learn
+                            </button>
+                          </Link>
+                          <Link href={`/explore/${styleSlug}/${routine.slug}/practice`} className="block">
+                            <button className="w-full py-2.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
+                              Practice
+                            </button>
+                          </Link>
+                          <Link href={`/record/${routine.id}?mode=remix`} className="block">
+                            <button className="w-full py-2.5 rounded-lg bg-gold text-obsidian text-[10px] font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-glow">
+                              Remix
+                            </button>
+                          </Link>
+                        </div>
+                        <div className="mt-3">
+                          <Link href={`/explore/${styleSlug}/${routine.slug}`}>
+                            <button className="w-full rounded-full border border-white/10 bg-transparent text-[9px] font-bold uppercase tracking-[0.2em] py-2 text-zinc-400 hover:text-white transition-colors">
+                              View Full Details
+                            </button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>

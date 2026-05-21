@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getChoreographySaves } from "@/lib/api/choreos";
 
 type SavedItem = {
   choreoId: string;
@@ -28,15 +29,9 @@ export default function SavedPage() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch("/api/choreos/saves", { cache: "no-store" });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          if (!mounted) return;
-          setError(payload?.error || "Unable to load saved choreos");
-          return;
-        }
+        const saves = await getChoreographySaves();
         if (!mounted) return;
-        setItems(Array.isArray(payload?.saves) ? payload.saves : []);
+        setItems(Array.isArray(saves) ? saves : []);
       } catch {
         if (mounted) setError("Unable to load saved choreos");
       } finally {

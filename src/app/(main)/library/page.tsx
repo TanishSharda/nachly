@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { getChoreographyIndex } from "@/lib/api/choreos";
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -54,13 +55,12 @@ export default function LibraryPage() {
 
     async function loadLibraryState() {
       try {
-        const [subscriptionResponse, choreoResponse, sessionsResponse] = await Promise.all([
+        const [subscriptionResponse, sessionsResponse] = await Promise.all([
           fetch("/api/subscriptions/check", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
-          fetch("/api/choreos", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
           fetch("/api/practice-sessions?limit=100", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
         ]);
 
-        const choreos = Array.isArray(choreoResponse?.choreos) ? (choreoResponse.choreos as ChoreoItem[]) : [];
+        const choreos = await getChoreographyIndex();
         const sessions = Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as Session[]) : [];
 
         const styleMap = new Map<string, StyleLibrary>();
@@ -74,7 +74,7 @@ export default function LibraryPage() {
             name: choreo.styleName || slug,
             gradient_from: gradient.from,
             gradient_to: gradient.to,
-            routines: [],
+              routines: [] as Array<{ id: string; title: string; slug: string; difficulty: string; progress: number }>,
             progress: 0,
           };
           if (!existing.routines.some((routine) => routine.slug === choreo.routineSlug)) {
@@ -86,7 +86,7 @@ export default function LibraryPage() {
               progress: 0,
             });
           }
-          styleMap.set(slug, existing);
+          styleMap.set(slug, existing as StyleLibrary);
         }
 
         const sessionProgress = new Map<string, { total: number; count: number }>();

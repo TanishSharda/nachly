@@ -11,6 +11,7 @@ import Select from "@/components/ui/Select";
 import Progress from "@/components/ui/Progress";
 import CircularProgress from "@/components/ui/CircularProgress";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getChoreographySaves, getChoreographyLikes } from "@/lib/api/choreos";
 
 type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 
@@ -146,17 +147,17 @@ export default function ProfilePage() {
 
     async function loadProfileStats() {
       try {
-        const [sessionsResponse, savesResponse, likesResponse] = await Promise.all([
+        const [sessionsResponse, saves, likes] = await Promise.all([
           fetch("/api/practice-sessions?limit=100", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
-          fetch("/api/choreos/saves", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
-          fetch("/api/choreos/likes", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
+          getChoreographySaves(),
+          getChoreographyLikes(),
         ]);
 
         if (!mounted) return;
 
         setPracticeSessions(Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as PracticeSessionItem[]) : []);
-        setSavedCount(Array.isArray(savesResponse?.saves) ? savesResponse.saves.length : 0);
-        setLikedCount(Array.isArray(likesResponse?.likes) ? likesResponse.likes.length : 0);
+        setSavedCount(Array.isArray(saves) ? saves.length : 0);
+        setLikedCount(Array.isArray(likes) ? likes.length : 0);
       } catch {
         if (mounted) {
           setPracticeSessions([]);

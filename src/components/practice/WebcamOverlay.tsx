@@ -36,7 +36,7 @@ export default function WebcamOverlay({
   const [pipSize, setPipSize] = useState<PipSize>("medium");
   const [position, setPosition] = useState({ x: -1, y: -1 }); // -1 means "use default"
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, elemX: 0, elemY: 0 });
 
   const size = PIP_SIZES[pipSize];

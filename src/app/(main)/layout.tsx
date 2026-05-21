@@ -9,7 +9,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   let navbarUser: { id: string; full_name: string; avatar_url: string | null; role: string } | null = null;
 
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
       const { data: profile } = await supabase

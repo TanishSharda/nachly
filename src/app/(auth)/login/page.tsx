@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -21,6 +21,20 @@ function LoginForm() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const saved = localStorage.getItem("rememberedEmail");
+      if (saved) {
+        setEmail(saved);
+        setRemember(true);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }, []);
 
   const authErrorMap: Record<string, string> = {
     auth_failed: "Google login failed. Please try again.",
@@ -95,7 +109,17 @@ function LoginForm() {
         return;
       }
 
-      // Login successful, redirect
+      // Login successful: remember email if requested, then redirect
+      try {
+        if (remember && email) {
+          localStorage.setItem("rememberedEmail", email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+      } catch {
+        // ignore localStorage errors
+      }
+
       router.push(redirect);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -195,6 +219,26 @@ function LoginForm() {
               />
             </div>
 
+            <div className="flex items-center gap-2">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setRemember(checked);
+                  try {
+                    if (checked && email) localStorage.setItem("rememberedEmail", email);
+                    else localStorage.removeItem("rememberedEmail");
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className="h-4 w-4 rounded bg-white/5 border-white/10 text-emerald-500"
+              />
+              <label htmlFor="remember" className="text-sm text-zinc-300">Remember my email</label>
+            </div>
+
             <motion.button
               type="submit"
               disabled={loading}
@@ -230,56 +274,6 @@ function LoginForm() {
           </motion.div>
         )}
 
-        ) : (
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm text-zinc-300 mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-zinc-300 mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
-                required
-              />
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={loading}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? <Spinner /> : "Sign In"}
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={() => {
-                setShowEmailForm(false);
-                setError("");
-                setEmail("");
-                setPassword("");
-              }}
-              className="w-full py-2 px-6 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
-            >
-              Back to other options
-            </motion.button>
-          </form>
-        )}
 
         {!showEmailForm && (
           <>

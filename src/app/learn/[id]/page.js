@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc, collection, getDocs, query, where, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { isSupabaseConfigured, shouldUseFirebaseFallback } from "@/lib/supabase/client";
+import { getChoreographyPost } from "@/lib/api/choreos";
 import LearnModePlayer from "@/components/learn/LearnModePlayer";
 
 function buildMockChoreo(id) {
@@ -91,12 +92,9 @@ async function fetchChoreoById(id) {
   if (isSupabaseConfigured()) {
     try {
       // Fetch choreography (handles both submissions and routines)
-      const response = await fetch(`/api/choreos/${encodeURIComponent(id)}`, { cache: "no-store" });
-      if (response.ok) {
-        const payload = await response.json();
-        if (payload?.choreo) return payload.choreo;
-      }
-      supabaseRequestFailed = !response.ok;
+      const post = await getChoreographyPost(String(id));
+      if (post) return post;
+      supabaseRequestFailed = true;
     } catch {
       supabaseRequestFailed = true;
     }

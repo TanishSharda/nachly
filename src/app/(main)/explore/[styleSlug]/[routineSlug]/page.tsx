@@ -3,8 +3,9 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { getChoreographyFeed, getChoreographyPost, getChoreographySaves, postChoreographySave } from "@/lib/api/choreos";
 import { motion } from "framer-motion";
-import { getStyleBySlug, getRoutineBySlug, getMockSteps, getMockVideos } from "@/lib/mock-data";
+import { use } from "react";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import { formatDuration } from "@/lib/utils/format";
@@ -27,11 +28,45 @@ const difficultyColors = {
 
 export default function RoutineDetailPage() {
   const { styleSlug, routineSlug } = useParams<{ styleSlug: string; routineSlug: string }>();
-  const style = getStyleBySlug(styleSlug);
-  const routine = getRoutineBySlug(styleSlug, routineSlug);
-  const steps = routine ? getMockSteps(routine.id) : [];
-  const videos = routine ? getMockVideos(routine.id) : [];
+  const [style, setStyle] = useState<any | null>(null);
+  const [routine, setRoutine] = useState<any | null>(null);
+  const [steps, setSteps] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const performanceVideo = videos.find((v) => v.video_type === "performance");
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadRoutine() {
+      setLoading(true);
+      try {
+        // Try to find routine via feed by style and slug
+        const feedJson = await getChoreographyFeed({ style: styleSlug || undefined, limit: 150 });
+        const posts = Array.isArray(feedJson?.posts) ? feedJson.posts : [];
+        const found = posts.find((p: any) => p.routineSlug === routineSlug || p.slug === routineSlug || p.id === routineSlug);
+
+        if (found) {
+          setStyle({ name: found.styleName || found.style || styleSlug });
+          // Fetch full details by id
+          const id = found.id;
+          const post = await getChoreographyPost(id) || found;
+          if (!mounted) return;
+          setRoutine(post);
+          setSteps(post?.moves || post?.routine_steps || []);
+          setVideos(post?.routine_videos || (post?.tutorial ? [post.tutorial] : []) || []);
+        }
+      } catch (err) {
+        // leave empty — non-blocking UI
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadRoutine();
+    return () => {
+      mounted = false;
+    };
+  }, [styleSlug, routineSlug]);
   const [isSaved, setIsSaved] = useState(false);
   const [savePending, setSavePending] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -43,10 +78,8 @@ export default function RoutineDetailPage() {
 
     async function loadSavedState() {
       try {
-        const response = await fetch("/api/choreos/saves", { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
-        const isRoutineSaved = (payload?.saves || []).some((entry: { choreoId?: string }) => entry?.choreoId === routine?.id);
+        const saves = await getChoreographySaves();
+        const isRoutineSaved = (saves || []).some((entry: { choreoId?: string }) => entry?.choreoId === routine?.id);
         if (mounted) setIsSaved(isRoutineSaved);
       } catch {
         // Non-blocking on detail page.
@@ -64,24 +97,14 @@ export default function RoutineDetailPage() {
 
     setSavePending(true);
     try {
-      const response = await fetch("/api/choreos/saves", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          choreoId: routine.id,
-          title: routine.title,
-          videoUrl: performanceVideo?.video_url || "",
-          styleSlug,
-          difficulty: routine.difficulty,
-          caption: routine.description,
-        }),
+      const payload = await postChoreographySave({
+        choreoId: routine.id,
+        title: routine.title,
+        videoUrl: performanceVideo?.video_url || "",
+        styleSlug,
+        difficulty: routine.difficulty,
+        caption: routine.description,
       });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setSaveMessage(payload?.error || "Unable to update saved status");
-        return;
-      }
 
       setIsSaved(Boolean(payload?.saved));
       setSaveMessage(payload?.saved ? "Saved for practice later" : "Removed from saved");
@@ -155,7 +178,7 @@ export default function RoutineDetailPage() {
 
             <motion.div variants={fadeUp}>
               <div className="flex flex-wrap items-center gap-3 mb-4">
-                <Badge variant={difficultyColors[routine.difficulty]} size="md">
+                <Badge variant={difficultyColors[routine.difficulty as keyof typeof difficultyColors]} size="md">
                   {routine.difficulty}
                 </Badge>
                 <Badge variant="outline" size="md" className="text-zinc-200 border-white/20">

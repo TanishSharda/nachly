@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ comments: {} });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
 
   const { data, error } = await db
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
   const input = parsed.data;
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

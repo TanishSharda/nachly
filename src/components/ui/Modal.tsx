@@ -13,7 +13,7 @@ interface ModalProps {
 }
 
 export default function Modal({ open, onClose, children, className, title }: ModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (open) {

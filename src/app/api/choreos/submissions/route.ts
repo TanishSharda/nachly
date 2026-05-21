@@ -76,7 +76,7 @@ export async function GET(request: Request) {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -153,7 +153,7 @@ export async function PATCH(request: Request) {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -235,7 +235,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Draft id is required" }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
       return missingSupabaseConfigResponse();
     }
 
-    const supabase = createServerSupabase();
+      const supabase = await createServerSupabase();
     const {
       data: { user },
     } = await supabase.auth.getUser();

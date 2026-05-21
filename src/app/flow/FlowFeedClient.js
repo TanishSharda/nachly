@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
+import { getChoreographyFeed } from "@/lib/api/choreos";
 
 const FLOW_CACHE_KEY = "nachly_flow_feed_cache_v3";
 const ENABLED_FLOW_STYLES = ["bollywood", "bhangra"];
@@ -93,14 +94,9 @@ async function fetchChoreos() {
 
   if (isSupabaseConfigured()) {
     try {
-      const response = await fetch("/api/choreos?tier=official", { cache: "no-store" });
-      if (response.ok) {
-        const payload = await response.json();
-        if (Array.isArray(payload?.choreos)) {
-          return payload.choreos;
-        }
-      }
-      supabaseRequestFailed = !response.ok;
+      const data = await getChoreographyFeed({ tier: "official", limit: 200 });
+      if (Array.isArray(data?.posts)) return data.posts;
+      supabaseRequestFailed = true;
     } catch {
       supabaseRequestFailed = true;
     }

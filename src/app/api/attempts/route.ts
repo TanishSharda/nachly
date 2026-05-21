@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const choreoId = (url.searchParams.get("choreoId") || "").trim();
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     return missingSupabaseConfigResponse();
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

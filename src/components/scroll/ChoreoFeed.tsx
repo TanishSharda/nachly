@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { apiGet } from "@/lib/api-client";
+import { getChoreographyFeed } from "@/lib/api/choreos";
 import { cn } from "@/lib/utils/cn";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
@@ -31,8 +31,9 @@ const FEED_FILTERS = [
   { label: "Advanced", difficulty: "advanced" },
 ];
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat("en-IN", { notation: value >= 10000 ? "compact" : "standard" }).format(value);
+function formatCount(value?: number | null) {
+  const v = value ?? 0;
+  return new Intl.NumberFormat("en-IN", { notation: v >= 10000 ? "compact" : "standard" }).format(v);
 }
 
 function FeedCard({ post }: { post: ChoreographyFeedItem }) {
@@ -113,7 +114,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
 
             <div className="flex flex-col gap-2 lg:min-w-[220px]">
               <Link
-                href="/learn"
+                href={`/learn/${post.id}`}
                 className="inline-flex items-center justify-center rounded-2xl bg-[#f4eadb] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-[#372515] transition hover:bg-white"
               >
                 Learn Tab
@@ -128,7 +129,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
                     onClick: async () => {
                       const url = `${window.location.origin}/learn/${post.id}?mode=stepwise`;
                       if (navigator.share) {
-                        await navigator.share({ title: post.title, text: post.description, url });
+                        await navigator.share({ title: post.title, text: post.description ?? undefined, url });
                         return;
                       }
                       await navigator.clipboard.writeText(url);
@@ -226,24 +227,25 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
     if (!loadingMore || !hasMore) return;
 
     const loadMore = async () => {
-      const response = await apiGet<FeedResponse>(`/api/choreos/feed?limit=8&offset=${offset}${queryString ? `&${queryString}` : ""}`);
-
-      if (response.error || !response.data) {
-        setError(response.error?.message || "Unable to load more reels right now.");
+      try {
+        const params: any = { limit: 8, offset };
+        if (style) params.style = style;
+        if (difficulty) params.difficulty = difficulty;
+        const data = await getChoreographyFeed(params);
+        const incoming = data.posts || [];
+        setPosts((current) => {
+          const existingIds = new Set(current.map((item) => item.id));
+          const merged = [...current, ...incoming.filter((item) => !existingIds.has(item.id))];
+          return merged;
+        });
+        setOffset(data.nextOffset ?? offset + incoming.length);
+        setHasMore(Boolean(data.hasMore && incoming.length));
+        setError(null);
+      } catch (err: any) {
+        setError(err?.message || "Unable to load more reels right now.");
+      } finally {
         setLoadingMore(false);
-        return;
       }
-
-      const incoming = response.data.posts || [];
-      setPosts((current) => {
-        const existingIds = new Set(current.map((item) => item.id));
-        const merged = [...current, ...incoming.filter((item) => !existingIds.has(item.id))];
-        return merged;
-      });
-      setOffset(response.data.nextOffset ?? offset + incoming.length);
-      setHasMore(Boolean(response.data.hasMore && incoming.length));
-      setError(null);
-      setLoadingMore(false);
     };
 
     void loadMore();

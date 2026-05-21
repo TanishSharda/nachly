@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ purchased: false });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();

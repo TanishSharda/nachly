@@ -94,6 +94,10 @@ const nextConfig = {
   experimental: {
     optimizeCss: false, // disabled to avoid critters dependency
   },
+  // Turbopack root to avoid workspace root inference issues
+  turbopack: {
+    root: ".",
+  },
 };
 
 export default nextConfig;

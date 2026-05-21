@@ -5,6 +5,7 @@ import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Progress from "@/components/ui/Progress";
+import { getChoreographyIndex } from "@/lib/api/choreos";
 
 type ChoreoItem = {
   styleSlug: string;
@@ -49,13 +50,12 @@ export default function DashLibraryPage() {
 
     async function loadAccess() {
       try {
-        const [subscriptionResponse, choreoResponse, sessionsResponse] = await Promise.all([
+        const [subscriptionResponse, sessionsResponse] = await Promise.all([
           fetch("/api/subscriptions/check", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
-          fetch("/api/choreos", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
           fetch("/api/practice-sessions?limit=100", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
         ]);
 
-        const choreos = Array.isArray(choreoResponse?.choreos) ? (choreoResponse.choreos as ChoreoItem[]) : [];
+        const choreos = await getChoreographyIndex();
         const sessions = Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as PracticeSession[]) : [];
 
         const styleMap = new Map<string, { name: string; routineSlugs: Set<string> }>();
@@ -166,7 +166,7 @@ export default function DashLibraryPage() {
               key={style.slug}
               className="min-h-[220px] rounded-2xl overflow-hidden relative flex flex-col justify-end p-6 dash-glass dash-card cursor-pointer group animate-slide-up"
               style={{
-                background: `linear-gradient(to top, rgba(0,0,0,0.85), transparent), linear-gradient(135deg, ${style.gradient_from}, ${style.gradient_to})`,
+                background: `linear-gradient(to top, rgba(0,0,0,0.85), transparent), linear-gradient(135deg, ${style.gradientFrom}, ${style.gradientTo})`,
               }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-nred-700/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />

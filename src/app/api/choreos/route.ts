@@ -82,7 +82,7 @@ function getMockChoreos(tierFilter?: string | null, styleFilter?: string | null)
   return filtered;
 }
 
-function pickPreferredVideoUrl(entries) {
+function pickPreferredVideoUrl(entries: Array<{ video_url?: string | null; sort_order?: number | null }>) {
   const sorted = [...(entries || [])]
     .filter((entry) => Boolean(entry?.video_url))
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -127,7 +127,7 @@ export async function GET(request: Request) {
   const styleParam = (searchParams.get("style") || "").trim().toLowerCase();
   const styleFilter = ["bollywood", "bhangra", "mix"].includes(styleParam) ? styleParam : null;
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
 
   let query = db
@@ -152,29 +152,16 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error("[/api/choreos] Query error:", error);
-    // Use mock data if table doesn't exist (development mode)
-    if (error.code === "PGRST205" || error.message?.includes("Could not find the table")) {
-      console.warn("[/api/choreos] Database table not found, using mock data");
-      const mockChoreos = getMockChoreos(tierFilter, styleFilter);
-      return NextResponse.json({ choreos: mockChoreos, fallback: true, mockData: true });
-    }
     return NextResponse.json(
       { error: "Failed to fetch choreography list", detail: error.message },
       { status: 500 }
     );
   }
-
   if (!data || data.length === 0) {
-    // Use mock data if no real data found
-    const mockChoreos = getMockChoreos(tierFilter, styleFilter);
-    if (mockChoreos.length > 0) {
-      console.warn("[/api/choreos] No data in database, using mock data");
-      return NextResponse.json({ choreos: mockChoreos, fallback: true, mockData: true });
-    }
     return NextResponse.json({ choreos: [], fallback: true });
   }
 
-  const choreos = (data || []).map((row) => {
+  const choreos = (data || []).map((row: any) => {
     const video = pickPreferredVideoUrl(row.routine_videos || []);
 
     const moves = [...(row.routine_steps || [])]
@@ -192,13 +179,13 @@ export async function GET(request: Request) {
       routineSlug: row.slug || null,
       video,
       caption: row.caption || row.description || "",
-      style: row.dance_styles?.slug || "unknown",
-      styleSlug: row.dance_styles?.slug || "unknown",
-      styleName: row.dance_styles?.name || row.dance_styles?.slug || "Style",
-      stylePriceInr: row.dance_styles?.price_inr ?? null,
+      style: row.dance_styles?.[0]?.slug || "unknown",
+      styleSlug: row.dance_styles?.[0]?.slug || "unknown",
+      styleName: row.dance_styles?.[0]?.name || row.dance_styles?.[0]?.slug || "Style",
+      stylePriceInr: row.dance_styles?.[0]?.price_inr ?? null,
       difficulty: row.difficulty || "intermediate",
       choreographerId: row.choreographer_id || null,
-      choreographerName: row.profiles?.full_name || "Official Choreographer",
+      choreographerName: row.profiles?.[0]?.full_name || row.profiles?.full_name || "Official Choreographer",
       tier: row.submission_tier || "community",
       score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
       tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],

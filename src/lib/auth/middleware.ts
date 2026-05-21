@@ -15,7 +15,7 @@ export interface AuthenticatedUser {
  */
 export async function getAuthUser(request: NextRequest): Promise<AuthenticatedUser | null> {
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();

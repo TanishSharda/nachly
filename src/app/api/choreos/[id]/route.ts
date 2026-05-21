@@ -72,13 +72,14 @@ function mapSubmissionToChoreo(row: {
   ai_overall_score: number | null;
   ai_tags: string[] | null;
   submission_status?: string | null;
+  dance_styles?: Array<{ slug?: string; name?: string; price_inr?: number }> | null;
 }) {
   return {
     id: row.id,
     title: row.title || "Untitled Choreo",
     video: row.video_url || "",
     caption: row.caption || row.description || "",
-    style: row.style_slug || "unknown",
+     style: row.dance_styles?.[0]?.slug || "unknown",
     tier: row.tier || "community",
     score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
     tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
@@ -98,7 +99,7 @@ function missingSupabaseConfigResponse() {
   );
 }
 
-export async function GET(_: Request, context: { params: { id: string } }) {
+export async function GET(_: Request, context: any) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -109,7 +110,7 @@ export async function GET(_: Request, context: { params: { id: string } }) {
   }
 
   try {
-    const supabase = createServerSupabase();
+    const supabase = await createServerSupabase();
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
 
     const { data: submissionRow, error: submissionError } = await db
@@ -136,7 +137,7 @@ export async function GET(_: Request, context: { params: { id: string } }) {
   }
 
   try {
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : createServerSupabase();
+    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : await createServerSupabase();
     const routineSelect =
       "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)";
 
@@ -198,7 +199,7 @@ export async function GET(_: Request, context: { params: { id: string } }) {
         title: row.title || "Untitled Choreo",
         video,
         caption: row.description || "",
-        style: row.dance_styles?.slug || "unknown",
+             style: row.dance_styles?.[0]?.slug || "unknown",
         tier: row.submission_tier || "community",
         score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
         tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],

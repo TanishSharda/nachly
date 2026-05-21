@@ -65,7 +65,7 @@ export default function CreatorCard({
         {/* Overlay badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
           <span className="rounded-full bg-black/60 backdrop-blur-sm px-2 py-0.5 text-[9px] font-semibold text-white">{styleLabel}</span>
-          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${difficultyColors[difficulty]}`}>{difficulty}</span>
+          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${difficultyColors[difficulty as keyof typeof difficultyColors]}`}>{difficulty}</span>
         </div>
 
         {/* Parts badge */}
