@@ -13,7 +13,7 @@ export default function Badge({ children, variant = "default", size = "sm", clas
       className={cn(
         "inline-flex items-center font-body font-medium rounded-full",
         {
-          "bg-white/10 text-zinc-300": variant === "default",
+          "bg-[var(--gold)]/10 text-[var(--gold)]": variant === "default",
           "bg-nred-500/16 text-nred-300 border border-nred-500/30": variant === "red",
           "bg-white/10 text-white": variant === "accent",
           "bg-emerald-100 text-emerald-800": variant === "success",

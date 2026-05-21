@@ -53,34 +53,39 @@ export default function SignupPage() {
   }
 
   return (
-    <div>
-      <div className="text-center mb-8">
-        <h1 className="font-display text-3xl font-bold app-accent-text mb-2">Start dancing today</h1>
-        <p className="text-zinc-300">Use Google to create your account, or log in if you already have one</p>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <h1 className="font-display text-3xl font-bold app-accent-text mb-2">Start dancing today</h1>
+          <p className="muted-text">Use Google to create your account, or log in if you already have one</p>
+        </div>
+
+        {!isSupabaseConfigured() && (
+          <div className="p-3 bg-nred-500/10 border border-nred-400/30 rounded-xl text-sm text-nred-200 mb-4 text-center">
+            <strong>Demo mode:</strong> Supabase is not connected. Signup will be simulated.
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3 bg-amber-500/10 border border-amber-400/30 rounded-xl text-sm text-amber-200 mb-4 text-center">
+            {error}
+          </div>
+        )}
+
+        <div className="w-full">
+          <Button onClick={handleGoogleSignup} loading={loading} className="w-full flex items-center justify-center gap-3 py-3.5">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#f1f0ee] text-xs font-bold text-[#2d241a]">G</span>
+            Continue with Google
+          </Button>
+        </div>
+
+        <p className="mt-6 text-center text-sm muted-text">
+          Already have an account? {" "}
+          <Link href="/login" className="text-[var(--gold)] font-semibold hover:underline">
+            Log in
+          </Link>
+        </p>
       </div>
-
-      {!isSupabaseConfigured() && (
-        <div className="p-3 bg-nred-500/10 border border-nred-400/30 rounded-xl text-sm text-nred-200 mb-4 text-center">
-          <strong>Demo mode:</strong> Supabase is not connected. Signup will be simulated.
-        </div>
-      )}
-
-      {error && (
-        <div className="p-3 bg-amber-500/10 border border-amber-400/30 rounded-xl text-sm text-amber-200 mb-4 text-center">
-          {error}
-        </div>
-      )}
-
-      <Button onClick={handleGoogleSignup} loading={loading} className="w-full">
-        Continue with Google
-      </Button>
-
-      <p className="mt-6 text-center text-sm text-zinc-300">
-        Already have an account?{" "}
-        <Link href="/login" className="text-nred-300 font-semibold hover:underline">
-          Log in
-        </Link>
-      </p>
     </div>
   );
 }

@@ -96,6 +96,18 @@
     transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.35s ease;
   }
 
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 14px 38px -28px rgba(58, 42, 26, 0.18);
+  }
+
+  .app-accent-text {
+    color: var(--gold);
+  }
+
   .premium-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 20px 50px -24px rgba(58, 42, 26, 0.34);
@@ -199,6 +211,36 @@
   .muted-text {
     color: var(--muted);
   }
+
+  /* Compatibility shims: map legacy Tailwind dark-theme utilities to design tokens */
+  .text-zinc-100,
+  .text-zinc-200,
+  .text-zinc-300,
+  .text-zinc-400,
+  .text-zinc-500,
+  .text-zinc-600 {
+    color: var(--muted) !important;
+  }
+
+  .text-zinc-700,
+  .text-zinc-800,
+  .text-zinc-900 {
+    color: var(--foreground) !important;
+  }
+
+  .bg-white\/5 { background: var(--surface) !important; }
+  .bg-white\/10 { background: var(--surface-elevated) !important; }
+  .bg-white\/15 { background: rgba(255,255,255,0.92) !important; }
+  .bg-white\/\[0\.03\] { background: rgba(255,255,255,0.03) !important; }
+  .bg-white\/\[0\.05\] { background: rgba(255,255,255,0.05) !important; }
+  .bg-white\/70 { background: rgba(255,255,255,0.7) !important; }
+
+  .border-white\/10 { border-color: var(--line-soft) !important; }
+  .border-white\/15 { border-color: var(--line) !important; }
+  .border-white\/20 { border-color: rgba(255,255,255,0.2) !important; }
+  .border-white\/40 { border-color: rgba(255,255,255,0.4) !important; }
+
+  /* Map a few common zinc/bg combinations used for overlays */
 
   .section-padding {
     @apply max-w-7xl mx-auto px-6 sm:px-12;

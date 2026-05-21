@@ -9,6 +9,8 @@ import { getOAuthRedirectBaseClient } from "@/lib/utils/site-url";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
 import Spinner from "@/components/ui/Spinner";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 function LoginForm() {
   const router = useRouter();
@@ -98,7 +100,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -107,6 +109,24 @@ function LoginForm() {
         setError(authError.message);
         setLoading(false);
         return;
+      }
+
+      // Login successful: mirror session to server cookies so SSR can read it, remember email if requested, then redirect
+      try {
+        const session = signInData?.session;
+        if (session) {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+            }),
+          });
+        }
+      } catch (e) {
+        // ignore session sync errors
       }
 
       // Login successful: remember email if requested, then redirect
@@ -136,15 +156,15 @@ function LoginForm() {
       >
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2">
-            <BrandLogo size={34} className="shadow-[0_0_14px_rgba(121,255,206,0.3)]" priority />
+            <BrandLogo size={34} className="shadow-[0_12px_32px_-22px_rgba(122,92,58,0.6)]" priority />
             <motion.h1
-              className="font-display text-4xl font-bold text-white mb-1"
+              className="font-display text-4xl font-bold app-accent-text mb-1"
               whileHover={{ scale: 1.02 }}
             >
               Nachly
             </motion.h1>
           </Link>
-          <p className="text-zinc-300 text-sm mt-2">Sign in to start dancing</p>
+          <p className="muted-text text-sm mt-2">Sign in to start dancing</p>
         </div>
 
         {!isSupabaseConfigured() && (
@@ -161,22 +181,10 @@ function LoginForm() {
 
         {!showEmailForm ? (
           <>
-            <motion.button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-3 py-3.5 px-6 bg-white hover:bg-zinc-100 text-zinc-800 font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
-            >
-              {loading ? (
-                <Spinner />
-              ) : (
-                <>
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-800">G</span>
-                  Continue with Google
-                </>
-              )}
-            </motion.button>
+            <Button onClick={handleGoogleLogin} loading={loading} variant="secondary" className="w-full flex items-center justify-center gap-3 py-3.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#f1f0ee] text-xs font-bold text-[#2d241a]">G</span>
+              Continue with Google
+            </Button>
 
             <div className="flex items-center gap-4 my-8">
               <div className="flex-1 h-px bg-white/10" />
@@ -184,39 +192,18 @@ function LoginForm() {
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            <motion.button
-              onClick={() => setShowEmailForm(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all border border-white/20"
-            >
+            <Button variant="ghost" className="w-full" onClick={() => setShowEmailForm(true)}>
               Sign in with Email
-            </motion.button>
+            </Button>
           </>
         ) : (
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-sm text-zinc-300 mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
-                required
-              />
+              <Input id="email" label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required />
             </div>
 
             <div>
-              <label className="block text-sm text-zinc-300 mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-colors"
-                required
-              />
+              <Input id="password" label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
 
             <div className="flex items-center gap-2">
@@ -234,33 +221,22 @@ function LoginForm() {
                     // ignore
                   }
                 }}
-                className="h-4 w-4 rounded bg-white/5 border-white/10 text-emerald-500"
+                className="h-4 w-4 rounded bg-white/5 border-white/10 text-[var(--gold)]"
               />
-              <label htmlFor="remember" className="text-sm text-zinc-300">Remember my email</label>
+              <label htmlFor="remember" className="text-sm muted-text">Remember my email</label>
             </div>
-
-            <motion.button
-              type="submit"
-              disabled={loading}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" loading={loading} className="w-full" variant="primary">
               {loading ? <Spinner /> : "Sign In"}
-            </motion.button>
+            </Button>
 
-            <motion.button
-              type="button"
-              onClick={() => {
-                setShowEmailForm(false);
-                setError("");
-                setEmail("");
-                setPassword("");
-              }}
-              className="w-full py-2 px-6 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
-            >
+            <Button type="button" variant="ghost" className="w-full" onClick={() => {
+              setShowEmailForm(false);
+              setError("");
+              setEmail("");
+              setPassword("");
+            }}>
               Back to other options
-            </motion.button>
+            </Button>
           </form>
         )}
 
@@ -287,19 +263,8 @@ function LoginForm() {
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            <Link
-              href="/explore"
-              onClick={() => {
-                getOrCreateGuestId();
-              }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-3 px-6 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-medium rounded-xl transition-all border border-white/10"
-              >
-                Continue as Guest
-              </motion.button>
+            <Link href="/explore" onClick={() => getOrCreateGuestId()}>
+              <Button variant="secondary" className="w-full">Continue as Guest</Button>
             </Link>
           </>
         )}
