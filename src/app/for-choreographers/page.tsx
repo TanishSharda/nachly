@@ -106,7 +106,7 @@ export default function ForChoreographersPage() {
             <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
               Log In
             </Link>
-            <Link href="/choreographer/create" className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110">
+            <Link href="/creator/upload" className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110">
               Become a Creator
             </Link>
           </div>
@@ -128,7 +128,7 @@ export default function ForChoreographersPage() {
             Upload choreography, build structured tutorials, reach thousands of learners, and earn from your expertise. The creator economy meets dance education.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/choreographer/create" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
+            <Link href="/creator/upload" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
               Apply to Create
             </Link>
             <a href="#how-it-works" className="inline-flex h-12 items-center justify-center rounded-full border border-[#6c513236] bg-white/70 px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
@@ -203,7 +203,7 @@ export default function ForChoreographersPage() {
               <div className="bg-[#0e0e0e] p-6 sm:p-8">
                 {/* Mock dashboard UI */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#c4ff00] to-[#7b9e00]" />
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#F3B2AB] to-[#D88B80]" />
                   <div>
                     <p className="text-sm font-semibold text-white">Creator Studio</p>
                     <p className="text-xs text-zinc-500">Your performance at a glance</p>
@@ -213,7 +213,7 @@ export default function ForChoreographersPage() {
                   {[
                     { label: "Total Earnings", value: "₹1,42,500", color: "text-emerald-400" },
                     { label: "Active Students", value: "1,247", color: "text-white" },
-                    { label: "Avg AI Score", value: "82%", color: "text-[#c4ff00]" },
+                    { label: "Avg AI Score", value: "82%", color: "text-[#F3B2AB]" },
                     { label: "Completion Rate", value: "68%", color: "text-amber-400" },
                   ].map((s) => (
                     <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 p-3 sm:p-4">
@@ -224,7 +224,7 @@ export default function ForChoreographersPage() {
                 </div>
                 <div className="mt-4 flex items-end gap-2 h-24">
                   {[35, 52, 44, 68, 82, 75, 90, 65, 78, 95, 88, 72].map((h, i) => (
-                    <motion.div key={i} initial={{ height: 0 }} whileInView={{ height: `${h}%` }} transition={{ delay: i * 0.04, duration: 0.4 }} viewport={{ once: true }} className="flex-1 rounded-t bg-gradient-to-t from-[#344400] to-[#c4ff00]" />
+                    <motion.div key={i} initial={{ height: 0 }} whileInView={{ height: `${h}%` }} transition={{ delay: i * 0.04, duration: 0.4 }} viewport={{ once: true }} className="flex-1 rounded-t bg-gradient-to-t from-[#344400] to-[#F3B2AB]" />
                   ))}
                 </div>
                 <div className="mt-1 flex justify-between text-[9px] text-zinc-600">
@@ -288,13 +288,13 @@ export default function ForChoreographersPage() {
               Join a growing community of verified choreographers earning from their expertise. Applications reviewed within 48 hours.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/choreographer/create" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-8 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
+              <Link href="/creator/upload" className="h-12 inline-flex items-center rounded-full bg-[#7a5c3a] px-8 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_35px_-15px_rgba(122,92,58,0.6)]">
                 Become a Creator
               </Link>
               <Link href="/subscribe" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
                 View Plans
               </Link>
-              <Link href="/explore" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
+              <Link href="/feed" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
                 Explore as Learner
               </Link>
             </div>
@@ -316,7 +316,7 @@ export default function ForChoreographersPage() {
             <Link href="/">For Learners</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
-            <Link href="/choreographer/create">Apply</Link>
+            <Link href="/creator/upload">Apply</Link>
             <Link href="/login">Login</Link>
           </div>
         </div>

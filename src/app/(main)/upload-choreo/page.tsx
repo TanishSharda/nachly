@@ -701,7 +701,7 @@ export default function UploadChoreoPage() {
         ← Back
       </button>
       {!hideNext && (
-        <button type="button" onClick={goNext} disabled={!canNext} className="rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-5 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
+        <button type="button" onClick={goNext} disabled={!canNext} className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-5 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
           Next →
         </button>
       )}
@@ -719,7 +719,7 @@ export default function UploadChoreoPage() {
           <p className="mt-2 text-sm text-zinc-400">Status: {result.status} · Tier: {result.tier}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/choreographer/routines" className="rounded-xl bg-white/10 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/15">View Submissions</Link>
-            <button type="button" onClick={() => { setResult(null); resetDraft(); }} className="rounded-xl border border-[#c4ff00]/30 bg-[#c4ff00]/10 px-4 py-2.5 text-xs font-semibold text-[#c4ff00]">Upload Another</button>
+            <button type="button" onClick={() => { setResult(null); resetDraft(); }} className="rounded-xl border border-[#F3B2AB]/30 bg-[#F3B2AB]/10 px-4 py-2.5 text-xs font-semibold text-[#F3B2AB]">Upload Another</button>
           </div>
         </div>
       </main>
@@ -731,7 +731,7 @@ export default function UploadChoreoPage() {
       <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7 backdrop-blur-sm">
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[#c4ff00]/80">Creator Studio</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#F3B2AB]/80">Creator Studio</p>
             <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">Post Choreography</h1>
           </div>
           <Link href="/choreographer/routines" className="rounded-lg border border-white/20 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10 transition">My Routines</Link>
@@ -754,7 +754,7 @@ export default function UploadChoreoPage() {
               <button
                 type="button"
                 onClick={resetDraft}
-                className="rounded-lg border border-[#c4ff00]/30 bg-[#c4ff00]/10 px-3 py-1.5 text-[11px] font-semibold text-[#c4ff00] hover:bg-[#c4ff00]/20 transition"
+                className="rounded-lg border border-[#F3B2AB]/30 bg-[#F3B2AB]/10 px-3 py-1.5 text-[11px] font-semibold text-[#F3B2AB] hover:bg-[#F3B2AB]/20 transition"
               >
                 New Draft
               </button>
@@ -776,7 +776,7 @@ export default function UploadChoreoPage() {
                 type="button"
                 onClick={() => applyDraft(draft)}
                 className={`rounded-xl border p-3 text-left text-xs transition ${
-                  draftId === draft.id ? "border-[#c4ff00] bg-[#c4ff00]/10" : "border-white/10 bg-zinc-900/40 hover:border-white/20"
+                  draftId === draft.id ? "border-[#F3B2AB] bg-[#F3B2AB]/10" : "border-white/10 bg-zinc-900/40 hover:border-white/20"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -799,7 +799,7 @@ export default function UploadChoreoPage() {
                             event.stopPropagation();
                             submitRenameDraft(draft);
                           }}
-                          className="text-[10px] text-[#c4ff00]"
+                          className="text-[10px] text-[#F3B2AB]"
                         >
                           Save
                         </button>
@@ -870,7 +870,7 @@ export default function UploadChoreoPage() {
                       type="button"
                       onClick={uploadVideoToSupabase}
                       disabled={uploadingVideo || !videoFile}
-                      className="rounded-xl bg-[#c4ff00] px-4 py-2 text-xs font-bold text-[#0a0a0a] disabled:opacity-40"
+                      className="rounded-xl bg-[#F3B2AB] px-4 py-2 text-xs font-bold text-[#0a0a0a] disabled:opacity-40"
                     >
                       {uploadingVideo ? "Uploading…" : "Upload to Cloud"}
                     </button>
@@ -878,7 +878,7 @@ export default function UploadChoreoPage() {
                   {uploadingVideo && (
                     <div className="mt-3">
                       <div className="h-2 w-full rounded-full bg-white/10">
-                        <div className="h-2 rounded-full bg-[#c4ff00] transition-all" style={{ width: `${uploadProgress}%` }} />
+                        <div className="h-2 rounded-full bg-[#F3B2AB] transition-all" style={{ width: `${uploadProgress}%` }} />
                       </div>
                       <p className="mt-1 text-[10px] text-zinc-500">{uploadProgress}% uploaded</p>
                     </div>
@@ -968,22 +968,22 @@ export default function UploadChoreoPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-zinc-400 mb-1 block">Title *</label>
-                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your choreography a name" className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40" />
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Give your choreography a name" className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40" />
                 </div>
                 <div>
                   <label className="text-xs text-zinc-400 mb-1 block">Description *</label>
-                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe your choreography, what learners will achieve..." className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40 resize-none" />
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe your choreography, what learners will achieve..." className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40 resize-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-zinc-400 mb-1 block">Dance Style</label>
-                    <select value={styleSlug} onChange={(e) => setStyleSlug(e.target.value as Style)} className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c4ff00]/40">
+                    <select value={styleSlug} onChange={(e) => setStyleSlug(e.target.value as Style)} className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F3B2AB]/40">
                       {styleOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs text-zinc-400 mb-1 block">Difficulty</label>
-                    <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c4ff00]/40">
+                    <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F3B2AB]/40">
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
                       <option value="advanced">Advanced</option>
@@ -992,7 +992,7 @@ export default function UploadChoreoPage() {
                 </div>
                 <div>
                   <label className="text-xs text-zinc-400 mb-1 block">Music Credit</label>
-                  <input value={musicCredit} onChange={(e) => setMusicCredit(e.target.value)} placeholder="Song name — Artist" className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40" />
+                  <input value={musicCredit} onChange={(e) => setMusicCredit(e.target.value)} placeholder="Song name — Artist" className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40" />
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <p className="text-xs font-semibold text-white">Monetization</p>
@@ -1009,7 +1009,7 @@ export default function UploadChoreoPage() {
                         onClick={() => setAccessType(option.value)}
                         className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
                           accessType === option.value
-                            ? "bg-[#c4ff00]/20 text-[#c4ff00] border border-[#c4ff00]/30"
+                            ? "bg-[#F3B2AB]/20 text-[#F3B2AB] border border-[#F3B2AB]/30"
                             : "bg-white/5 text-zinc-400 border border-white/10 hover:bg-white/10"
                         }`}
                       >
@@ -1026,7 +1026,7 @@ export default function UploadChoreoPage() {
                         value={priceInr}
                         onChange={(e) => setPriceInr(Number(e.target.value))}
                         placeholder="199"
-                        className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c4ff00]/40"
+                        className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F3B2AB]/40"
                       />
                     </div>
                   )}
@@ -1036,7 +1036,7 @@ export default function UploadChoreoPage() {
                       <select
                         value={subscriptionTier}
                         onChange={(e) => setSubscriptionTier(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c4ff00]/40"
+                        className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F3B2AB]/40"
                       >
                         <option value="">Select tier</option>
                         <option value="studio">Studio Pass</option>
@@ -1088,14 +1088,14 @@ export default function UploadChoreoPage() {
                     type="button"
                     onClick={() => uploadThumbnailToSupabase(thumbnailUrl)}
                     disabled={thumbnailUploading}
-                    className="w-fit rounded-xl bg-[#c4ff00] px-4 py-2 text-xs font-bold text-[#0a0a0a] disabled:opacity-40"
+                    className="w-fit rounded-xl bg-[#F3B2AB] px-4 py-2 text-xs font-bold text-[#0a0a0a] disabled:opacity-40"
                   >
                     {thumbnailUploading ? "Uploading…" : "Upload Thumbnail to Cloud"}
                   </button>
                 )}
                 <div>
                   <label className="text-xs text-zinc-400 mb-1 block">Or paste thumbnail URL</label>
-                  <input value={thumbnailUrl.startsWith("data:") ? "" : thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40" />
+                  <input value={thumbnailUrl.startsWith("data:") ? "" : thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40" />
                 </div>
               </div>
               <NavButtons />
@@ -1143,7 +1143,7 @@ export default function UploadChoreoPage() {
                     type="button"
                     onClick={() => setPreviewTab(tab)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                      previewTab === tab ? "bg-[#c4ff00]/20 text-[#c4ff00] border border-[#c4ff00]/30" : "bg-white/5 text-zinc-400 border border-white/10"
+                      previewTab === tab ? "bg-[#F3B2AB]/20 text-[#F3B2AB] border border-[#F3B2AB]/30" : "bg-white/5 text-zinc-400 border border-white/10"
                     }`}
                   >
                     {tab === "feed" ? "Feed Card" : "Learn Mode"}
@@ -1164,7 +1164,7 @@ export default function UploadChoreoPage() {
                   </div>
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="rounded-full bg-[#c4ff00]/15 px-2 py-0.5 text-[10px] font-bold text-[#c4ff00]">{difficulty}</span>
+                      <span className="rounded-full bg-[#F3B2AB]/15 px-2 py-0.5 text-[10px] font-bold text-[#F3B2AB]">{difficulty}</span>
                       <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-zinc-400">{styleOptions.find((s) => s.value === styleSlug)?.label}</span>
                     </div>
                     <h3 className="text-lg font-bold text-white">{title || "Untitled"}</h3>
@@ -1176,7 +1176,7 @@ export default function UploadChoreoPage() {
                       </div>
                     )}
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {hashtags.map((t) => <span key={t} className="text-[11px] text-[#c4ff00]/70">#{t}</span>)}
+                      {hashtags.map((t) => <span key={t} className="text-[11px] text-[#F3B2AB]/70">#{t}</span>)}
                     </div>
                   </div>
                 </div>
@@ -1219,7 +1219,7 @@ export default function UploadChoreoPage() {
                               return (
                                 <span
                                   key={marker.id}
-                                  className="absolute top-0 h-2 rounded-full bg-[#c4ff00]/50"
+                                  className="absolute top-0 h-2 rounded-full bg-[#F3B2AB]/50"
                                   style={{ left: `${left}%`, width: `${Math.max(2, width)}%` }}
                                 />
                               );
@@ -1292,7 +1292,7 @@ export default function UploadChoreoPage() {
                   { label: "Good lighting conditions", checked: goodLight, onChange: setGoodLight },
                 ].map((c) => (
                   <label key={c.label} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-200 cursor-pointer hover:bg-white/[0.05] transition">
-                    <input type="checkbox" checked={c.checked} onChange={(e) => c.onChange(e.target.checked)} className="accent-[#c4ff00] h-4 w-4" />
+                    <input type="checkbox" checked={c.checked} onChange={(e) => c.onChange(e.target.checked)} className="accent-[#F3B2AB] h-4 w-4" />
                     {c.label}
                   </label>
                 ))}
@@ -1316,7 +1316,7 @@ export default function UploadChoreoPage() {
               {error && <p className="mb-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-200">{error}</p>}
               <div className="flex items-center gap-3">
                 <button type="button" onClick={goBack} className="rounded-xl border border-white/20 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition">← Back</button>
-                <button type="button" onClick={handlePublish} disabled={submitting || !(fullBody && stableCam && goodLight)} className="flex-1 rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] py-3 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
+                <button type="button" onClick={handlePublish} disabled={submitting || !(fullBody && stableCam && goodLight)} className="flex-1 rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] py-3 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
                   {submitting ? "Publishing..." : "🚀 Publish Choreography"}
                 </button>
               </div>

@@ -58,16 +58,16 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
       <header className="sticky top-0 z-40 glass border-b border-white/10">
         <div className="px-4 sm:px-6 flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-2">
-            <BrandLogo size={32} className="shadow-[0_0_15px_rgba(196,255,0,0.2)]" />
+            <BrandLogo size={32} className="shadow-[0_0_15px_rgba(243,178,171,0.2)]" />
             <span className="font-display font-bold text-lg text-white">{SITE_NAME}</span>
-            <span className="text-[10px] bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] text-[#0a0a0a] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Creator</span>
+             <span className="text-[10px] bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] text-[#0a0a0a] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Creator</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/choreographer/create" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-3 py-1.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+            <Link href="/creator/upload" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-3 py-1.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
               New Upload
             </Link>
-            <Link href="/explore" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <Link href="/feed" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Back to Platform
             </Link>
           </div>
@@ -87,7 +87,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                     isActive
-                      ? "bg-[#c4ff00]/10 text-[#c4ff00]"
+                       ? "bg-[#F3B2AB]/10 text-[#F3B2AB]"
                       : "text-zinc-400 hover:bg-white/5 hover:text-white"
                   )}
                 >
@@ -98,7 +98,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
             })}
           </nav>
           <div className="border-t border-white/10 pt-4">
-            <Link href="/choreographer/create" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition">
+            <Link href="/creator/upload" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
               Creator Guide
             </Link>
@@ -122,7 +122,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
                 href={link.href}
                 className={cn(
                   "flex flex-col items-center gap-0.5 px-2 py-1 transition",
-                  isActive ? "text-[#c4ff00]" : "text-zinc-500"
+                  isActive ? "text-[#F3B2AB]" : "text-zinc-500"
                 )}
               >
                 {link.icon}

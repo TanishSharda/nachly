@@ -31,7 +31,7 @@ export default function UploadWizard({ steps, currentStep, onStepClick, children
               onClick={() => onStepClick?.(stepNum)}
               disabled={stepNum > currentStep}
               className={`relative h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                isComplete ? "bg-[#c4ff00]" : isActive ? "bg-[#c4ff00]/60" : "bg-white/15"
+                isComplete ? "bg-[#F3B2AB]" : isActive ? "bg-[#F3B2AB]/60" : "bg-white/15"
               } ${stepNum <= currentStep ? "cursor-pointer" : "cursor-not-allowed"}`}
             />
           );

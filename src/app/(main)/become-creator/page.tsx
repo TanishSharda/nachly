@@ -12,7 +12,7 @@ export default function BecomeCreatorPage() {
     try {
       const res = await fetch("/api/auth/upgrade-role", { method: "POST" });
       if (!res.ok) throw new Error("Upgrade failed");
-      router.push("/choreographer");
+      router.push("/creator/dashboard");
     } catch (err) {
       // noop
       setLoading(false);

@@ -279,10 +279,10 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm text-[#7e7468]">Your account, progress, and practice history.</p>
           </div>
           <Link
-            href="/choreographer/apply"
-            className="rounded-xl border border-[#c4ff00]/20 bg-[#c4ff00]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#c4ff00] transition hover:bg-[#c4ff00]/15"
+            href="/creator/dashboard"
+            className="rounded-xl border border-[#F3B2AB]/20 bg-[#F3B2AB]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#F3B2AB] transition hover:bg-[#F3B2AB]/15"
           >
-            Apply to teach
+            Become a Creator
           </Link>
         </div>
 
@@ -372,7 +372,7 @@ export default function ProfilePage() {
                       <p className="text-sm font-semibold text-[#2d241a]">{routine.title}</p>
                       <p className="text-[10px] uppercase tracking-[0.18em] text-[#8a7d70]">{routine.styleSlug} • {routine.sessions} sessions</p>
                     </div>
-                    <span className="text-sm font-semibold text-[#c4ff00]">{routine.progress}%</span>
+                    <span className="text-sm font-semibold text-[#F3B2AB]">{routine.progress}%</span>
                   </div>
                   <Progress value={routine.progress} size="sm" color={routine.progress >= 80 ? "green" : "wine"} className="mt-3" />
                 </div>

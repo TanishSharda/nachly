@@ -93,7 +93,7 @@ export default function SettingsPage() {
               max="100"
               value={aiSensitivity}
               onChange={(event) => setAiSensitivity(Number(event.target.value))}
-              className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-nred-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(196,255,0,0.55)] [&::-webkit-slider-thumb]:cursor-pointer"
+              className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-nred-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(243,178,171,0.55)] [&::-webkit-slider-thumb]:cursor-pointer"
             />
             <div className="flex justify-between text-xs text-zinc-500 mt-2">
               <span>Low</span>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
 
           {message ? <p className="text-sm text-zinc-300">{message}</p> : null}
 
-          <button type="button" onClick={handleSave} disabled={saving} className="rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-6 py-3 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-50">
+          <button type="button" onClick={handleSave} disabled={saving} className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-6 py-3 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-50">
             {saving ? "Saving..." : "Save Settings"}
           </button>
         </div>

@@ -146,15 +146,15 @@ export default function DashLibraryPage() {
       ) : null}
 
       {access.subscriptionActive ? (
-        <div className="mb-6 rounded-2xl border border-[#c4ff00]/20 bg-[#c4ff00]/10 px-4 py-3 text-sm text-white">
-          <p className="font-semibold text-[#c4ff00]">Naachly Plus active</p>
+        <div className="mb-6 rounded-2xl border border-[#F3B2AB]/20 bg-[#F3B2AB]/10 px-4 py-3 text-sm text-white">
+          <p className="font-semibold text-[#F3B2AB]">Naachly Plus active</p>
           <p className="mt-1 text-zinc-200">You can access the full library from your subscription.</p>
         </div>
       ) : null}
 
       {!hasAccess && !access.loading ? (
         <div className="rounded-2xl p-6 dash-glass dash-card text-zinc-300">
-          No unlocked styles yet. <Link href="/explore" className="text-[#c4ff00] underline">Explore styles</Link> or <Link href="/subscribe" className="text-[#c4ff00] underline">view plans</Link>.
+          No unlocked styles yet. <Link href="/feed" className="text-[#F3B2AB] underline">Explore styles</Link> or <Link href="/subscribe" className="text-[#F3B2AB] underline">view plans</Link>.
         </div>
       ) : null}
 
@@ -184,7 +184,7 @@ export default function DashLibraryPage() {
                     Open style
                   </Link>
                   {style.firstRoutineSlug ? (
-                    <Link href={`/explore/${style.slug}/${style.firstRoutineSlug}`} className="rounded-lg bg-[#c4ff00]/15 px-3 py-1.5 text-xs font-semibold text-[#c4ff00] hover:bg-[#c4ff00]/20">
+                    <Link href={`/explore/${style.slug}/${style.firstRoutineSlug}`} className="rounded-lg bg-[#F3B2AB]/15 px-3 py-1.5 text-xs font-semibold text-[#F3B2AB] hover:bg-[#F3B2AB]/20">
                       First routine
                     </Link>
                   ) : null}

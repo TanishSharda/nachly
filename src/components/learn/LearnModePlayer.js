@@ -44,7 +44,7 @@ function getLearnVideoSources(videoUrl) {
   ];
 }
 
-export default function LearnModePlayer({ choreo, backHref = "/scroll", practiceHref, mode }) {
+export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHref, mode }) {
   const router = useRouter();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -65,7 +65,7 @@ export default function LearnModePlayer({ choreo, backHref = "/scroll", practice
     return "/flow?style=mix";
   }, [practiceHref, choreo?.id]);
   const aiPracticeHref = useMemo(() => {
-    if (choreo?.id) return `/ai-practice/${encodeURIComponent(choreo.id)}`;
+    if (choreo?.id) return `/choreography/${encodeURIComponent(choreo.id)}/practice`;
     return "/adaptive-pose";
   }, [choreo?.id]);
 

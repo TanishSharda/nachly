@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
+import { getChoreographyFeed } from "@/lib/api/choreos";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
@@ -39,6 +41,19 @@ type SubmissionSummary = {
   updated_at?: string;
 };
 
+type FeedSummary = {
+  id: string;
+  title: string;
+  views_count?: number;
+  saves_count?: number;
+  like_count?: number;
+  published_at?: string | null;
+  creator_name?: string | null;
+  source?: string | null;
+  difficulty?: string | null;
+  dance_style?: string | null;
+};
+
 const quickActions = [
   { label: "Upload Choreography", href: "/choreographer/create", icon: "🎬", desc: "Create a new routine" },
   { label: "View Analytics", href: "/choreographer/analytics", icon: "📊", desc: "Track performance" },
@@ -65,6 +80,9 @@ export default function ChoreographerDashboard() {
   const [revenue, setRevenue] = useState<RevenuePayload | null>(null);
   const [displayName, setDisplayName] = useState("Creator");
   const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
+  const [feedPosts, setFeedPosts] = useState<FeedSummary[]>([]);
+  const [metrics, setMetrics] = useState<Record<string, number> | null>(null);
+  const [routineMetrics, setRoutineMetrics] = useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -76,6 +94,9 @@ export default function ChoreographerDashboard() {
           fetch("/api/choreographer/profile", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
           fetch("/api/choreos/submissions", { cache: "no-store" }).then((response) => response.json().catch(() => ({}))),
         ]);
+        const feedResponse = await getChoreographyFeed({ limit: 24, offset: 0 }).catch(() => ({ posts: [] }));
+        const metricsResponse = await fetch("/api/choreographer/metrics", { cache: "no-store" }).then((r) => r.json().catch(() => ({})));
+        const byRoutineResponse = await fetch("/api/choreographer/metrics/by-routine", { cache: "no-store" }).then((r) => r.json().catch(() => ({})));
         if (!mounted) return;
 
 
@@ -97,10 +118,19 @@ export default function ChoreographerDashboard() {
             .filter((item) => item.submission_status !== "draft")
             .slice(0, 6)
         );
+
+        setFeedPosts(
+          Array.isArray(feedResponse?.posts)
+            ? (feedResponse.posts as FeedSummary[])
+            : []
+        );
+        setMetrics(metricsResponse?.metrics || null);
+        setRoutineMetrics(byRoutineResponse?.routines || []);
       } catch {
         if (mounted) {
           setRevenue(null);
           setSubmissions([]);
+          setFeedPosts([]);
         }
       }
     }
@@ -108,6 +138,67 @@ export default function ChoreographerDashboard() {
     void loadDashboardData();
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let client: any;
+    try {
+      client = createSupabaseClient();
+    } catch (err) {
+      return;
+    }
+
+    const channel = client
+      .channel("creator-dashboard-metrics")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "routines" },
+        () => {
+          void fetch("/api/choreographer/metrics", { cache: "no-store" })
+            .then((r) => r.json().catch(() => ({})))
+            .then((data) => setMetrics(data?.metrics || null))
+            .catch(() => undefined);
+
+          void fetch("/api/choreographer/metrics/by-routine", { cache: "no-store" })
+            .then((r) => r.json().catch(() => ({})))
+            .then((d) => setRoutineMetrics(d?.routines || []))
+            .catch(() => undefined);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "routines" },
+        () => {
+          void fetch("/api/choreographer/metrics", { cache: "no-store" })
+            .then((r) => r.json().catch(() => ({})))
+            .then((data) => setMetrics(data?.metrics || null))
+            .catch(() => undefined);
+
+          void fetch("/api/choreographer/metrics/by-routine", { cache: "no-store" })
+            .then((r) => r.json().catch(() => ({})))
+            .then((d) => setRoutineMetrics(d?.routines || []))
+            .catch(() => undefined);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "choreo_submissions" },
+        () => {
+          void fetch("/api/choreographer/metrics", { cache: "no-store" })
+            .then((r) => r.json().catch(() => ({})))
+            .then((data) => setMetrics(data?.metrics || null))
+            .catch(() => undefined);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
@@ -124,15 +215,17 @@ export default function ChoreographerDashboard() {
         label: "Pending Payout",
         value: `₹${(revenue?.summary.pendingPayout || 0).toLocaleString("en-IN")}`,
         sub: "next payout cycle",
-        color: "text-[#c4ff00]",
+        color: "text-[#F3B2AB]",
         icon: "📈",
       },
       {
-        label: "PPV + Subscriptions",
-        value: `₹${((revenue?.streams.ppv || 0) + (revenue?.streams.subscriptions || 0)).toLocaleString("en-IN")}`,
-        sub: "live monetization",
+        label: metrics ? "Total Likes" : "PPV + Subscriptions",
+        value: metrics
+          ? `${(metrics.likes || 0).toLocaleString?.("en-IN") || metrics.likes || 0}`
+          : `₹${((revenue?.streams.ppv || 0) + (revenue?.streams.subscriptions || 0)).toLocaleString("en-IN")}`,
+        sub: metrics ? "all-time likes" : "live monetization",
         color: "text-white",
-        icon: "👥",
+        icon: metrics ? "❤️" : "👥",
       },
       {
         label: "Revenue Split",
@@ -176,16 +269,26 @@ export default function ChoreographerDashboard() {
   }, [revenue, submissions]);
 
   const routinePerformance = useMemo(() => {
-    if (!submissions.length) return recentRoutines;
+    if (routineMetrics && routineMetrics.length) {
+      return routineMetrics.slice(0, 4).map((r) => ({
+        title: r.title || "Untitled choreo",
+        students: Number(r.views || 0),
+        avgScore: Number(r.likes || 0),
+        completion: Number(r.practiceCompletions || 0),
+        status: "published",
+      }));
+    }
 
-    return submissions.slice(0, 4).map((item) => ({
+    if (!feedPosts.length) return recentRoutines;
+
+    return feedPosts.slice(0, 4).map((item) => ({
       title: item.title || "Untitled choreo",
-      students: Number(item.view_count || 0),
-      avgScore: Number(item.ai_overall_score || 0),
-      completion: Number(item.ai_overall_score || 0),
-      status: item.submission_status || "pending_review",
+      students: Number(item.views_count || item.view_count || 0),
+      avgScore: Number(item.like_count || 0),
+      completion: Number(item.saves_count || 0),
+      status: item.source || "published",
     }));
-  }, [submissions]);
+  }, [feedPosts]);
 
   return (
     <motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -196,7 +299,7 @@ export default function ChoreographerDashboard() {
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">Welcome back, {displayName}</h1>
             <p className="text-zinc-400 mt-1 text-sm">Here&apos;s how your content is performing</p>
           </div>
-          <Link href="/choreographer/create" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-4 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110">
+          <Link href="/creator/upload" className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-4 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
             New Upload
           </Link>
@@ -223,7 +326,7 @@ export default function ChoreographerDashboard() {
             <Link key={a.label} href={a.href}>
               <Card hover className="!p-4 group">
                 <span className="text-2xl">{a.icon}</span>
-                <p className="text-sm font-semibold text-white mt-2 group-hover:text-[#c4ff00] transition">{a.label}</p>
+                <p className="text-sm font-semibold text-white mt-2 group-hover:text-[#F3B2AB] transition">{a.label}</p>
                 <p className="text-[10px] text-zinc-500 mt-0.5">{a.desc}</p>
               </Card>
             </Link>
@@ -237,13 +340,13 @@ export default function ChoreographerDashboard() {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-bold text-white">Routine Performance</h3>
-              <Link href="/choreographer/routines" className="text-[10px] font-semibold uppercase tracking-wider text-[#c4ff00] hover:underline">View All</Link>
+              <Link href="/choreographer/routines" className="text-[10px] font-semibold uppercase tracking-wider text-[#F3B2AB] hover:underline">View All</Link>
             </div>
             <div className="space-y-3">
               {routinePerformance.map((r) => (
                 <div key={r.title} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-10 h-10 bg-[#c4ff00]/10 rounded-lg flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4ff00" strokeWidth="2" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                  <div className="w-10 h-10 bg-[#F3B2AB]/10 rounded-lg flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F3B2AB" strokeWidth="2" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-white text-sm truncate">{r.title}</p>
@@ -252,7 +355,7 @@ export default function ChoreographerDashboard() {
                   <div className="text-right shrink-0">
                     <p className="text-xs font-semibold text-white">{r.completion}%</p>
                     <div className="w-16 h-1.5 rounded-full bg-white/10 mt-1 overflow-hidden">
-                      <div className="h-full rounded-full bg-[#c4ff00]" style={{ width: `${r.completion}%` }} />
+                      <div className="h-full rounded-full bg-[#F3B2AB]" style={{ width: `${r.completion}%` }} />
                     </div>
                   </div>
                 </div>
@@ -270,7 +373,7 @@ export default function ChoreographerDashboard() {
                 <div key={i} className="flex gap-3 items-start">
                   <div className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${
                     a.type === "earn" ? "bg-emerald-400" :
-                    a.type === "learn" ? "bg-[#c4ff00]" :
+                    a.type === "learn" ? "bg-[#F3B2AB]" :
                     a.type === "milestone" ? "bg-amber-400" :
                     a.type === "featured" ? "bg-purple-400" :
                     "bg-zinc-500"
@@ -291,7 +394,7 @@ export default function ChoreographerDashboard() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-bold text-white">Monthly Earnings</h3>
-            <Link href="/choreographer/earnings" className="text-[10px] font-semibold uppercase tracking-wider text-[#c4ff00] hover:underline">Details</Link>
+            <Link href="/creator/monetisation" className="text-[10px] font-semibold uppercase tracking-wider text-[#F3B2AB] hover:underline">Details</Link>
           </div>
           <div className="h-36 flex items-end gap-2">
             {([35, 52, 44, 68, 82, 75, 90, 65, 78, 95, 88, 72] as number[]).map((h, i) => (
@@ -300,7 +403,7 @@ export default function ChoreographerDashboard() {
                 initial={{ height: 0 }}
                 animate={{ height: `${h}%` }}
                 transition={{ delay: i * 0.04, duration: 0.5 }}
-                className="flex-1 bg-gradient-to-t from-[#344400] to-[#c4ff00] rounded-t-md min-h-[4px]"
+                className="flex-1 bg-gradient-to-t from-[#344400] to-[#F3B2AB] rounded-t-md min-h-[4px]"
               />
             ))}
           </div>

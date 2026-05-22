@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex gap-1 rounded-xl bg-white/5 p-1">
           {timeRanges.map((r) => (
-            <button key={r} type="button" onClick={() => setRange(r)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${range === r ? "bg-[#c4ff00]/20 text-[#c4ff00]" : "text-zinc-500 hover:text-white"}`}>
+            <button key={r} type="button" onClick={() => setRange(r)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${range === r ? "bg-[#F3B2AB]/20 text-[#F3B2AB]" : "text-zinc-500 hover:text-white"}`}>
               {r}
             </button>
           ))}
@@ -242,8 +242,8 @@ export default function AnalyticsPage() {
 
       {revenue ? (
         <motion.div variants={fadeUp} className="mb-6">
-          <Card className="border-[#c4ff00]/20 bg-[#c4ff00]/5">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#c4ff00]/80">Live earnings sync</p>
+          <Card className="border-[#F3B2AB]/20 bg-[#F3B2AB]/5">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#F3B2AB]/80">Live earnings sync</p>
             <p className="mt-2 text-sm text-zinc-200">
               Your revenue, payout, and workshop totals are now pulled from the monetization system in real time.
             </p>
@@ -278,7 +278,7 @@ export default function AnalyticsPage() {
                   initial={{ height: 0 }}
                   animate={{ height: `${(e.value / monthlyMax) * 100}%` }}
                   transition={{ delay: i * 0.04, duration: 0.5 }}
-                  className="w-full rounded-t-md bg-gradient-to-t from-[#344400] to-[#c4ff00] min-h-[4px]"
+                  className="w-full rounded-t-md bg-gradient-to-t from-[#344400] to-[#F3B2AB] min-h-[4px]"
                 />
                 <span className="text-[9px] text-zinc-600">{e.month}</span>
               </div>
@@ -301,7 +301,7 @@ export default function AnalyticsPage() {
                     whileInView={{ width: `${f.pct}%` }}
                     transition={{ delay: i * 0.08, duration: 0.6 }}
                     viewport={{ once: true }}
-                    className="h-full rounded-lg bg-gradient-to-r from-[#c4ff00]/80 to-[#c4ff00]/40"
+                    className="h-full rounded-lg bg-gradient-to-r from-[#F3B2AB]/80 to-[#F3B2AB]/40"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white">
                     {f.value.toLocaleString()}
@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 rounded-full bg-white/10 overflow-hidden">
-                          <div className="h-full rounded-full bg-[#c4ff00]" style={{ width: `${r.completion}%` }} />
+                          <div className="h-full rounded-full bg-[#F3B2AB]" style={{ width: `${r.completion}%` }} />
                         </div>
                         <span className="text-zinc-400">{r.completion}%</span>
                       </div>

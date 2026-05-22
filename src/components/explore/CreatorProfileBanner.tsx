@@ -36,7 +36,7 @@ export default function CreatorProfileBanner({
         {coverUrl ? (
           <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${coverUrl})` }} />
         ) : (
-          <div className="h-full w-full bg-gradient-to-r from-[#1a2200] via-[#344400] to-[#556d00]" />
+          <div className="h-full w-full bg-gradient-to-r from-[#F3B2AB] via-[#E6A39F] to-[#D88B80]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
       </div>
@@ -57,8 +57,8 @@ export default function CreatorProfileBanner({
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-white">{name}</h2>
               {isVerified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#c4ff00]/15 px-2 py-0.5 text-[10px] font-bold text-[#c4ff00]">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#c4ff00"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#F3B2AB]/15 px-2 py-0.5 text-[10px] font-bold text-[#F3B2AB]">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#F3B2AB"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                   Verified
                 </span>
               )}
@@ -76,7 +76,7 @@ export default function CreatorProfileBanner({
               className={`shrink-0 rounded-xl px-5 py-2 text-xs font-bold transition ${
                 isFollowing
                   ? "border border-white/20 bg-white/5 text-zinc-300 hover:bg-white/10"
-                  : "bg-[#c4ff00] text-[#0a0a0a] hover:brightness-110"
+                  : "bg-[#F3B2AB] text-[#0a0a0a] hover:brightness-110"
               }`}
             >
               {isFollowing ? "Following" : "Follow"}

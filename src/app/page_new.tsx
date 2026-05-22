@@ -158,7 +158,7 @@ export default function HomePageNew() {
                 Try Flow
               </button>
               <Link
-                href="/choreographer/create"
+                href="/creator/upload"
                 className="inline-flex h-12 items-center justify-center rounded-full border border-gold/25 bg-gold/5 px-7 text-xs font-semibold uppercase tracking-[0.16em] text-gold transition hover:bg-gold/10"
               >
                 For Dance Academies
@@ -218,7 +218,7 @@ export default function HomePageNew() {
               <li>Monetize recorded content</li>
             </ul>
             <Link
-              href="/choreographer/create"
+              href="/creator/upload"
               className="mt-6 inline-flex items-center justify-center rounded-full bg-gold px-7 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-obsidian transition hover:brightness-105"
             >
               Partner with us
@@ -262,7 +262,7 @@ export default function HomePageNew() {
                 Try Flow
               </button>
               <Link
-                href="/choreographer/create"
+                href="/creator/upload"
                 className="inline-flex h-12 items-center rounded-full border border-gold/30 bg-[#1a1512] px-7 text-xs font-semibold uppercase tracking-[0.15em] text-gold transition hover:bg-gold/10"
               >
                 For Dance Academies

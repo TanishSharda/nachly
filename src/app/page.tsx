@@ -170,9 +170,9 @@ function sectionReveal(delay = 0) {
 function BentoCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[2rem] border border-[#6c51321f] bg-[#fbf7f1] p-6 shadow-[0_18px_45px_-28px_rgba(58,42,26,0.45)] transition duration-300 hover:-translate-y-0.5 hover:border-[#6c513236] hover:shadow-[0_24px_50px_-26px_rgba(58,42,26,0.5)] sm:p-7 ${className}`}
+      className={`relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.5)] transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_24px_50px_-26px_rgba(0,0,0,0.6)] sm:p-7 ${className}`}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#efe3d2] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/5 to-transparent" />
       {children}
     </div>
   );
@@ -222,8 +222,8 @@ export default function HomePage() {
   }, []);
 
   const flowEntryHref = useMemo(() => {
-    if (!authReady) return "/login?redirect=%2Fexplore";
-    return isAuthenticated ? "/explore" : "/login?redirect=%2Fexplore";
+    if (!authReady) return "/login?redirect=%2Ffeed";
+    return isAuthenticated ? "/feed" : "/login?redirect=%2Ffeed";
   }, [authReady, isAuthenticated]);
 
   const goToFlowEntry = useCallback(() => {
@@ -276,30 +276,30 @@ export default function HomePage() {
   );
 
   return (
-    <main className="relative min-h-screen overflow-x-clip bg-[#f4f1ec] text-[#221d16]">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(122,92,58,0.12),transparent_45%),radial-gradient(circle_at_85%_5%,rgba(251,249,245,0.7),transparent_55%),linear-gradient(180deg,#f6f3ef_0%,#f1ebe2_48%,#ece4d8_100%)]" />
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04] [background-image:radial-gradient(rgba(122,92,58,0.2)_1px,transparent_1px)] [background-size:36px_36px]" />
+    <main className="relative min-h-screen overflow-x-clip bg-[#080808] text-[#F8F8F8]">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.03),transparent_45%),radial-gradient(circle_at_85%_5%,rgba(255,255,255,0.02),transparent_55%),linear-gradient(180deg,#0a0a0a_0%,#121212_48%,#000000_100%)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.03] [background-image:radial-gradient(rgba(255,255,255,0.4)_1px,transparent_1px)] [background-size:36px_36px]" />
 
       <section className="section-padding pt-8 sm:pt-12">
         <motion.nav
           {...sectionReveal()}
-          className="flex items-center justify-between rounded-full border border-[#6c51321f] bg-[#fbf7f1]/80 px-4 py-3 backdrop-blur-xl sm:px-7"
+          className="flex items-center justify-between rounded-full border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-7"
         >
           <Link href="/" className="flex items-center gap-3">
             <BrandLogo size={28} />
-            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Nachly</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#F3B2AB]">Nachly</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/for-choreographers" className="hidden sm:inline-flex rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
+            <Link href="/for-choreographers" className="hidden sm:inline-flex rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
               For Creators
             </Link>
-            <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
+            <Link href="/login" className="rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
               Log In
             </Link>
             <button
               type="button"
               onClick={goToFlowEntry}
-              className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110"
+              className="rounded-full bg-[#F3B2AB] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
             >
               Start Learning
             </button>
@@ -308,17 +308,17 @@ export default function HomePage() {
 
         <motion.div {...sectionReveal(0.05)} className="mt-12 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#7a5c3a]">Beta waitlist open</p>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-[#241e17] sm:text-6xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F3B2AB]">Beta waitlist open</p>
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-white sm:text-6xl">
               Learn Dance Like You Scroll.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5f554b] sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-[#8A8D9F] sm:text-lg">
               Discover viral choreography, practice step-by-step, and level up your moves. Nachly turns short-form dances into real skills.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-2">
               {heroBadges.map((badge) => (
-                <span key={badge} className="rounded-full border border-[#6c513226] bg-white/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6d5133]">
+                <span key={badge} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8D9F]">
                   {badge}
                 </span>
               ))}
@@ -328,13 +328,13 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={goToFlowEntry}
-                className="h-12 rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#fff7f0] transition hover:brightness-110"
+                className="h-12 rounded-full bg-white px-7 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:brightness-110"
               >
                 Start Learning
               </button>
               <a
                 href="#waitlist"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-[#6c513236] bg-white/70 px-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#7a5c3a] transition hover:bg-[#f5ede2]"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-transparent px-7 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10"
               >
                 Join Waitlist
               </a>
@@ -350,9 +350,9 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               whileHover={{ y: -6 }}
-              className="relative rounded-[2.5rem] border border-[#6c513236] bg-white/85 p-3 shadow-[0_28px_60px_-30px_rgba(58,42,26,0.6)]"
+              className="relative rounded-[2.5rem] border border-white/10 bg-white/5 p-3 shadow-[0_28px_60px_-30px_rgba(0,0,0,0.6)]"
             >
-              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#e7dccd] bg-[#1b1510]">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-white/10 bg-black">
                 <video
                   autoPlay
                   muted
@@ -363,12 +363,12 @@ export default function HomePage() {
                 >
                   <source src={HERO_VIDEO} type="video/mp4" />
                 </video>
-                <div className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                <div className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
                   Scroll
                 </div>
-                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 p-3">
-                  <p className="text-xs font-semibold text-[#2b241b]">Monsoon Groove</p>
-                  <p className="text-[10px] text-[#6d6157]">Learn in 6 steps</p>
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur-md">
+                  <p className="text-xs font-semibold text-white">Monsoon Groove</p>
+                  <p className="text-[10px] text-[#8A8D9F]">Learn in 6 steps</p>
                 </div>
               </div>
             </motion.div>
@@ -378,9 +378,9 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               whileHover={{ y: -6 }}
-              className="relative rounded-[2.5rem] border border-[#6c513236] bg-white/85 p-3 shadow-[0_28px_60px_-30px_rgba(58,42,26,0.6)]"
+              className="relative rounded-[2.5rem] border border-white/10 bg-white/5 p-3 shadow-[0_28px_60px_-30px_rgba(0,0,0,0.6)]"
             >
-              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-[#e7dccd] bg-[#f6efe5]">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-white/10 bg-black">
                 <video
                   autoPlay
                   muted
@@ -391,15 +391,15 @@ export default function HomePage() {
                 >
                   <source src={HERO_VIDEO_ALT} type="video/mp4" />
                 </video>
-                <div className="absolute left-3 top-3 rounded-full bg-white/80 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                <div className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
                   Learn
                 </div>
-                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 p-3">
-                  <p className="text-xs font-semibold text-[#2b241b]">Step-by-step</p>
-                  <div className="mt-2 h-1.5 rounded-full bg-[#efe6da]">
-                    <div className="h-full w-1/2 rounded-full bg-[#7a5c3a]" />
+                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur-md">
+                  <p className="text-xs font-semibold text-white">Step-by-step</p>
+                  <div className="mt-2 h-1.5 rounded-full bg-white/20">
+                    <div className="h-full w-1/2 rounded-full bg-[#F3B2AB]" />
                   </div>
-                  <p className="mt-2 text-[10px] text-[#6d6157]">Loop the chorus</p>
+                  <p className="mt-2 text-[10px] text-[#8A8D9F]">Loop the chorus</p>
                 </div>
               </div>
             </motion.div>
@@ -409,16 +409,16 @@ export default function HomePage() {
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">App preview</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">See it in motion</h2>
-          <p className="mt-3 max-w-2xl text-sm text-[#6b6056]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">App preview</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">See it in motion</h2>
+          <p className="mt-3 max-w-2xl text-sm text-[#8A8D9F]">
             Real choreography clips, real practice flow. This is what Nachly feels like.
           </p>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {appPreviews.map((item) => (
               <motion.div key={item.title} whileHover={{ y: -6 }} transition={{ duration: 0.3 }}>
                 <BentoCard>
-                  <div className="relative aspect-[9/16] overflow-hidden rounded-[1.75rem] border border-[#e7dccd] bg-[#1b1510]">
+                  <div className="relative aspect-[9/16] overflow-hidden rounded-[1.75rem] border border-white/10 bg-black">
                     <video
                       autoPlay
                       muted
@@ -429,11 +429,11 @@ export default function HomePage() {
                     >
                       <source src={item.video} type="video/mp4" />
                     </video>
-                    <div className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a]">
+                    <div className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
                       {item.title}
                     </div>
-                    <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 px-3 py-2">
-                      <p className="text-[10px] font-semibold text-[#2b241b]">{item.subtitle}</p>
+                    <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 px-3 py-2 backdrop-blur-md">
+                      <p className="text-[10px] font-semibold text-white">{item.subtitle}</p>
                     </div>
                   </div>
                 </BentoCard>
@@ -445,8 +445,8 @@ export default function HomePage() {
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Why users love it</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Built for dance learners, not spectators</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">Why users love it</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">Built for dance learners, not spectators</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {whyLove.map((item, index) => (
               <motion.div
@@ -457,8 +457,8 @@ export default function HomePage() {
                 viewport={{ once: true, amount: 0.2 }}
               >
                 <BentoCard>
-                  <h3 className="text-lg font-semibold text-[#241e17]">{item.title}</h3>
-                  <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm text-[#8A8D9F]">{item.description}</p>
                 </BentoCard>
               </motion.div>
             ))}
@@ -468,8 +468,8 @@ export default function HomePage() {
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">How it works</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">A scroll-native learning loop</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">How it works</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">A scroll-native learning loop</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-5">
             {howItWorks.map((step, index) => (
               <motion.div
@@ -480,9 +480,9 @@ export default function HomePage() {
                 viewport={{ once: true, amount: 0.2 }}
               >
                 <BentoCard className="text-center">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">{step.step}</p>
-                  <h3 className="mt-3 text-xl font-semibold text-[#241e17]">{step.title}</h3>
-                  <p className="mt-2 text-sm text-[#6b6056]">{step.description}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">{step.step}</p>
+                  <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
+                  <p className="mt-2 text-sm text-[#8A8D9F]">{step.description}</p>
                 </BentoCard>
               </motion.div>
             ))}
@@ -494,15 +494,15 @@ export default function HomePage() {
         <motion.div {...sectionReveal()}>
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Problem and solution</p>
-              <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Watching dance is not learning dance</h2>
-              <p className="mt-5 text-base leading-relaxed text-[#5f554b]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">Problem and solution</p>
+              <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">Watching dance is not learning dance</h2>
+              <p className="mt-5 text-base leading-relaxed text-[#8A8D9F]">
                 Nachly bridges the gap between passive scrolling and real practice. You get structure, repetition, and progress so dances actually stick.
               </p>
             </div>
             <BentoCard>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">Nachly fixes it</p>
-              <ul className="mt-4 space-y-3 text-sm text-[#5f554b]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">Nachly fixes it</p>
+              <ul className="mt-4 space-y-3 text-sm text-[#8A8D9F]">
                 <li>Breakdowns built for repetition</li>
                 <li>Practice tools you control</li>
                 <li>Progress you can track</li>
@@ -515,8 +515,8 @@ export default function HomePage() {
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Features</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Everything you need to level up</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">Features</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">Everything you need to level up</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((item, index) => (
               <motion.div
@@ -527,8 +527,8 @@ export default function HomePage() {
                 viewport={{ once: true, amount: 0.2 }}
               >
                 <BentoCard>
-                  <h3 className="text-lg font-semibold text-[#241e17]">{item.title}</h3>
-                  <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm text-[#8A8D9F]">{item.description}</p>
                 </BentoCard>
               </motion.div>
             ))}
@@ -563,9 +563,9 @@ export default function HomePage() {
               viewport={{ once: true, amount: 0.2 }}
             >
               <BentoCard>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">{item.label}</p>
-                <h3 className="mt-3 text-xl font-semibold text-[#241e17]">{item.title}</h3>
-                <p className="mt-2 text-sm text-[#6b6056]">{item.description}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">{item.label}</p>
+                <h3 className="mt-3 text-xl font-semibold text-white">{item.title}</h3>
+                <p className="mt-2 text-sm text-[#8A8D9F]">{item.description}</p>
               </BentoCard>
             </motion.div>
           ))}
@@ -578,16 +578,16 @@ export default function HomePage() {
           <div className="rounded-[2.5rem] border border-[#6c513236] bg-gradient-to-br from-[#2b241b] to-[#1a1610] p-8 sm:p-10">
             <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#a38260]">For choreographers</p>
-                <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#f8f5ef] sm:text-4xl">Teach dance. Build your brand. Earn.</h2>
-                <p className="mt-4 text-sm leading-relaxed text-[#8a7d70]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">For choreographers</p>
+                <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">Teach dance. Build your brand. Earn.</h2>
+                <p className="mt-4 text-sm leading-relaxed text-[#8A8D9F]">
                   Join a growing community of verified choreographers. Upload like Instagram, structure professional tutorials, reach global learners, and monetize your expertise with a 60% revenue share.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href="/for-choreographers" className="inline-flex h-11 items-center rounded-full bg-[#7a5c3a] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110 shadow-[0_14px_30px_-15px_rgba(122,92,58,0.5)]">
+                  <Link href="/for-choreographers" className="inline-flex h-11 items-center rounded-full bg-[#F3B2AB] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-black transition hover:brightness-110 shadow-[0_14px_30px_-15px_rgba(243,178,171,0.5)]">
                     Learn More
                   </Link>
-                  <Link href="/choreographer/create" className="inline-flex h-11 items-center rounded-full border border-[#6c513260] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#a38260] transition hover:bg-white/5">
+                  <Link href="/creator/upload" className="inline-flex h-11 items-center rounded-full border border-white/20 px-6 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/5">
                     Start Creating
                   </Link>
                 </div>
@@ -613,20 +613,20 @@ export default function HomePage() {
 
       <section id="waitlist" className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <div className="rounded-[2.5rem] border border-[#6c513236] bg-[#fbf7f1] p-8 text-center shadow-[0_25px_50px_-30px_rgba(58,42,26,0.6)] sm:p-10">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">Waitlist</p>
-            <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">
+          <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 text-center shadow-[0_25px_50px_-30px_rgba(0,0,0,0.6)] sm:p-10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">Waitlist</p>
+            <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">
               Be among the first to transform how you learn dance.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#6b6056]">
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#8A8D9F]">
               Get early access, new drops, and creator-led routines as soon as we launch.
             </p>
 
             <div className="mx-auto mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
               {waitlistStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-[#6c51321f] bg-white/80 px-4 py-3">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#7a5c3a]">{stat.label}</p>
-                  <p className="mt-2 text-lg font-semibold text-[#241e17]">{stat.value}</p>
+                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#F3B2AB]">{stat.label}</p>
+                  <p className="mt-2 text-lg font-semibold text-white">{stat.value}</p>
                 </div>
               ))}
             </div>
@@ -638,12 +638,12 @@ export default function HomePage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
-                className="h-12 flex-1 rounded-full border border-[#6c513236] bg-white px-5 text-sm text-[#2b241b] placeholder:text-[#8a7d70] outline-none transition focus:border-[#7a5c3a]"
+                className="h-12 flex-1 rounded-full border border-white/10 bg-white/5 px-5 text-sm text-white placeholder:text-[#8A8D9F] outline-none transition focus:border-white/30"
               />
               <button
                 type="submit"
                 disabled={captureState === "saving"}
-                className="h-12 rounded-full bg-[#7a5c3a] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110 disabled:opacity-70"
+                className="h-12 rounded-full bg-white px-6 text-xs font-semibold uppercase tracking-[0.14em] text-black transition hover:brightness-110 disabled:opacity-70"
               >
                 {captureState === "saving" ? "Saving..." : "Join Waitlist"}
               </button>
@@ -657,13 +657,13 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={goToFlowEntry}
-                className="h-12 rounded-full bg-[#7a5c3a] px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#fff7f0] transition hover:brightness-110"
+                className="h-12 rounded-full bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-black transition hover:brightness-110"
               >
                 Start Learning
               </button>
               <Link
                 href="/scroll?style=mix"
-                className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]"
+                className="inline-flex h-12 items-center rounded-full border border-white/20 bg-transparent px-7 text-xs font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-white/10"
               >
                 Explore the Feed
               </Link>
@@ -674,8 +674,8 @@ export default function HomePage() {
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7a5c3a]">FAQ</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-[#241e17] sm:text-5xl">Quick answers</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">FAQ</p>
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">Quick answers</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {faqs.map((item, index) => (
               <motion.div
@@ -686,8 +686,8 @@ export default function HomePage() {
                 viewport={{ once: true, amount: 0.2 }}
               >
                 <BentoCard>
-                  <h3 className="text-base font-semibold text-[#241e17]">{item.question}</h3>
-                  <p className="mt-2 text-sm text-[#6b6056]">{item.answer}</p>
+                  <h3 className="text-base font-semibold text-white">{item.question}</h3>
+                  <p className="mt-2 text-sm text-[#8A8D9F]">{item.answer}</p>
                 </BentoCard>
               </motion.div>
             ))}
@@ -696,20 +696,20 @@ export default function HomePage() {
       </section>
 
       <footer className="section-padding pb-16 pt-14">
-        <div className="flex flex-col items-start justify-between gap-6 border-t border-[#6c51321f] pt-8 sm:flex-row">
+        <div className="flex flex-col items-start justify-between gap-6 border-t border-white/10 pt-8 sm:flex-row">
           <div>
             <div className="flex items-center gap-3">
               <BrandLogo size={28} />
-              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#7a5c3a]">Nachly</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#F3B2AB]">Nachly</span>
             </div>
-            <p className="mt-3 max-w-sm text-sm text-[#6b6056]">A modern dance learning app built for the scroll generation.</p>
+            <p className="mt-3 max-w-sm text-sm text-[#8A8D9F]">A modern dance learning app built for the scroll generation.</p>
           </div>
-          <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7a5c3a]">
-            <Link href="/scroll?style=mix">Flow</Link>
-            <Link href="/explore">Explore</Link>
+          <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">
+            <Link href="/feed?style=mix">Flow</Link>
+            <Link href="/feed">Feed</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
-            <Link href="/choreographer/create">Apply</Link>
+            <Link href="/creator/dashboard">Creator</Link>
             <Link href="/login">Login</Link>
             <Link href="/download-app">App</Link>
           </div>

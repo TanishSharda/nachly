@@ -70,7 +70,7 @@ export default function StyleCoursePage() {
       <motion.div initial="hidden" animate="visible" variants={stagger}>
         <motion.div variants={fadeUp} className="mb-4">
           <Link
-            href="/explore"
+            href="/feed"
             className="inline-flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -162,7 +162,7 @@ export default function StyleCoursePage() {
               <p className="text-zinc-300 max-w-md mx-auto mb-6">
                 {style.name} choreographies are being crafted by expert instructors. Check back soon!
               </p>
-              <Link href="/choreographer/create">
+              <Link href="/creator/upload">
                 <button className="px-8 py-3.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-gold hover:text-obsidian transition-all">
                   Want to teach {style.name}? Apply here
                 </button>

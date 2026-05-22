@@ -161,14 +161,14 @@ export default function ChoreographerCreatePage() {
         >
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#c4ff00]">Creator wizard</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#F3B2AB]">Creator wizard</p>
               <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Map the routine before you upload it.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
                 Use this quick setup to lock the concept, pick the audience, and hand off to the upload studio with a clean creative brief.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-300">
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${isLoading ? "border-white/10 bg-white/5 text-zinc-400" : presetError ? "border-amber-400/20 bg-amber-400/10 text-amber-200" : "border-[#c4ff00]/20 bg-[#c4ff00]/10 text-[#c4ff00]"}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${isLoading ? "animate-pulse bg-zinc-500" : presetError ? "bg-amber-300" : "bg-[#c4ff00]"}`} />
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${isLoading ? "border-white/10 bg-white/5 text-zinc-400" : presetError ? "border-amber-400/20 bg-amber-400/10 text-amber-200" : "border-[#F3B2AB]/20 bg-[#F3B2AB]/10 text-[#F3B2AB]"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isLoading ? "animate-pulse bg-zinc-500" : presetError ? "bg-amber-300" : "bg-[#F3B2AB]"}`} />
                   {isLoading ? "Loading saved brief" : presetStatus}
                 </span>
                 {presetError && <span className="text-zinc-400">{presetError}</span>}
@@ -182,7 +182,7 @@ export default function ChoreographerCreatePage() {
                 return (
                   <div
                     key={item.title}
-                    className={`rounded-2xl border px-3 py-3 text-center ${active ? "border-[#c4ff00]/40 bg-[#c4ff00]/10 text-[#c4ff00]" : done ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-white/5 text-zinc-400"}`}
+                    className={`rounded-2xl border px-3 py-3 text-center ${active ? "border-[#F3B2AB]/40 bg-[#F3B2AB]/10 text-[#F3B2AB]" : done ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-white/5 text-zinc-400"}`}
                   >
                     <p>{String(index + 1).padStart(2, "0")}</p>
                     <p className="mt-1 leading-tight">{item.title}</p>
@@ -258,9 +258,9 @@ export default function ChoreographerCreatePage() {
                             key={option.value}
                             type="button"
                             onClick={() => setMonetization(option.value)}
-                            className={`rounded-2xl border p-4 text-left transition ${selected ? "border-[#c4ff00]/40 bg-[#c4ff00]/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+                            className={`rounded-2xl border p-4 text-left transition ${selected ? "border-[#F3B2AB]/40 bg-[#F3B2AB]/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
                           >
-                              <p className={`text-sm font-bold ${selected ? "text-[#c4ff00]" : "text-white"}`}>{option.label}</p>
+                              <p className={`text-sm font-bold ${selected ? "text-[#F3B2AB]" : "text-white"}`}>{option.label}</p>
                               <p className="mt-1 text-xs text-zinc-400">{option.description}</p>
                             </button>
                           );
@@ -315,8 +315,8 @@ export default function ChoreographerCreatePage() {
                 </div>
               </Card>
 
-              <Card className="border-[#c4ff00]/20 bg-[#c4ff00]/10 p-5 text-[#f5ffe0]">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#c4ff00]">Studio shortcut</p>
+              <Card className="border-[#F3B2AB]/20 bg-[#F3B2AB]/10 p-5 text-[#f5ffe0]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#F3B2AB]">Studio shortcut</p>
                 <h3 className="mt-2 text-2xl font-black text-white">Need to skip the setup?</h3>
                 <p className="mt-2 text-sm text-zinc-200">
                   Open the full upload studio directly if your routine brief is already prepared.

@@ -61,13 +61,13 @@ export default function DraftsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#c4ff00]/70">Creator Studio</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#F3B2AB]/70">Creator Studio</p>
           <h1 className="mt-2 text-2xl font-bold text-white">Drafts</h1>
           <p className="text-sm text-zinc-400 mt-1">Manage unfinished choreography uploads.</p>
         </div>
         <Link
-          href="/choreographer/create"
-          className="rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-4 py-2 text-xs font-bold text-[#0a0a0a]"
+          href="/creator/upload"
+          className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-4 py-2 text-xs font-bold text-[#0a0a0a]"
         >
           New Upload
         </Link>

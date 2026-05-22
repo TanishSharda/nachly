@@ -44,7 +44,7 @@ export default function CaptionEditor({ captions, onChange }: CaptionEditorProps
         <button
           type="button"
           onClick={addCaption}
-          className="rounded-xl border border-[#c4ff00]/30 bg-[#c4ff00]/10 px-3 py-1.5 text-xs font-semibold text-[#c4ff00] hover:bg-[#c4ff00]/20 transition"
+          className="rounded-xl border border-[#F3B2AB]/30 bg-[#F3B2AB]/10 px-3 py-1.5 text-xs font-semibold text-[#F3B2AB] hover:bg-[#F3B2AB]/20 transition"
         >
           + Add Caption
         </button>

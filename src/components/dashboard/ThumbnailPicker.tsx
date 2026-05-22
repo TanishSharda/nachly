@@ -106,7 +106,7 @@ export default function ThumbnailPicker({ videoUrl, selectedUrl, onSelect }: Thu
             type="button"
             onClick={() => onSelect(frame)}
             className={`relative overflow-hidden rounded-xl border-2 transition ${
-              selectedUrl === frame ? "border-[#c4ff00]" : "border-white/10 hover:border-white/30"
+              selectedUrl === frame ? "border-[#F3B2AB]" : "border-white/10 hover:border-white/30"
             }`}
           >
             <img src={frame} alt={`Frame ${index + 1}`} className="h-full w-full object-cover" />

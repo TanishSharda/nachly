@@ -33,8 +33,8 @@ function getNavLinks(user: NavbarProps["user"]): NavLink[] {
   // Add choreographer-specific links
   if (user?.role === "choreographer" || user?.role === "admin") {
     baseLinks.push(
-      { label: "Create", href: "/choreographer/create", minRole: "choreographer" },
-      { label: "Dashboard", href: "/choreographer/dashboard", minRole: "choreographer" }
+      { label: "Create", href: "/creator/upload", minRole: "choreographer" },
+      { label: "Dashboard", href: "/creator/dashboard", minRole: "choreographer" }
     );
   }
 
@@ -54,8 +54,7 @@ export default function Navbar({ user }: NavbarProps) {
   const navLinks = getNavLinks(user);
 
   const handleProfileClick = () => {
-    console.log("Profile clicked");
-    router.push("/profile");
+    router.push("/profile/me");
     setMobileOpen(false);
   };
 
@@ -114,11 +113,11 @@ export default function Navbar({ user }: NavbarProps) {
             {user ? (
               <>
                 {user?.role !== "choreographer" && user?.role !== "admin" ? (
-                  <Link href="/become-creator">
+                  <Link href="/creator/dashboard">
                     <Button size="sm">Start Teaching</Button>
                   </Link>
                 ) : (
-                  <Link href="/choreographer">
+                  <Link href="/creator/dashboard">
                     <Button variant="ghost" size="sm">Creator Dashboard</Button>
                   </Link>
                 )}
@@ -199,11 +198,11 @@ export default function Navbar({ user }: NavbarProps) {
                   {user ? (
                     <>
                       {user?.role !== "choreographer" && user?.role !== "admin" ? (
-                        <Link href="/become-creator" onClick={() => setMobileOpen(false)} className="block">
+                        <Link href="/creator/dashboard" onClick={() => setMobileOpen(false)} className="block">
                           <Button size="sm" className="w-full">Start Teaching</Button>
                         </Link>
                       ) : (
-                        <Link href="/choreographer" onClick={() => setMobileOpen(false)} className="block">
+                        <Link href="/creator/dashboard" onClick={() => setMobileOpen(false)} className="block">
                           <Button variant="ghost" size="sm" className="w-full">Creator Dashboard</Button>
                         </Link>
                       )}

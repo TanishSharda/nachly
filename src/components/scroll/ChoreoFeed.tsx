@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getChoreographyFeed } from "@/lib/api/choreos";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
@@ -36,13 +37,28 @@ function formatCount(value?: number | null) {
   return new Intl.NumberFormat("en-IN", { notation: v >= 10000 ? "compact" : "standard" }).format(v);
 }
 
+function slugify(value?: string | null) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function FeedCard({ post }: { post: ChoreographyFeedItem }) {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"performance" | "teaching">("performance");
 
-  const videoUrl = post.demo_reel?.video_url || post.tutorial?.video_url || "";
+  const performanceVideo = post.demo_video_url || post.demo_reel?.video_url || post.video_url || "";
+  const teachingVideo = post.teaching_video_url || post.tutorial?.video_url || performanceVideo;
+  const videoUrl = activeTab === "teaching" ? teachingVideo : performanceVideo;
   const posterUrl = post.demo_reel?.thumbnail_url || "";
+  const creatorSlug = slugify(post.creator_name);
+  const learnHref = `/choreography/${encodeURIComponent(post.id)}/learn`;
+  const practiceHref = `/choreography/${encodeURIComponent(post.id)}/practice`;
+  const profileHref = creatorSlug ? `/profile/${encodeURIComponent(creatorSlug)}` : "/profile/me";
 
   return (
     <motion.article
@@ -50,7 +66,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-15%" }}
       transition={{ duration: 0.45 }}
-      className="relative overflow-hidden rounded-[2rem] border border-[#6c51321c] bg-[#1b120d] shadow-[0_28px_60px_-36px_rgba(48,31,17,0.8)]"
+      className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#1b120d] shadow-[0_28px_60px_-36px_rgba(0,0,0,0.8)]"
     >
       <div className="relative min-h-[74vh]">
         {videoUrl ? (
@@ -65,7 +81,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#7a5c3a_0%,#20160f_45%,#0b0705_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#1a1a1a_0%,#000000_100%)]" />
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b0705] via-[#0b0705]/35 to-transparent" />
@@ -93,11 +109,34 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
             </div>
           </div>
 
+          <div className="mt-4 inline-flex rounded-full border border-white/10 bg-black/20 p-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/85 backdrop-blur-md w-fit">
+            <button
+              type="button"
+              onClick={() => setActiveTab("performance")}
+              className={cn(
+                "rounded-full px-3 py-1.5 transition",
+                activeTab === "performance" ? "bg-white text-[#241811]" : "text-white/80 hover:text-white"
+              )}
+            >
+              Performance
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("teaching")}
+              className={cn(
+                "rounded-full px-3 py-1.5 transition",
+                activeTab === "teaching" ? "bg-white text-[#241811]" : "text-white/80 hover:text-white"
+              )}
+            >
+              Teaching
+            </button>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-2xl text-white">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7]">
+              <Link href={profileHref} className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7] hover:text-white transition-colors">
                 {post.creator_name || "Featured choreographer"}
-              </p>
+              </Link>
               <h2 className="mt-3 text-3xl font-black leading-[0.92] tracking-tight sm:text-4xl md:text-5xl">
                 {post.title}
               </h2>
@@ -114,8 +153,8 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
 
             <div className="flex flex-col gap-2 lg:min-w-[220px]">
               <Link
-                href="/learn"
-                className="inline-flex items-center justify-center rounded-2xl bg-[#f4eadb] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-[#372515] transition hover:bg-white"
+                href={learnHref}
+                className="inline-flex items-center justify-center rounded-2xl bg-[#F3B2AB] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
               >
                 Learn Tab
               </Link>
@@ -127,7 +166,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
                     label: "Share",
                     active: false,
                     onClick: async () => {
-                      const url = `${window.location.origin}/learn/${post.id}?mode=stepwise`;
+                      const url = `${window.location.origin}${learnHref}`;
                       if (navigator.share) {
                         await navigator.share({ title: post.title, text: post.description ?? undefined, url });
                         return;
@@ -144,8 +183,8 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
                     className={cn(
                       "rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] backdrop-blur-md transition",
                       action.active
-                        ? "border-[#f7d9b740] bg-[#f7d9b71c] text-[#fff6eb]"
-                        : "border-white/10 bg-white/8 text-[#f4e7d6] hover:bg-white/12"
+                        ? "border-[#F3B2AB]/40 bg-[#F3B2AB]/20 text-[#F3B2AB]"
+                        : "border-white/10 bg-white/5 text-white hover:bg-white/10"
                     )}
                   >
                     {action.label}
@@ -164,7 +203,7 @@ function FeedSkeleton() {
   return (
     <div className="space-y-5">
       {Array.from({ length: 2 }).map((_, index) => (
-        <Card key={index} padding="none" className="overflow-hidden rounded-[2rem] border border-[#6c51321c] bg-[#1b120d]">
+        <Card key={index} padding="none" className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#1b120d]">
           <div className="relative min-h-[70vh]">
             <Skeleton className="absolute inset-0 rounded-none bg-[#2d2017]" />
             <div className="relative flex min-h-[70vh] flex-col justify-between p-6">
@@ -204,6 +243,64 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
     setHasMore(initialPosts.length > 0);
     setError(null);
   }, [initialPosts]);
+
+  useEffect(() => {
+    // Subscribe to Supabase realtime events to refresh feed on publish/unpublish
+    let client: any;
+    try {
+      client = createSupabaseClient();
+    } catch (err) {
+      // supabase not configured in this environment
+      return;
+    }
+
+    const channel = client
+      .channel("public-choreography-feed")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "routines" },
+        () => {
+          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
+            if (data?.posts && Array.isArray(data.posts)) {
+              setPosts((current) => {
+                const incoming = data.posts || [];
+                const ids = new Set(current.map((p) => p.id));
+                const merged = [...incoming.filter((p) => !ids.has(p.id)), ...current];
+                return merged.slice(0, Math.max(8, merged.length));
+              });
+            }
+          }).catch(() => undefined);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "routines" },
+        (payload: any) => {
+          // refresh when published_at toggles or approval changes
+          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
+            if (data?.posts && Array.isArray(data.posts)) setPosts(data.posts);
+          }).catch(() => undefined);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "choreo_submissions" },
+        () => {
+          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
+            if (data?.posts && Array.isArray(data.posts)) setPosts(data.posts);
+          }).catch(() => undefined);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch {
+        // ignore
+      }
+    };
+  }, [style, difficulty]);
 
   useEffect(() => {
     const target = sentinelRef.current;
@@ -259,7 +356,7 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
 
   return (
     <div className="space-y-5 pb-6">
-      <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#81634a]">
+      <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
         {FEED_FILTERS.map((filter) => {
           const isActive = (filter.style || "all") === activeFilters[0] && (filter.difficulty || "all") === activeFilters[1];
           const href = new URLSearchParams();
@@ -269,10 +366,10 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
           return (
             <Link
               key={filter.label}
-              href={href.toString() ? `/scroll?${href.toString()}` : "/scroll"}
+              href={href.toString() ? `/feed?${href.toString()}` : "/feed"}
               className={cn(
                 "rounded-full border px-4 py-2 transition",
-                isActive ? "border-[#7a5c3a] bg-[#7a5c3a] text-[#fff7ef]" : "border-[#6c513220] bg-white/70 text-[#725b3f] hover:bg-white"
+                isActive ? "border-[#F3B2AB] bg-[#F3B2AB] text-black" : "border-white/10 bg-white/5 text-white hover:bg-white/10"
               )}
             >
               {filter.label}
@@ -289,11 +386,11 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
 
       <div ref={sentinelRef} className="grid place-items-center py-8">
         {loadingMore ? (
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a6a4c]">Loading more reels</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8A8D9F]">Loading more reels</span>
         ) : hasMore ? (
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a6a4c]">Scroll for more</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8A8D9F]">Scroll for more</span>
         ) : (
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a6a4c]">End of the feed</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8A8D9F]">End of the feed</span>
         )}
         {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
       </div>

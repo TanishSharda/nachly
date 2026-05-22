@@ -4,8 +4,8 @@
   "description": "India's first AI-powered dance academy. Learn Bollywood, Hip Hop, Kathak & Bhangra with real-time AI feedback.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#061532",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "orientation": "portrait",
   "icons": [
     {

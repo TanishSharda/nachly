@@ -165,8 +165,8 @@ export default function LibraryPage() {
             Checking your access...
           </motion.div>
         ) : subscriptionActive ? (
-          <motion.div variants={fadeUp} className="mb-5 rounded-2xl border border-[#c4ff00]/20 bg-[#c4ff00]/10 p-4 text-sm text-white">
-            <p className="font-semibold text-[#c4ff00]">Naachly Plus active</p>
+          <motion.div variants={fadeUp} className="mb-5 rounded-2xl border border-[#F3B2AB]/20 bg-[#F3B2AB]/10 p-4 text-sm text-white">
+            <p className="font-semibold text-[#F3B2AB]">Naachly Plus active</p>
             <p className="mt-1 text-zinc-200">You have subscription access to premium routines and creator drops.</p>
           </motion.div>
         ) : null}
@@ -180,7 +180,7 @@ export default function LibraryPage() {
             </div>
             <h2 className="font-display text-xl font-bold text-white mb-2">No courses yet</h2>
             <p className="text-zinc-300 mb-6">Explore dance styles and unlock your first routine</p>
-            <Link href="/explore"><Button>Explore Styles</Button></Link>
+            <Link href="/feed"><Button>Explore Styles</Button></Link>
           </motion.div>
         ) : (
           <div className="space-y-7">

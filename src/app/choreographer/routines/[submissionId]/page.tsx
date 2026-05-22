@@ -159,7 +159,7 @@ export default function ChoreographerSubmissionDetailPage() {
                 >
                   {saving ? "Resubmitting..." : "Resubmit"}
                 </button>
-                <Link href="/choreographer/create" className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white">
+                <Link href="/creator/upload" className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white">
                   New Upload
                 </Link>
               </div>
