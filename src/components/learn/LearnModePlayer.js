@@ -56,6 +56,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
   const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
+  const [signedUrl, setSignedUrl] = useState(null);
   const isEmbedUrl = useMemo(() => {
     const v = String(choreo?.video || "").trim();
     if (!v) return false;
@@ -209,6 +210,51 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
     } catch {}
   }, [choreo, videoSources]);
 
+  // If the choreo.video points to Supabase storage public URL, request a signed URL
+  useEffect(() => {
+    let mounted = true;
+    async function fetchSigned() {
+      setSignedUrl(null);
+      const v = String(choreo?.video || "").trim();
+      if (!v) return;
+
+      try {
+        const url = new URL(v, window.location.href);
+        const publicMarker = "/storage/v1/object/public/";
+        const idx = url.pathname.indexOf(publicMarker);
+        if (idx === -1) return;
+
+        const tail = url.pathname.slice(idx + publicMarker.length); // bucket/...path
+        const parts = tail.split("/");
+        const bucket = parts.shift();
+        const path = parts.join("/");
+        if (!bucket || !path) return;
+
+        const res = await fetch("/api/storage/signed-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bucket, path, expires: 300 }),
+        });
+        const json = await res.json();
+        if (!mounted) return;
+        if (res.ok && json?.url) {
+          setSignedUrl(json.url);
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn("Failed to get signed url", json);
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("No signed URL needed or failed to parse URL", err);
+      }
+    }
+
+    fetchSigned();
+    return () => {
+      mounted = false;
+    };
+  }, [choreo?.video]);
+
   const togglePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -360,9 +406,9 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
               preload="auto"
               className="h-full w-full bg-[#1b1510] object-contain"
             >
-              {videoSources.map((source) => (
-                <source key={source.src} src={source.src} type={source.type} />
-              ))}
+                {(signedUrl ? [{ src: signedUrl, type: "video/mp4" }] : videoSources).map((source) => (
+                  <source key={source.src} src={source.src} type={source.type} />
+                ))}
             </video>
           )}
 
