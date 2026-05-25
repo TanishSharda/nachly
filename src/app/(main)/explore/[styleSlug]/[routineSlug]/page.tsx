@@ -127,7 +127,7 @@ export default function RoutineDetailPage() {
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </Link>
-          <Link href="/explore" className="hover:text-white transition-colors">Explore</Link>
+          <Link href="/feed" className="hover:text-white transition-colors">Explore</Link>
           <span>/</span>
           <Link href={`/explore/${styleSlug}`} className="hover:text-white transition-colors">{style.name}</Link>
           <span>/</span>

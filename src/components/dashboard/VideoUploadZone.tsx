@@ -71,7 +71,7 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
             onClick={() => setMode(m)}
             className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
               mode === m
-                ? "bg-[#c4ff00]/20 text-[#c4ff00] border border-[#c4ff00]/30"
+                ? "bg-[#F3B2AB]/20 text-[#F3B2AB] border border-[#F3B2AB]/30"
                 : "bg-white/5 text-zinc-400 border border-white/10 hover:bg-white/10"
             }`}
           >
@@ -88,7 +88,7 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
           onClick={() => fileRef.current?.click()}
           className={`relative cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-300 ${
             dragging
-              ? "border-[#c4ff00] bg-[#c4ff00]/5"
+              ? "border-[#F3B2AB] bg-[#F3B2AB]/5"
               : "border-white/20 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.05]"
           } ${hasVideo ? "p-3" : "p-8 sm:p-12"}`}
         >
@@ -113,10 +113,10 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
           ) : (
             <div className="text-center">
               <motion.div
-                animate={dragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
-                className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5"
-              >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={dragging ? "#c4ff00" : "#666"} strokeWidth="1.5" strokeLinecap="round">
+                  animate={dragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
+                  className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5"
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={dragging ? "#F3B2AB" : "#666"} strokeWidth="1.5" strokeLinecap="round">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                 </svg>
               </motion.div>
@@ -131,7 +131,7 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
             value={videoUrl}
             onChange={(e) => onVideoUrlChange(e.target.value)}
             placeholder="https://drive.google.com/... or direct video URL"
-            className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-[#c4ff00]/50 focus:ring-2 focus:ring-[#c4ff00]/20"
+            className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-[#F3B2AB]/50 focus:ring-2 focus:ring-[#F3B2AB]/20"
           />
           <p className="mt-2 text-xs text-zinc-600">Paste a Google Drive link or direct video URL</p>
           {previewUrl && (

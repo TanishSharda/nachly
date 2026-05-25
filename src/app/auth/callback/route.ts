@@ -8,8 +8,8 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const providerError = searchParams.get("error");
   const providerErrorDescription = searchParams.get("error_description");
-  const redirectParam = searchParams.get("redirect") || "/explore";
-  const redirect = redirectParam.startsWith("/") ? redirectParam : "/explore";
+  const redirectParam = searchParams.get("redirect") || "/feed";
+  const redirect = redirectParam.startsWith("/") ? redirectParam : "/feed";
   const requestId = crypto.randomUUID();
   const pendingCookies: Array<{ name: string; value: string; options?: Record<string, unknown> }> = [];
 
@@ -137,13 +137,26 @@ export async function GET(request: Request) {
         });
       }
 
+      let resolvedRedirect = redirect;
+      if (redirect === "/feed") {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        resolvedRedirect = profile?.role === "choreographer" || profile?.role === "admin" ? "/creator/dashboard" : "/feed";
+      }
+
       logAuthEvent({
         event: "oauth_login_success",
         level: "info",
         requestId,
         userId: user.id,
-        details: { redirect },
+        details: { redirect: resolvedRedirect },
       });
+
+      return finalizeRedirect(`${origin}${resolvedRedirect}`);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";

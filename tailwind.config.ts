@@ -9,7 +9,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        /* Legacy/shared UI semantic palette */
+        /* Naachly marketing-aligned palette (primary project tokens) */
+        naachly: {
+          background: "#0a0a0a",
+          surface: "#141314",
+          foreground: "#F8F5EF",
+          muted: "#8A8D9F",
+          accent: "#FFFFFF",
+          accentPink: "#F3B2AB",
+          accentPinkDark: "#D88B80",
+        },
+        /* compatibility aliases for existing code that reference older tokens */
+        dbg: {
+          DEFAULT: "#0a0a0a",
+          50: "#282828",
+          100: "#1a1a1a",
+          200: "#121212",
+          300: "#0a0a0a",
+        },
+        dark: {
+          DEFAULT: "#0a0a0a",
+          50: "#282828",
+          100: "#1f1f1f",
+          200: "#1a1a1a",
+          300: "#8A8D9F",
+        },
+        /* keep `wine` as-is in case used elsewhere */
         wine: {
           50: "#fdf2f8",
           100: "#fce7f3",
@@ -22,61 +47,6 @@ const config: Config = {
           800: "#9d174d",
           900: "#831843",
         },
-        gold: {
-          DEFAULT: "#7A5C3A",
-          50: "#f8f4ef",
-          100: "#efe6db",
-          200: "#dfcdb6",
-          300: "#d0b391",
-          400: "#c29a6d",
-          500: "#ad8151",
-          600: "#8f6b44",
-          700: "#7a5c3a",
-          800: "#624a2f",
-          900: "#4c3924",
-        },
-        obsidian: {
-          DEFAULT: "#F4F1EC",
-          100: "#EDE7DE",
-        },
-        /* Primary accent palette */
-        nred: {
-          DEFAULT: "#7A5C3A",
-          50: "#f7ffe0",
-          100: "#edffc2",
-          200: "#e1ff8a",
-          300: "#d5ff5d",
-          400: "#ccff2e",
-          500: "#c4ff00",
-          600: "#9fcd00",
-          700: "#7b9e00",
-          800: "#556d00",
-          900: "#344400",
-          950: "#1a2200",
-        },
-        /* Dark background palette */
-        dbg: {
-          DEFAULT: "#000000",
-          50: "#282828",
-          100: "#1a1a1a",
-          200: "#121212",
-          300: "#0a0a0a",
-          400: "#000000",
-        },
-        /* Dark text/surface palette (now purely black-based) */
-        dark: {
-          DEFAULT: "#000000",
-          50: "#282828",
-          100: "#1f1f1f",
-          200: "#1a1a1a",
-          300: "#8A8D9F",
-          400: "#6b6e80",
-          500: "#0a0a0a",
-          600: "#080808",
-          700: "#050505",
-          800: "#030303",
-          900: "#000000",
-        },
       },
       fontFamily: {
         display: ["var(--font-manrope)", "var(--font-playfair)", "Georgia", "serif"],
@@ -84,10 +54,10 @@ const config: Config = {
         dash: ["'Manrope'", "'Inter'", "system-ui", "sans-serif"],
       },
       backgroundImage: {
-        "gradient-nred": "linear-gradient(135deg, #c4ff00 0%, #7b9e00 100%)",
-        "gradient-warm": "linear-gradient(135deg, #c4ff00 0%, #74ff35 100%)",
-        "gradient-wine": "linear-gradient(135deg, #9fcd00 0%, #344400 100%)",
-        "gradient-gold": "linear-gradient(135deg, #c4ff00 0%, #f8ffe1 100%)",
+        "gradient-nred": "linear-gradient(135deg, #F3B2AB 0%, #D88B80 100%)",
+        "gradient-warm": "linear-gradient(135deg, #F3B2AB 0%, #E6A39F 100%)",
+        "gradient-wine": "linear-gradient(135deg, #F3B2AB 0%, #D88B80 100%)",
+        "gradient-gold": "linear-gradient(135deg, #F3B2AB 0%, #FBEAEA 100%)",
         "gradient-cream": "linear-gradient(180deg, #061433 0%, #010713 100%)",
       },
       transitionTimingFunction: {
@@ -149,9 +119,9 @@ const config: Config = {
           "100%": { backgroundPosition: "200% 0" },
         },
         pulseGlow: {
-          "0%": { boxShadow: "0 0 10px rgba(196,255,0,0.45)" },
-          "50%": { boxShadow: "0 0 25px rgba(196,255,0,0.4), 0 0 5px #c4ff00" },
-          "100%": { boxShadow: "0 0 10px rgba(196,255,0,0.45)" },
+          "0%": { boxShadow: "0 0 10px rgba(243,178,171,0.45)" },
+          "50%": { boxShadow: "0 0 25px rgba(243,178,171,0.4), 0 0 5px #F3B2AB" },
+          "100%": { boxShadow: "0 0 10px rgba(243,178,171,0.45)" },
         },
         bgPulse: {
           "0%": { transform: "scale(1) translate(0, 0)" },

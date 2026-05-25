@@ -863,7 +863,7 @@ export default function FlowPage() {
       <header className="fixed top-0 z-50 w-full bg-[#fbf9f4]/75 backdrop-blur-xl px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] md:px-6 md:py-4">
         <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/explore" className="text-[#725b3f] hover:opacity-80 transition-opacity active:scale-95 rounded-full p-1">
+          <Link href="/feed" className="text-[#725b3f] hover:opacity-80 transition-opacity active:scale-95 rounded-full p-1">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </Link>
           <h1 className="font-black text-2xl md:text-2xl tracking-tight text-[#725b3f]">Nachly</h1>

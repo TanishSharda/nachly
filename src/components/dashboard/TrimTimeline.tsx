@@ -37,7 +37,7 @@ export default function TrimTimeline({ duration, startSeconds, endSeconds, onCha
       <div className="relative h-10 rounded-xl bg-gradient-to-r from-zinc-900 to-zinc-800">
         <div className="absolute inset-0 rounded-xl border border-white/5" />
         <div
-          className="absolute top-1.5 h-7 rounded-lg bg-[#c4ff00]/20 border border-[#c4ff00]/40"
+          className="absolute top-1.5 h-7 rounded-lg bg-[#F3B2AB]/20 border border-[#F3B2AB]/40"
           style={progress}
         />
         <input
@@ -83,7 +83,7 @@ export default function TrimTimeline({ duration, startSeconds, endSeconds, onCha
               const bounded = Math.min(nextStart, safeEnd - minGap);
               onChange({ startSeconds: Math.max(0, bounded), endSeconds: safeEnd });
             }}
-            className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#c4ff00]/40"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#F3B2AB]/40"
           />
         </div>
         <div>
@@ -99,7 +99,7 @@ export default function TrimTimeline({ duration, startSeconds, endSeconds, onCha
               const bounded = Math.max(nextEnd, safeStart + minGap);
               onChange({ startSeconds: safeStart, endSeconds: Math.min(duration, bounded) });
             }}
-            className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#c4ff00]/40"
+            className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-[#F3B2AB]/40"
           />
         </div>
       </div>

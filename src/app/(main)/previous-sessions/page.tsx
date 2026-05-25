@@ -161,7 +161,7 @@ export default function PreviousSessionsPage() {
             <p className="mt-1 text-sm text-zinc-400">Your past recordings with song name, score, timestamp, and replay actions.</p>
           </div>
           <Link
-            href="/explore"
+            href="/feed"
             className="rounded-xl border border-white/20 px-4 py-2 text-sm text-zinc-200 transition hover:bg-white/10"
           >
             Back to Explore

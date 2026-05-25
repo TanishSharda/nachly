@@ -22,7 +22,7 @@ export default function AdminApplicationsClient(props: {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Legacy Creator Applications</h1>
-          <Link href="/explore" className="text-sm text-zinc-400 hover:text-zinc-300">← Back</Link>
+          <Link href="/feed" className="text-sm text-zinc-400 hover:text-zinc-300">← Back</Link>
         </div>
 
         <div className="mb-4 rounded-xl border border-yellow-400/20 bg-yellow-500/10 p-3 text-xs text-yellow-100">

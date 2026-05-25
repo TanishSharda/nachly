@@ -55,7 +55,7 @@ export default function ChoreographerRoutinesPage() {
           <p className="mt-1 text-sm text-zinc-300">Track review status, AI scores, and resubmit if needed.</p>
         </div>
         <Link
-          href="/choreographer/create"
+          href="/creator/upload"
           className="rounded-xl bg-gradient-to-r from-nred-500 to-lime-500 px-4 py-2 text-sm font-semibold text-[#041225]"
         >
           New Upload
@@ -69,7 +69,7 @@ export default function ChoreographerRoutinesPage() {
         <div className="rounded-2xl app-card p-8 text-center">
           <p className="text-zinc-300">No choreography submissions yet.</p>
           <Link
-            href="/choreographer/create"
+            href="/creator/upload"
             className="mt-4 inline-flex rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white"
           >
             Upload your first choreo

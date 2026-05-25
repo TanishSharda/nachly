@@ -53,7 +53,7 @@ export default function LessonBuilder({ parts, onPartsChange }: LessonBuilderPro
         <button
           type="button"
           onClick={addPart}
-          className="flex items-center gap-1.5 rounded-xl border border-[#c4ff00]/30 bg-[#c4ff00]/10 px-3 py-1.5 text-xs font-semibold text-[#c4ff00] transition hover:bg-[#c4ff00]/20"
+          className="flex items-center gap-1.5 rounded-xl border border-[#F3B2AB]/30 bg-[#F3B2AB]/10 px-3 py-1.5 text-xs font-semibold text-[#F3B2AB] transition hover:bg-[#F3B2AB]/20"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
           Add Part
@@ -83,7 +83,7 @@ export default function LessonBuilder({ parts, onPartsChange }: LessonBuilderPro
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                   </button>
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#c4ff00]/10 text-xs font-bold text-[#c4ff00]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F3B2AB]/10 text-xs font-bold text-[#F3B2AB]">
                   {index + 1}
                 </span>
               </div>
@@ -97,27 +97,27 @@ export default function LessonBuilder({ parts, onPartsChange }: LessonBuilderPro
                 value={part.label}
                 onChange={(e) => updatePart(part.id, "label", e.target.value)}
                 placeholder="Part name (e.g. Intro Groove)"
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40"
+                className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40"
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
                   value={part.startTime}
                   onChange={(e) => updatePart(part.id, "startTime", e.target.value)}
                   placeholder="Start (e.g. 0:00)"
-                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40"
+                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40"
                 />
                 <input
                   value={part.endTime}
                   onChange={(e) => updatePart(part.id, "endTime", e.target.value)}
                   placeholder="End (e.g. 0:30)"
-                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40"
+                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40"
                 />
               </div>
               <input
                 value={part.description}
                 onChange={(e) => updatePart(part.id, "description", e.target.value)}
                 placeholder="Brief description (optional)"
-                className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#c4ff00]/40"
+                className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40"
               />
             </div>
           </div>

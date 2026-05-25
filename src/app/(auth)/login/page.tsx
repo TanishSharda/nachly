@@ -263,7 +263,7 @@ function LoginForm() {
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            <Link href="/explore" onClick={() => getOrCreateGuestId()}>
+            <Link href="/feed" onClick={() => getOrCreateGuestId()}>
               <Button variant="secondary" className="w-full">Continue as Guest</Button>
             </Link>
           </>

@@ -19,6 +19,8 @@ export interface ChoreographyFeedItem {
   title: string;
   description?: string | null;
   video_url?: string | null;
+  demo_video_url?: string | null;
+  teaching_video_url?: string | null;
 
   // style / difficulty
   style_slug?: string | null;
@@ -42,6 +44,7 @@ export interface ChoreographyFeedItem {
   // timestamps
   created_at?: string | null;
   updated_at?: string | null;
+  published_at?: string | null;
 
   // creator
   creator_name?: string | null;
@@ -90,8 +93,8 @@ export async function getChoreographyFeed(
     // Fetch approved submissions
     let submissionsQuery = supabase
       .from('choreo_submissions')
-      .select('*')
-      .eq('submission_status', 'approved');
+      .select('id,user_id,title,description,caption,video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,saves_count,creator_name,published_at,created_at,updated_at,profiles(full_name,avatar_url)')
+      .not('published_at', 'is', null);
 
     if (style) submissionsQuery = submissionsQuery.eq('style_slug', style);
     if (difficulty) submissionsQuery = submissionsQuery.eq('difficulty', difficulty);
@@ -105,7 +108,7 @@ export async function getChoreographyFeed(
     // Fetch published/approved routines (creator performance videos)
     let routinesQuery = supabase
       .from('routines')
-      .select('id,title,slug,description,caption,difficulty,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,choreographer_id,profiles(full_name),dance_styles(slug,name),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)')
+      .select('id,title,slug,description,caption,difficulty,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,choreographer_id,created_at,updated_at,profiles(full_name,avatar_url),dance_styles(slug,name),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)')
       .eq('is_published', true)
       .eq('is_approved', true);
 
@@ -121,9 +124,12 @@ export async function getChoreographyFeed(
     // Normalize submissions to unified post shape
     const normalizedSubs = (submissions || []).map((s: any) => ({
       id: s.id,
+      user_id: s.user_id || null,
       title: s.title,
       description: s.description || s.caption || '',
       video_url: s.video_url,
+      demo_video_url: s.video_url || null,
+      teaching_video_url: s.video_url || null,
       style_slug: s.style_slug,
       difficulty: s.difficulty,
       submission_status: s.submission_status,
@@ -133,7 +139,9 @@ export async function getChoreographyFeed(
       views_count: s.view_count || 0,
       like_count: s.like_count || 0,
       saves_count: s.saves_count || 0,
-      creator_name: s.creator_name || null,
+      creator_name: s.profiles?.full_name || s.creator_name || null,
+      creator_avatar_url: s.profiles?.avatar_url || null,
+      published_at: s.published_at || s.created_at || null,
       demo_reel: null,
       tutorial: { video_url: s.video_url, duration_seconds: null },
       source: 'submission',
@@ -142,12 +150,16 @@ export async function getChoreographyFeed(
     // Normalize routines to unified post shape
     const normalizedRoutines = (routines || []).map((r: any) => {
       const preferred = (r.routine_videos || []).find((v: any) => v.video_type === 'performance') || (r.routine_videos || [])[0] || null;
-      const tutorial = preferred ? { video_url: preferred.video_url, duration_seconds: null } : null;
+      const teaching = (r.routine_videos || []).find((v: any) => v.video_type === 'teaching') || null;
+      const tutorial = teaching ? { video_url: teaching.video_url, duration_seconds: null } : preferred ? { video_url: preferred.video_url, duration_seconds: null } : null;
       return {
         id: r.id,
+        choreographer_id: r.choreographer_id || null,
         title: r.title,
         description: r.description || r.caption || '',
         video_url: preferred ? preferred.video_url : '',
+        demo_video_url: preferred ? preferred.video_url : null,
+        teaching_video_url: teaching ? teaching.video_url : null,
         // dance_styles comes from PostgREST nested select and is an array
         style_slug: r.dance_styles?.[0]?.slug || null,
         difficulty: r.difficulty || null,
@@ -159,6 +171,8 @@ export async function getChoreographyFeed(
         like_count: r.like_count || 0,
         saves_count: r.saves_count || 0,
         creator_name: r.profiles?.[0]?.full_name || r.profiles?.full_name || null,
+        creator_avatar_url: r.profiles?.[0]?.avatar_url || r.profiles?.avatar_url || null,
+        published_at: r.created_at || null,
         demo_reel: null,
         tutorial,
         source: 'routine',
@@ -166,7 +180,12 @@ export async function getChoreographyFeed(
     });
 
     // Merge and sort by engagement_score
-    const combined = [...normalizedSubs, ...normalizedRoutines].sort((a, b) => (b.engagement_score || 0) - (a.engagement_score || 0));
+    const combined = [...normalizedSubs, ...normalizedRoutines].sort((a, b) => {
+      const aPublished = new Date(a.published_at || a.created_at || 0).getTime();
+      const bPublished = new Date(b.published_at || b.created_at || 0).getTime();
+      if (bPublished !== aPublished) return bPublished - aPublished;
+      return (b.engagement_score || 0) - (a.engagement_score || 0);
+    });
 
     const paged = combined.slice(offset, offset + limit);
 

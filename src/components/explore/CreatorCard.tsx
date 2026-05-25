@@ -39,7 +39,7 @@ export default function CreatorCard({
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.25 }}
-      className="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden transition-all hover:border-white/20 hover:shadow-[0_12px_40px_-15px_rgba(196,255,0,0.15)]"
+      className="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden transition-all hover:border-white/20 hover:shadow-[0_12px_40px_-15px_rgba(243,178,171,0.15)]"
     >
       {/* Thumbnail / Video */}
       <Link href={`/learn/${id}`} className="block relative aspect-[9/14] bg-black overflow-hidden">
@@ -98,12 +98,12 @@ export default function CreatorCard({
           </div>
           <span className="text-xs font-medium text-zinc-300 truncate">{creatorName}</span>
           {isVerified && (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#c4ff00" className="shrink-0"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#F3B2AB" className="shrink-0"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
           )}
         </div>
 
         <Link href={`/learn/${id}`}>
-          <h3 className="text-sm font-semibold text-white line-clamp-1 hover:text-[#c4ff00] transition">{title}</h3>
+          <h3 className="text-sm font-semibold text-white line-clamp-1 hover:text-[#F3B2AB] transition">{title}</h3>
         </Link>
 
         {/* Actions */}
@@ -118,7 +118,7 @@ export default function CreatorCard({
               {formatCount(learnCount)}
             </span>
           </div>
-          <Link href={`/learn/${id}`} className="rounded-lg bg-[#c4ff00] px-3 py-1.5 text-[10px] font-bold text-[#0a0a0a] transition hover:brightness-110">
+          <Link href={`/learn/${id}`} className="rounded-lg bg-[#F3B2AB] px-3 py-1.5 text-[10px] font-bold text-[#0a0a0a] transition hover:brightness-110">
             Learn This
           </Link>
         </div>

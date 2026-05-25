@@ -86,8 +86,8 @@ export default function AnalyticsPage() {
     const verified = drillEvents.filter((event) => event.signatureValid);
     if (!verified.length) {
       return [
-        { label: "Footwork", value: 68, color: "#9fcd00" },
-        { label: "Posture", value: 74, color: "#c4ff00" },
+        { label: "Footwork", value: 68, color: "#D88B80" },
+        { label: "Posture", value: 74, color: "#F3B2AB" },
       ];
     }
 
@@ -112,8 +112,8 @@ export default function AnalyticsPage() {
 
     const colors: Record<DrillEvent["bodyPart"], string> = {
       arms: "#b8ff4a",
-      legs: "#9fcd00",
-      posture: "#c4ff00",
+      legs: "#D88B80",
+      posture: "#F3B2AB",
     };
 
     return (Object.keys(buckets) as DrillEvent["bodyPart"][])
@@ -172,7 +172,7 @@ export default function AnalyticsPage() {
                 <div key={`trend-${index}`} className="flex flex-1 flex-col items-center gap-2">
                   <div className="relative h-36 w-full overflow-hidden rounded-xl bg-white/5">
                     <div
-                      className="absolute bottom-0 left-0 right-0 rounded-xl bg-gradient-to-t from-[#556d00] to-[#c4ff00]"
+                      className="absolute bottom-0 left-0 right-0 rounded-xl bg-gradient-to-t from-[#556d00] to-[#F3B2AB]"
                       style={{ height: `${(value / trendMax) * 100}%` }}
                     />
                   </div>

@@ -26,7 +26,7 @@ export default function RoutineCard({ routine, styleSlug, index }: RoutineCardPr
         <div className="h-36 sm:h-40 bg-gradient-to-br from-dbg-100 to-dbg-200 relative flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-2 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#c4ff00" stroke="none">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#F3B2AB" stroke="none">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
             </div>

@@ -95,7 +95,7 @@ export default function WorkshopsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#c4ff00]/70">Creator Studio</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#F3B2AB]/70">Creator Studio</p>
           <h1 className="mt-2 text-2xl font-bold text-white">Workshops</h1>
           <p className="text-sm text-zinc-400 mt-1">Schedule live workshops and manage attendance.</p>
         </div>
@@ -103,7 +103,7 @@ export default function WorkshopsPage() {
           type="button"
           onClick={handleCreateWorkshop}
           disabled={saving}
-          className="rounded-xl bg-gradient-to-r from-[#c4ff00] to-[#7b9e00] px-4 py-2 text-xs font-bold text-[#0a0a0a]"
+          className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-4 py-2 text-xs font-bold text-[#0a0a0a]"
         >
           {saving ? "Saving..." : "Create Workshop"}
         </button>
@@ -138,7 +138,7 @@ export default function WorkshopsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-[#c4ff00]">₹{Math.round(workshop.price_inr / 100)}</p>
+                    <p className="text-sm font-semibold text-[#F3B2AB]">₹{Math.round(workshop.price_inr / 100)}</p>
                     <p className="text-[10px] text-zinc-500">{workshop.capacity} seats</p>
                   </div>
                   <Badge variant={workshop.status === "scheduled" ? "default" : "success"}>{workshop.status}</Badge>
@@ -159,7 +159,7 @@ export default function WorkshopsPage() {
           <input value={capacity} onChange={(event) => setCapacity(event.target.value)} className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white sm:col-span-2" placeholder="Capacity" />
         </div>
         <textarea value={description} onChange={(event) => setDescription(event.target.value)} className="mt-3 w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white" rows={4} placeholder="Describe what learners will get." />
-        <button type="button" onClick={handleCreateWorkshop} disabled={saving} className="mt-4 rounded-xl border border-[#c4ff00]/30 bg-[#c4ff00]/10 px-4 py-2 text-xs font-semibold text-[#c4ff00] disabled:opacity-60">
+        <button type="button" onClick={handleCreateWorkshop} disabled={saving} className="mt-4 rounded-xl border border-[#F3B2AB]/30 bg-[#F3B2AB]/10 px-4 py-2 text-xs font-semibold text-[#F3B2AB] disabled:opacity-60">
           {saving ? "Saving..." : "Save Workshop"}
         </button>
       </Card>

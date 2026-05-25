@@ -19,7 +19,7 @@ export default function SignupPage() {
     if (!isSupabaseConfigured()) {
       await new Promise((r) => setTimeout(r, 1000));
       setLoading(false);
-      router.push("/explore");
+      router.push("/onboarding");
       return;
     }
 
@@ -29,7 +29,7 @@ export default function SignupPage() {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${redirectBase}/auth/callback?redirect=${encodeURIComponent("/explore")}`,
+          redirectTo: `${redirectBase}/auth/callback?redirect=${encodeURIComponent("/onboarding")}`,
           queryParams: {
             prompt: "select_account",
           },

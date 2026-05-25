@@ -48,8 +48,8 @@ export default function FeedbackPage() {
 
   const breakdowns = useMemo(
     () => [
-      { label: "Timing", value: `${Math.round(latestSession?.accuracy ?? 98)}%`, color: "#c4ff00" },
-      { label: "Energy", value: `${Math.round(latestSession?.consistency ?? 89)}%`, color: "#9fcd00" },
+      { label: "Timing", value: `${Math.round(latestSession?.accuracy ?? 98)}%`, color: "#F3B2AB" },
+      { label: "Energy", value: `${Math.round(latestSession?.consistency ?? 89)}%`, color: "#D88B80" },
       { label: "Fluidity", value: `${Math.round(latestSession?.completion ?? 91)}%`, color: "#FFFFFF" },
     ],
     [latestSession]

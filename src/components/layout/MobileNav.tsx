@@ -17,7 +17,7 @@ function getBaseMobileNavItems(): MobileNavItem[] {
   return [
     {
       label: "Home",
-      href: "/explore",
+      href: "/feed",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M3 10.5 12 3l9 7.5" />
@@ -27,7 +27,7 @@ function getBaseMobileNavItems(): MobileNavItem[] {
     },
     {
       label: "Explore",
-      href: "/library",
+      href: "/collections",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" />
@@ -37,7 +37,7 @@ function getBaseMobileNavItems(): MobileNavItem[] {
     },
     {
       label: "Scroll",
-      href: "/scroll",
+      href: "/feed",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -57,7 +57,7 @@ function getBaseMobileNavItems(): MobileNavItem[] {
     },
     {
       label: "Profile",
-      href: "/profile",
+      href: "/profile/me",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <circle cx="12" cy="8" r="5" />
@@ -75,7 +75,7 @@ function buildMobileNavItems(userRole?: string): MobileNavItem[] {
   if (userRole === "choreographer" || userRole === "admin") {
     baseItems.splice(3, 0, {
       label: "Create",
-      href: "/choreographer/create",
+      href: "/creator/upload",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M12 5v14" />
@@ -87,7 +87,7 @@ function buildMobileNavItems(userRole?: string): MobileNavItem[] {
 
     baseItems.push({
       label: "Dashboard",
-      href: "/choreographer/dashboard",
+      href: "/creator/dashboard",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <rect x="3" y="3" width="7" height="7" />
@@ -170,7 +170,7 @@ export default function MobileNav() {
     console.log("Profile clicked");
 
     if (!isSupabaseConfigured()) {
-      router.push("/profile");
+      router.push("/profile/me");
       return;
     }
 
@@ -185,9 +185,9 @@ export default function MobileNav() {
         return;
       }
 
-      router.push("/profile");
+      router.push("/profile/me");
     } catch {
-      router.push("/login?redirect=%2Fprofile");
+      router.push("/login?redirect=%2Fprofile%2Fme");
     }
   };
 

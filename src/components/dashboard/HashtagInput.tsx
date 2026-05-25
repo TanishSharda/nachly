@@ -51,11 +51,11 @@ export default function HashtagInput({ tags, onTagsChange, maxTags = 10 }: Hasht
       </div>
 
       {/* Tags display */}
-      <div className="flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-zinc-900 p-2.5 min-h-[44px] focus-within:border-[#c4ff00]/40 transition">
+      <div className="flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-zinc-900 p-2.5 min-h-[44px] focus-within:border-[#F3B2AB]/40 transition">
         {tags.map((tag) => (
-          <span key={tag} className="inline-flex items-center gap-1 rounded-lg bg-[#c4ff00]/15 px-2 py-1 text-xs font-medium text-[#c4ff00]">
+          <span key={tag} className="inline-flex items-center gap-1 rounded-lg bg-[#F3B2AB]/15 px-2 py-1 text-xs font-medium text-[#F3B2AB]">
             #{tag}
-            <button type="button" onClick={() => removeTag(tag)} className="ml-0.5 text-[#c4ff00]/60 hover:text-[#c4ff00] transition">
+            <button type="button" onClick={() => removeTag(tag)} className="ml-0.5 text-[#F3B2AB]/60 hover:text-[#F3B2AB] transition">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
           </span>
@@ -81,7 +81,7 @@ export default function HashtagInput({ tags, onTagsChange, maxTags = 10 }: Hasht
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-400 transition hover:border-[#c4ff00]/30 hover:text-[#c4ff00]"
+              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-zinc-400 transition hover:border-[#F3B2AB]/30 hover:text-[#F3B2AB]"
             >
               #{tag}
             </button>
