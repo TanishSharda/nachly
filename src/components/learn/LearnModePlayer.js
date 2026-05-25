@@ -44,7 +44,7 @@ function getLearnVideoSources(videoUrl) {
   ];
 }
 
-export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHref, mode }) {
+export default function LearnModePlayer({ choreo, backHref = "/learn/feed", practiceHref, mode }) {
   const router = useRouter();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,6 +56,35 @@ export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHr
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
   const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
+  const isEmbedUrl = useMemo(() => {
+    const v = String(choreo?.video || "").trim();
+    if (!v) return false;
+    const lower = v.toLowerCase();
+    if (lower.includes("youtube.com") || lower.includes("youtu.be") || lower.includes("vimeo.com") || lower.includes("/embed/")) return true;
+    const path = v.split("?")[0];
+    const ext = path.split('.').pop()?.toLowerCase();
+    if (!ext) return false;
+    return !(ext === "mp4" || ext === "webm");
+  }, [choreo?.video]);
+
+  const embedSrc = useMemo(() => {
+    const v = String(choreo?.video || "").trim();
+    if (!v) return "";
+    // convert common YouTube formats to embed
+    try {
+      if (v.includes("youtube.com/watch")) {
+        const m = v.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+        const id = m ? m[1] : null;
+        if (id) return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1`;
+      }
+      if (v.includes("youtu.be/")) {
+        const m = v.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+        const id = m ? m[1] : null;
+        if (id) return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1`;
+      }
+    } catch {}
+    return v;
+  }, [choreo?.video]);
   const moves = choreo?.moves || [];
   const isStepwiseMode = mode === "stepwise";
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -136,6 +165,34 @@ export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHr
     };
   }, [resumeKey]);
 
+  // Attempt programmatic autoplay when the source list changes.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoSources || !videoSources.length) return;
+
+    // Ensure muted to satisfy autoplay policies
+    try {
+      video.muted = true;
+    } catch {}
+
+    // reload sources
+    video.load();
+
+    const tryPlay = () => {
+      void video.play().catch(() => {
+        // play may be blocked by browser autoplay policies
+      });
+    };
+
+    if (video.readyState >= 2) {
+      tryPlay();
+      return;
+    }
+
+    video.addEventListener("canplay", tryPlay, { once: true });
+    return () => video.removeEventListener("canplay", tryPlay);
+  }, [videoSources]);
+
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
@@ -143,6 +200,14 @@ export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHr
     }, 4500);
     return () => clearInterval(id);
   }, [isPlaying]);
+
+  // Debug logging to help diagnose missing sources when running locally
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("LearnModePlayer: choreo", choreo, "videoSources", videoSources);
+    } catch {}
+  }, [choreo, videoSources]);
 
   const togglePlayPause = () => {
     const video = videoRef.current;
@@ -277,19 +342,52 @@ export default function LearnModePlayer({ choreo, backHref = "/feed", practiceHr
         </div>
 
         <section className="absolute inset-0 z-0">
-          <video
-            ref={videoRef}
-            playsInline
-            className="h-full w-full bg-[#1b1510] object-contain"
-          >
-            {videoSources.map((source) => (
-              <source key={source.src} src={source.src} type={source.type} />
-            ))}
-          </video>
+          {isEmbedUrl && (!videoSources || videoSources.length === 0) ? (
+            <iframe
+              src={embedSrc}
+              title={choreo?.title || "Learn video"}
+              allow="autoplay; encrypted-media; fullscreen"
+              allowFullScreen
+              className="h-full w-full bg-[#1b1510] object-contain"
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              loop
+              preload="auto"
+              className="h-full w-full bg-[#1b1510] object-contain"
+            >
+              {videoSources.map((source) => (
+                <source key={source.src} src={source.src} type={source.type} />
+              ))}
+            </video>
+          )}
 
           {videoError ? (
             <div className="absolute inset-0 grid place-items-center bg-[#2c1f16]/70 px-6 text-center text-sm text-[#ffe9e5]">
               {videoError}
+            </div>
+          ) : null}
+
+          {!videoSources || videoSources.length === 0 ? (
+            <div className="absolute inset-0 grid place-items-center bg-[#111111]/70 px-6 text-center text-sm text-white/80">
+              <div className="max-w-[80%]">
+                <p className="mb-2 font-semibold">No playable video sources detected for this routine.</p>
+                <p className="break-words text-xs mb-2">Resolved URL: {String(choreo?.video || "")}</p>
+                <div className="text-left text-xs">
+                  <p className="font-semibold">Resolved sources:</p>
+                  <ul className="list-disc ml-4">
+                    {Array.isArray(videoSources) && videoSources.length ? (
+                      videoSources.map((s) => <li key={s.src} className="break-words">{s.src} ({s.type})</li>)
+                    ) : (
+                      <li className="italic">(none)</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
             </div>
           ) : null}
 
