@@ -35,6 +35,7 @@ App runs on `http://localhost:3000`.
 ## Environment Notes
 
 - Supabase variables are required for auth, drill APIs, and feedback persistence.
+- After deploying to Vercel, verify `/api/storage/signed-url` returns a signed URL before checking private video playback.
 - Firebase variables are only required for Firebase-backed routes (for example reels/learn/record/replay).
 - Razorpay variables are required for checkout, verification, and webhook reconciliation.
 - Do not commit secrets to source control.
