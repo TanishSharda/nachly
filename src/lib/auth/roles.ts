@@ -39,8 +39,8 @@ const PERMISSIONS: Record<UserRole, RolePermissions> = {
     canRecord: true,
     canViewLibrary: true,
     canViewStats: true,
-    canCreate: true,
-    canViewDashboard: true,
+    canCreate: false,
+    canViewDashboard: false,
     canViewAdmin: false,
   },
   choreographer: {
@@ -92,16 +92,16 @@ export function canAccessRoute(role: UserRole, routePath: string): boolean {
   const permissions = getPermissions(role);
 
   if (routePath.startsWith('/home')) return permissions.canViewHome;
-  if (routePath.startsWith('/explore')) return permissions.canViewExplore;
+  if (routePath.startsWith('/explore') || routePath.startsWith('/feed') || routePath.startsWith('/learn/feed')) return permissions.canViewExplore;
   if (routePath.startsWith('/learn')) return permissions.canViewLearn;
   if (routePath.startsWith('/profile')) return permissions.canViewProfile;
   if (routePath.startsWith('/practice')) return permissions.canViewPractice;
   if (routePath.startsWith('/record')) return permissions.canRecord;
   if (routePath.startsWith('/library')) return permissions.canViewLibrary;
   if (routePath.startsWith('/stats')) return permissions.canViewStats;
-  if (routePath.startsWith('/choreographer/apply')) return true;
-  if (routePath.startsWith('/choreographer/create')) return permissions.canCreate;
-  if (routePath.startsWith('/choreographer')) return permissions.canViewDashboard;
+  if (routePath.startsWith('/choreographer/apply') || routePath.startsWith('/creator/apply')) return true;
+  if (routePath.startsWith('/choreographer/create') || routePath.startsWith('/creator/create')) return permissions.canCreate;
+  if (routePath.startsWith('/choreographer') || routePath.startsWith('/creator')) return permissions.canViewDashboard;
   if (routePath.startsWith('/admin')) return permissions.canViewAdmin;
 
   return true; // Public routes

@@ -59,7 +59,7 @@ export default function LikedPage() {
             <p className="mt-1 text-sm text-zinc-400">Your hearted choreographies from Scroll.</p>
           </div>
           <Link
-            href="/profile/me"
+            href="/learn/profile"
             className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
           >
             Back to Profile

@@ -78,10 +78,14 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [role, setRole] = useState<"student" | "choreographer" | "admin">("student");
   const [savedCount, setSavedCount] = useState(0);
   const [likedCount, setLikedCount] = useState(0);
   const [practiceSessions, setPracticeSessions] = useState<PracticeSessionItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const isCreator = role === "choreographer" || role === "admin";
+  const creatorCtaHref = isCreator ? "/creator/dashboard" : "/onboarding?role=creator";
+  const creatorCtaLabel = isCreator ? "Upload a Dance" : "Become a Creator";
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -109,7 +113,7 @@ export default function ProfilePage() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, bio, preferences")
+          .select("full_name, bio, preferences, role")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -120,6 +124,7 @@ export default function ProfilePage() {
 
         setName(profile?.full_name || fallbackName);
         setBio(profile?.bio || "");
+        setRole((profile?.role as "student" | "choreographer" | "admin") || "student");
 
         const preferences = (profile?.preferences as {
           experience_level?: ExperienceLevel;
@@ -234,11 +239,14 @@ export default function ProfilePage() {
         .map((value) => value.trim())
         .filter(Boolean);
 
+      const nextRole = role === "choreographer" || role === "admin" ? role : "student";
+
       const { error: saveError } = await supabase
         .from("profiles")
         .update({
           full_name: name,
           bio,
+          role: nextRole,
           preferences: {
             experience_level: experienceLevel,
             dance_styles: styles,
@@ -279,10 +287,10 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm text-[#7e7468]">Your account, progress, and practice history.</p>
           </div>
           <Link
-            href="/creator/dashboard"
+            href={creatorCtaHref}
             className="rounded-xl border border-[#F3B2AB]/20 bg-[#F3B2AB]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#F3B2AB] transition hover:bg-[#F3B2AB]/15"
           >
-            Become a Creator
+            {creatorCtaLabel}
           </Link>
         </div>
 
@@ -366,7 +374,7 @@ export default function ProfilePage() {
 
             <div className="mt-5 space-y-4">
               {topRoutines.length > 0 ? topRoutines.map((routine) => (
-                <div key={routine.routineId} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <Link key={routine.routineId} href={`/choreography/${encodeURIComponent(routine.routineId)}`} className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#2d241a]">{routine.title}</p>
@@ -375,7 +383,7 @@ export default function ProfilePage() {
                     <span className="text-sm font-semibold text-[#F3B2AB]">{routine.progress}%</span>
                   </div>
                   <Progress value={routine.progress} size="sm" color={routine.progress >= 80 ? "green" : "wine"} className="mt-3" />
-                </div>
+                </Link>
               )) : (
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[#7e7468]">
                   Start a practice session to unlock routine progress here.

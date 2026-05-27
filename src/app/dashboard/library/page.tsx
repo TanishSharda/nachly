@@ -154,7 +154,7 @@ export default function DashLibraryPage() {
 
       {!hasAccess && !access.loading ? (
         <div className="rounded-2xl p-6 dash-glass dash-card text-zinc-300">
-          No unlocked styles yet. <Link href="/feed" className="text-[#F3B2AB] underline">Explore styles</Link> or <Link href="/subscribe" className="text-[#F3B2AB] underline">view plans</Link>.
+          No unlocked styles yet. <Link href="/learn/feed" className="text-[#F3B2AB] underline">Explore styles</Link> or <Link href="/subscribe" className="text-[#F3B2AB] underline">view plans</Link>.
         </div>
       ) : null}
 

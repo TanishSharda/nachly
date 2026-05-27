@@ -401,7 +401,7 @@ export default function ReplayPage() {
         {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
 
         <div className="mt-5 flex gap-3">
-          <Link href="/feed" className="rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-zinc-200 transition">
+          <Link href="/learn/feed" className="rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-zinc-200 transition">
             Back to Scroll
           </Link>
           <Link href={`/record/${choreoId}`} className="rounded-xl border border-nred-400/60 bg-nred-500/15 px-4 py-2 text-sm font-semibold text-nred-200 hover:bg-nred-500/25 transition">

@@ -39,8 +39,8 @@ export async function getChoreographyPost(id: string) {
   if (!res.ok) {
     throw new Error(json?.error || "Failed to fetch choreography post");
   }
-  // API returns { post } or the post object directly in some routes
-  return (json && (json.post || json)) || null;
+  // API variants observed: { post }, { choreo }, or the object directly.
+  return (json && (json.post || json.choreo || json)) || null;
 }
 
 export async function getChoreographyIndex() {
@@ -116,7 +116,11 @@ export async function getChoreographySubmission(id: string) {
 export async function postChoreographySubmission(body: any) {
   const res = await fetch(`/api/choreos/submissions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await safeJson(res) || {};
-  if (!res.ok) throw new Error(json?.error || "Failed to create submission");
+  if (!res.ok) {
+    const msg = json?.error ? String(json.error) : "Failed to create submission";
+    const detail = json?.detail ? `: ${String(json.detail)}` : "";
+    throw new Error(`${msg}${detail}`);
+  }
   return json;
 }
 

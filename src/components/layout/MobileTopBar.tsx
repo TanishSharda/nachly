@@ -12,6 +12,7 @@ export default function MobileTopBar({ initial }: MobileTopBarProps) {
     pathname.startsWith("/flow") ||
     pathname.startsWith("/learn") ||
     pathname.startsWith("/record") ||
+    pathname.startsWith("/learn/feed") ||
     pathname.startsWith("/scroll") ||
     pathname.startsWith("/reels");
 

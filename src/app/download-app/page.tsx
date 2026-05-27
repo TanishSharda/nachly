@@ -40,7 +40,7 @@ export default function DownloadAppPage() {
 
   useEffect(() => {
     if (isStandalone) {
-      router.replace("/login");
+      router.replace("/auth");
     }
   }, [isStandalone, router]);
 

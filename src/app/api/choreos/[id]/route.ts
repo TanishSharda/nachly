@@ -65,8 +65,11 @@ function mapSubmissionToChoreo(row: {
   id: string;
   title: string | null;
   description: string | null;
+  song_name?: string | null;
   caption: string | null;
   video_url: string | null;
+  performance_video_url?: string | null;
+  teach_video_url?: string | null;
   style_slug: string | null;
   tier: string | null;
   ai_overall_score: number | null;
@@ -77,9 +80,12 @@ function mapSubmissionToChoreo(row: {
   return {
     id: row.id,
     title: row.title || "Untitled Choreo",
-    video: row.video_url || "",
-    caption: row.caption || row.description || "",
-     style: row.dance_styles?.[0]?.slug || "unknown",
+    video: row.teach_video_url || row.performance_video_url || row.video_url || "",
+    performance_video_url: row.performance_video_url || row.video_url || "",
+    teach_video_url: row.teach_video_url || row.performance_video_url || row.video_url || "",
+    song_name: row.song_name || null,
+    caption: row.caption || row.description || row.song_name || "",
+    style: row.dance_styles?.[0]?.slug || row.style_slug || "unknown",
     tier: row.tier || "community",
     score: typeof row.ai_overall_score === "number" ? row.ai_overall_score : null,
     tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
@@ -104,7 +110,8 @@ export async function GET(_: Request, context: any) {
     return missingSupabaseConfigResponse();
   }
 
-  const id = (context.params?.id || "").trim();
+  const params = await context?.params;
+  const id = String(params?.id || "").trim();
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
@@ -115,9 +122,9 @@ export async function GET(_: Request, context: any) {
 
     const { data: submissionRow, error: submissionError } = await db
       .from("choreo_submissions")
-      .select("id,title,description,caption,video_url,style_slug,tier,ai_overall_score,ai_tags,submission_status")
+      .select("id,title,description,song_name,caption,video_url,performance_video_url,teach_video_url,style_slug,tier,ai_overall_score,ai_tags,submission_status")
       .eq("id", id)
-      .eq("submission_status", "approved")
+      .not("published_at", "is", null)
       .maybeSingle();
 
     if (submissionError) {

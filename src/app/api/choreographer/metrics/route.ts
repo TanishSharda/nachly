@@ -23,7 +23,7 @@ export async function GET() {
 
   try {
     // routines owned by this choreographer
-    const { data: routinesData, error: routinesError } = await db.from("routines").select("id").eq("choreographer_id", user.id).limit(500);
+    const { data: routinesData, error: routinesError } = await db.from("routines").select("id,saves_count").eq("choreographer_id", user.id).limit(500);
     if (routinesError) {
       console.error('[choreographer/metrics] routines error:', routinesError);
       return NextResponse.json({ metrics: {} }, { status: 500 });
@@ -32,13 +32,13 @@ export async function GET() {
     const routineIds = (routinesData || []).map((r: any) => r.id).filter(Boolean);
 
     // submissions authored by this creator (community uploads)
-    const { data: subsData } = await db.from("choreo_submissions").select("id").eq("user_id", user.id).limit(500);
+    const { data: subsData } = await db.from("choreo_submissions").select("id,saves_count").eq("user_id", user.id).limit(500);
     const submissionIds = (subsData || []).map((s: any) => s.id).filter(Boolean);
 
     const allIds = Array.from(new Set([...routineIds, ...submissionIds]));
 
     if (!allIds.length) {
-      return NextResponse.json({ metrics: { likes: 0, comments: 0, tryThis: 0, views: 0, practiceCompletions: 0, uniqueLearners: 0 } });
+      return NextResponse.json({ metrics: { likes: 0, comments: 0, tryThis: 0, views: 0, practiceCompletions: 0, uniqueLearners: 0, saves: 0 } });
     }
 
     const { data: engagementRows, error: engagementError } = await db
@@ -50,7 +50,7 @@ export async function GET() {
       console.error('[choreographer/metrics] engagement error:', engagementError);
     }
 
-    const metrics = { likes: 0, comments: 0, tryThis: 0, views: 0, practiceCompletions: 0, uniqueLearners: 0 } as Record<string, number>;
+    const metrics = { likes: 0, comments: 0, tryThis: 0, views: 0, practiceCompletions: 0, uniqueLearners: 0, saves: 0 } as Record<string, number>;
     const learnerSet = new Set<string>();
 
     (engagementRows || []).forEach((row: any) => {
@@ -81,6 +81,15 @@ export async function GET() {
 
     metrics.practiceCompletions = practiceCount;
     metrics.uniqueLearners = learnerSet.size;
+
+    // sum saves from routines and submissions
+    try {
+      const routineSaves = (routinesData || []).reduce((sum: number, r: any) => sum + Number(r.saves_count || 0), 0);
+      const submissionSaves = (subsData || []).reduce((sum: number, s: any) => sum + Number(s.saves_count || 0), 0);
+      metrics.saves = routineSaves + submissionSaves;
+    } catch (e) {
+      metrics.saves = 0;
+    }
 
     return NextResponse.json({ metrics });
   } catch (err: any) {

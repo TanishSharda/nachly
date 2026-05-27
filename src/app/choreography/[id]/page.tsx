@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
-export default function ChoreographyPage({ params }: { params: { id: string } }) {
-  redirect(`/choreography/${encodeURIComponent(params.id)}/learn`);
+export default async function ChoreographyPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/choreography/${encodeURIComponent(id)}/learn`);
 }

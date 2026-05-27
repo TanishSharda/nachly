@@ -18,9 +18,12 @@ export interface ChoreographyFeedItem {
   // canonical fields
   title: string;
   description?: string | null;
+  song_name?: string | null;
   video_url?: string | null;
   demo_video_url?: string | null;
   teaching_video_url?: string | null;
+  performance_video_url?: string | null;
+  teach_video_url?: string | null;
 
   // style / difficulty
   style_slug?: string | null;
@@ -44,7 +47,7 @@ export interface ChoreographyFeedItem {
   // timestamps
   created_at?: string | null;
   updated_at?: string | null;
-  published_at?: string | null;
+  
 
   // creator
   creator_name?: string | null;
@@ -91,9 +94,10 @@ export async function getChoreographyFeed(
   try {
     const supabase = await getReadOnlySupabaseClient();
     // Fetch approved submissions
+    // Avoid embedding related `profiles` directly to prevent ambiguous relationship errors
     let submissionsQuery = supabase
       .from('choreo_submissions')
-      .select('id,user_id,title,description,caption,video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,saves_count,creator_name,published_at,created_at,updated_at,profiles(full_name,avatar_url)')
+      .select('id,user_id,title,description,song_name,caption,video_url,performance_video_url,teach_video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,published_at,created_at,updated_at')
       .not('published_at', 'is', null);
 
     if (style) submissionsQuery = submissionsQuery.eq('style_slug', style);
@@ -126,10 +130,13 @@ export async function getChoreographyFeed(
       id: s.id,
       user_id: s.user_id || null,
       title: s.title,
-      description: s.description || s.caption || '',
-      video_url: s.video_url,
-      demo_video_url: s.video_url || null,
-      teaching_video_url: s.video_url || null,
+      description: s.description || s.song_name || s.caption || '',
+      song_name: s.song_name || null,
+      video_url: s.performance_video_url || s.video_url || null,
+      demo_video_url: s.performance_video_url || s.video_url || null,
+      teaching_video_url: s.teach_video_url || s.video_url || s.performance_video_url || null,
+      performance_video_url: s.performance_video_url || s.video_url || null,
+      teach_video_url: s.teach_video_url || s.video_url || s.performance_video_url || null,
       style_slug: s.style_slug,
       difficulty: s.difficulty,
       submission_status: s.submission_status,
@@ -138,12 +145,12 @@ export async function getChoreographyFeed(
       view_count: s.view_count || 0,
       views_count: s.view_count || 0,
       like_count: s.like_count || 0,
-      saves_count: s.saves_count || 0,
-      creator_name: s.profiles?.full_name || s.creator_name || null,
+      saves_count: 0,
+      creator_name: null,
       creator_avatar_url: s.profiles?.avatar_url || null,
       published_at: s.published_at || s.created_at || null,
       demo_reel: null,
-      tutorial: { video_url: s.video_url, duration_seconds: null },
+      tutorial: { video_url: s.teach_video_url || s.performance_video_url || s.video_url, duration_seconds: null },
       source: 'submission',
     }));
 
@@ -169,7 +176,7 @@ export async function getChoreographyFeed(
         view_count: r.view_count || 0,
         views_count: r.view_count || 0,
         like_count: r.like_count || 0,
-        saves_count: r.saves_count || 0,
+        saves_count: 0,
         creator_name: r.profiles?.[0]?.full_name || r.profiles?.full_name || null,
         creator_avatar_url: r.profiles?.[0]?.avatar_url || r.profiles?.avatar_url || null,
         published_at: r.created_at || null,
@@ -181,8 +188,8 @@ export async function getChoreographyFeed(
 
     // Merge and sort by engagement_score
     const combined = [...normalizedSubs, ...normalizedRoutines].sort((a, b) => {
-      const aPublished = new Date(a.published_at || a.created_at || 0).getTime();
-      const bPublished = new Date(b.published_at || b.created_at || 0).getTime();
+      const aPublished = new Date(a.published_at || 0).getTime();
+      const bPublished = new Date(b.published_at || 0).getTime();
       if (bPublished !== aPublished) return bPublished - aPublished;
       return (b.engagement_score || 0) - (a.engagement_score || 0);
     });

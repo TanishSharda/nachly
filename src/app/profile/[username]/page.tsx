@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceRoleClient, createServerSupabase } from "@/lib/supabase/server";
+import HistoryBackButton from "@/components/shared/HistoryBackButton";
 
 function slugify(value?: string | null) {
   return String(value || "")
@@ -15,6 +16,11 @@ function pickVideo(entries: Array<{ video_url?: string | null; video_type?: stri
   if (performance?.video_url) return performance.video_url;
   const first = [...(entries || [])].find((entry) => entry?.video_url);
   return first?.video_url || "";
+}
+
+function formatCount(value?: number | null) {
+  const next = value ?? 0;
+  return new Intl.NumberFormat("en-IN", { notation: next >= 10000 ? "compact" : "standard" }).format(next);
 }
 
 export default async function PublicProfilePage({ params }: { params: { username: string } }) {
@@ -77,6 +83,17 @@ export default async function PublicProfilePage({ params }: { params: { username
   return (
     <main className="min-h-screen bg-[#f4f1ec] text-[#221d16]">
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <div className="mb-4">
+          <HistoryBackButton
+            fallbackHref="/learn/feed"
+            ariaLabel="Go back"
+            className="inline-flex items-center gap-2 rounded-full border border-[#6c513220] bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] shadow-[0_16px_30px_-24px_rgba(58,42,26,0.28)] transition hover:bg-white"
+          >
+            <span aria-hidden="true">←</span>
+            Back
+          </HistoryBackButton>
+        </div>
+
         <div className="rounded-[2rem] border border-[#6c51321c] bg-white/80 p-6 shadow-[0_24px_48px_-30px_rgba(58,42,26,0.28)]">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -94,17 +111,46 @@ export default async function PublicProfilePage({ params }: { params: { username
 
         <div className="mt-6 grid gap-4">
           {publishedChoreographies.length ? publishedChoreographies.map((item) => (
-            <article key={item.id} className="overflow-hidden rounded-[2rem] border border-[#6c51321c] bg-[#1b120d] shadow-[0_28px_60px_-36px_rgba(48,31,17,0.8)]">
-              <div className="p-6 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7]">{item.style} • {item.difficulty}</p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight">{item.title}</h2>
-                <p className="mt-3 max-w-2xl text-sm text-[#f1e4d7]">{item.description}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href={`/choreography/${encodeURIComponent(item.id)}/learn`} className="rounded-2xl bg-[#f4eadb] px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-[#372515]">
-                    Learn
+            <article key={item.id} className="relative overflow-hidden rounded-[2rem] border border-[#6c51321c] bg-[#1b120d] shadow-[0_28px_60px_-36px_rgba(48,31,17,0.8)]">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0b0705] via-[#0b0705]/35 to-transparent" />
+              <div className="relative min-h-[54vh] p-5 sm:p-7">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#f4e8d9] backdrop-blur-md">
+                    <span>{item.style}</span>
+                    <span>•</span>
+                    <span>{item.difficulty}</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fff7ef] backdrop-blur-md">
+                    <span>{formatCount(profile.follower_count)} followers</span>
+                  </div>
+                </div>
+
+                <div className="mt-20 max-w-2xl text-white">
+                  <Link href={`/choreography/${encodeURIComponent(item.id)}`} className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7] hover:text-white transition-colors">
+                    {profile.full_name}
                   </Link>
-                  <Link href={`/choreography/${encodeURIComponent(item.id)}/practice`} className="rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-[#f4e7d6]">
+                  <h2 className="mt-3 text-3xl font-black leading-[0.92] tracking-tight sm:text-4xl md:text-5xl">
+                    {item.title}
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#f1e4d7] sm:text-base">
+                    {item.description || "Open this choreography to learn or practice it."}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#fff2e3]">
+                    <span className="rounded-full bg-white/10 px-3 py-1.5">Published</span>
+                    <span className="rounded-full bg-white/10 px-3 py-1.5">Tutorial ready</span>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-5 left-5 right-5 flex flex-wrap gap-2 sm:bottom-7 sm:left-7 sm:right-7">
+                  <Link href={`/choreography/${encodeURIComponent(item.id)}/learn`} className="inline-flex items-center justify-center rounded-2xl bg-[#F3B2AB] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110">
+                    Learn Now
+                  </Link>
+                  <Link href={`/choreography/${encodeURIComponent(item.id)}/practice`} className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
                     Practice
+                  </Link>
+                  <Link href={`/choreography/${encodeURIComponent(item.id)}`} className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
+                    Open
                   </Link>
                 </div>
               </div>

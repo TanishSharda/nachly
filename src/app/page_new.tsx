@@ -83,7 +83,7 @@ export default function HomePageNew() {
       event.preventDefault();
       setIsEntering(true);
       setTimeout(() => {
-        router.push("/explore");
+        router.push("/learn/feed");
       }, 900);
     },
     [router]
@@ -125,7 +125,7 @@ export default function HomePageNew() {
             <span className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">{SITE_NAME}</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="rounded-full border border-gold/25 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gold transition hover:bg-gold/10">
+            <Link href="/auth" className="rounded-full border border-gold/25 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gold transition hover:bg-gold/10">
               Log In
             </Link>
             <button

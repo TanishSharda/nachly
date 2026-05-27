@@ -14,7 +14,7 @@ type SavedItem = {
 };
 
 function learnHref(item: SavedItem) {
-  return `/learn/${item.choreoId}?mode=stepwise`;
+  return `/choreography/${item.choreoId}/learn`;
 }
 
 export default function SavedPage() {
@@ -84,9 +84,9 @@ export default function SavedPage() {
                 ) : (
                   <div className="h-full w-full bg-gradient-to-br from-[#ddd5c7] to-[#cfc6b5]" />
                 )}
-                <button className="absolute right-4 top-4 rounded-full bg-white/85 p-2 text-[#725b3f] shadow-sm">
+                <Link href={`/choreography/${item.choreoId}`} className="absolute right-4 top-4 rounded-full bg-white/85 p-2 text-[#725b3f] shadow-sm">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
-                </button>
+                </Link>
               </div>
 
               <div className="p-6">
@@ -113,10 +113,10 @@ export default function SavedPage() {
                     Practice Now
                   </Link>
                   <Link
-                    href={`/record/${item.choreoId}?mode=remix`}
+                    href={`/choreography/${item.choreoId}/practice`}
                     className="rounded-full bg-[#725b3f] px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-white transition hover:bg-[#654f34]"
                   >
-                    Continue
+                    Practice
                   </Link>
                 </div>
               </div>

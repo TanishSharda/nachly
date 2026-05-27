@@ -17,8 +17,8 @@ export default async function AdminLayout({
         <div className="max-w-xl text-center">
           <h1 className="text-2xl font-bold mb-4">Admin Access</h1>
           <p className="mb-4">Please log in to continue.</p>
-          <Link href="/login?redirect=%2Fadmin" className="text-blue-400 hover:underline">
-            Log In
+          <Link href="/auth?redirect=%2Fadmin" className="text-blue-400 hover:underline">
+            Admin Sign In
           </Link>
         </div>
       </main>
@@ -37,8 +37,8 @@ export default async function AdminLayout({
         <div className="max-w-xl text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="mb-4">You do not have permission to view this admin area.</p>
-          <Link href="/feed" className="text-blue-400 hover:underline">
-            Back to Explore
+          <Link href="/learn/feed" className="text-blue-400 hover:underline">
+            Back to platform
           </Link>
         </div>
       </main>

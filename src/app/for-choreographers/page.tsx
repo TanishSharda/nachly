@@ -103,7 +103,7 @@ export default function ForChoreographersPage() {
             <Link href="/" className="hidden sm:inline-flex rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
               For Learners
             </Link>
-            <Link href="/login" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
+            <Link href="/auth" className="rounded-full border border-[#6c513236] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7a5c3a] transition hover:bg-[#f2e7da]">
               Log In
             </Link>
             <Link href="/creator/upload" className="rounded-full bg-[#7a5c3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#fff7f0] transition hover:brightness-110">
@@ -294,7 +294,7 @@ export default function ForChoreographersPage() {
               <Link href="/subscribe" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
                 View Plans
               </Link>
-              <Link href="/feed" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
+              <Link href="/learn/feed" className="inline-flex h-12 items-center rounded-full border border-[#6c513236] bg-white px-7 text-xs font-semibold uppercase tracking-[0.15em] text-[#7a5c3a] transition hover:bg-[#f5ede2]">
                 Explore as Learner
               </Link>
             </div>
@@ -317,7 +317,7 @@ export default function ForChoreographersPage() {
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
             <Link href="/creator/upload">Apply</Link>
-            <Link href="/login">Login</Link>
+            <Link href="/auth">Login</Link>
           </div>
         </div>
       </footer>

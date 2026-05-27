@@ -120,7 +120,7 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <Link href={latest ? `/explore/${latest.styleSlug}` : "/explore"} className="premium-button mt-6 inline-flex">
+            <Link href={latest ? `/explore/${latest.styleSlug}` : "/learn/feed"} className="premium-button mt-6 inline-flex">
               Resume Session
             </Link>
           </div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 <span className="text-[10px] uppercase tracking-[0.15em] text-gold/60">{item.level} • {item.duration}</span>
                 <h4 className="text-lg font-light text-[#E7E5E5]">{item.title}</h4>
                 <p className="text-[12px] text-[#E7E5E5]/30 italic">with {item.artist}</p>
-                <Link href={(item as { href?: string }).href || "/explore"} className="inline-block pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold/80 hover:text-gold">
+                <Link href={(item as { href?: string }).href || "/learn/feed"} className="inline-block pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold/80 hover:text-gold">
                   Open
                 </Link>
               </div>

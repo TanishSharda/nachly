@@ -5,7 +5,7 @@ import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/se
 const updateSchema = z.object({
   action: z.enum(["submit", "resubmit", "evaluate", "moderate"]),
   title: z.string().trim().min(2).max(120).optional(),
-  description: z.string().trim().min(10).max(2000).optional(),
+  description: z.string().trim().min(3).max(2000).optional(),
   caption: z.string().trim().max(280).optional().or(z.literal("")),
   videoUrl: z.string().trim().url().max(2000).optional(),
   checklist: z
@@ -60,12 +60,17 @@ async function loadCurrentUser() {
   return { supabase, user };
 }
 
+async function getSubmissionId(context: any) {
+  const params = await context?.params;
+  return String(params?.id || "").trim();
+}
+
 export async function GET(_: Request, context: any) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
 
-  const id = (context.params?.id || "").trim();
+  const id = await getSubmissionId(context);
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
@@ -114,7 +119,7 @@ export async function PATCH(request: Request, context: any) {
     return missingSupabaseConfigResponse();
   }
 
-  const id = (context.params?.id || "").trim();
+  const id = await getSubmissionId(context);
   if (!id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }

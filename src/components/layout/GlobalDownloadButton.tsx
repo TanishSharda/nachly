@@ -39,7 +39,7 @@ export default function GlobalDownloadButton() {
   }, []);
 
   // Only show on Explore page
-  if (pathname !== "/explore" || isStandalone) return null;
+  if (pathname !== "/learn/feed" || isStandalone) return null;
 
   const handleDownload = async () => {
     if (isStandalone) return;

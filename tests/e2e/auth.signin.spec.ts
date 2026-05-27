@@ -32,12 +32,12 @@ test.describe('Email signin flow', () => {
     // Client-side navigate to login (server may return 404 for direct GET)
     await page.evaluate(() => {
       const a = document.createElement('a')
-      a.href = '/login'
+      a.href = '/auth?mode=login'
       a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
     })
-    await page.waitForURL('**/login')
+    await page.waitForURL('**/auth?mode=login*')
 
     // Click Sign in with Email
     await page.click('text=Sign in with Email')
@@ -45,7 +45,7 @@ test.describe('Email signin flow', () => {
     await page.fill('input[type="email"]', email)
     await page.fill('input[type="password"]', password)
     await Promise.all([
-      page.waitForNavigation({ url: '**/explore' }),
+      page.waitForURL((url) => url.pathname === '/select-role' || url.pathname.startsWith('/explore')),
       page.click('button:has-text("Sign In")'),
     ])
 

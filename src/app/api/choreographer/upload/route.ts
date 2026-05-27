@@ -20,6 +20,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
   try {
     const supabase = await createServerSupabase();
     const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    console.log('[/api/choreographer/upload] Service role present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log(`[/api/choreographer/upload] Handling upload for user: ${user?.id || 'anonymous'}`);
+    } catch (e) {
+      // ignore
+    }
     
     // Get authenticated user
     const {
@@ -120,7 +127,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       });
 
     if (dbError) {
-      console.error('[/api/choreographer/upload] Database error:', dbError);
+      console.error('[/api/choreographer/upload] Database error:', JSON.stringify(dbError));
       // Storage succeeded but DB record failed - not critical
     }
 

@@ -222,8 +222,8 @@ export default function HomePage() {
   }, []);
 
   const flowEntryHref = useMemo(() => {
-    if (!authReady) return "/login?redirect=%2Ffeed";
-    return isAuthenticated ? "/feed" : "/login?redirect=%2Ffeed";
+    if (!authReady) return "/auth?redirect=%2Flearn%2Ffeed";
+    return isAuthenticated ? "/learn/feed" : "/auth?redirect=%2Flearn%2Ffeed";
   }, [authReady, isAuthenticated]);
 
   const goToFlowEntry = useCallback(() => {
@@ -293,7 +293,7 @@ export default function HomePage() {
             <Link href="/for-choreographers" className="hidden sm:inline-flex rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
               For Creators
             </Link>
-            <Link href="/login" className="rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
+            <Link href="/auth" className="rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
               Log In
             </Link>
             <button
@@ -662,7 +662,7 @@ export default function HomePage() {
                 Start Learning
               </button>
               <Link
-                href="/scroll?style=mix"
+                href="/learn/feed?style=mix"
                 className="inline-flex h-12 items-center rounded-full border border-white/20 bg-transparent px-7 text-xs font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-white/10"
               >
                 Explore the Feed
@@ -705,12 +705,12 @@ export default function HomePage() {
             <p className="mt-3 max-w-sm text-sm text-[#8A8D9F]">A modern dance learning app built for the scroll generation.</p>
           </div>
           <div className="flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">
-            <Link href="/feed?style=mix">Flow</Link>
-            <Link href="/feed">Feed</Link>
+            <Link href="/learn/feed?style=mix">Flow</Link>
+            <Link href="/learn/feed">Feed</Link>
             <Link href="/for-choreographers">For Creators</Link>
             <Link href="/subscribe">Subscriptions</Link>
             <Link href="/creator/dashboard">Creator</Link>
-            <Link href="/login">Login</Link>
+            <Link href="/auth">Login</Link>
             <Link href="/download-app">App</Link>
           </div>
         </div>
