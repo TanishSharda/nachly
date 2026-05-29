@@ -94,11 +94,11 @@ const test = base.extend<{ page: Page }>({
 
     // Attach diagnostics to capture runtime errors/crashes for flaky tests
     context.on('page', (p: BrowserContext['pages'] extends infer R ? any : any) => {
-      p.on('pageerror', (err) => console.error('[fixture] pageerror:', err && err.message ? err.message : err))
+      p.on('pageerror', (err: any) => console.error('[fixture] pageerror:', err && err.message ? err.message : err))
       p.on('crash', () => console.error('[fixture] page crash'))
       p.on('close', () => console.log('[fixture] page closed'))
-      p.on('console', (msg) => console.log('[fixture][console]', msg.type(), msg.text()))
-      p.on('requestfailed', (req) => console.warn('[fixture] requestfailed', req.url(), req.failure()?.errorText))
+      p.on('console', (msg: any) => console.log('[fixture][console]', msg.type(), msg.text()))
+      p.on('requestfailed', (req: any) => console.warn('[fixture] requestfailed', req.url(), req.failure()?.errorText))
     })
 
     context.setDefaultNavigationTimeout(60000)

@@ -390,7 +390,7 @@ export default function ReplayPage() {
               <div key={attempt.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-white">Attempt #{idx + 1}</p>
-                  <p className="text-xs text-zinc-400">{new Date(attempt.createdAt || Date.now()).toLocaleString()}</p>
+                  <p className="text-xs text-zinc-400">{attempt.createdAt ? new Date(attempt.createdAt).toLocaleString() : "—"}</p>
                 </div>
                 <div className="text-sm font-semibold text-nred-300">{attempt.score}</div>
               </div>

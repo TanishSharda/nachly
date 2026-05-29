@@ -18,52 +18,29 @@ export default function HeroCinematic() {
       </div>
 
       <div className="section-padding relative z-10 mx-auto flex h-full max-w-7xl items-center gap-8">
-        {/* Left - Discover feed mock */}
-        <motion.div initial={{ x: -80, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.8 }} className="hidden w-1/4 shrink-0 flex-col gap-4 md:flex">
-          <div className="rounded-2xl bg-[rgba(255,255,255,0.03)] p-3 shadow-lg">
-            <div className="h-56 w-full rounded-xl bg-black/60" />
-            <div className="mt-3 space-y-2">
-              <div className="h-3 w-3/4 rounded bg-white/10" />
-              <div className="h-3 w-1/2 rounded bg-white/8" />
-            </div>
-          </div>
-        </motion.div>
 
-        {/* Center - Recording studio mock */}
-        <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.9 }} className="flex w-full max-w-3xl flex-col items-center gap-6">
-          <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/8 bg-black p-3 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.8)]">
-            <div className="aspect-[16/9] w-full rounded-lg bg-black">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-56 w-36 rounded-lg bg-gradient-to-br from-[#1b1b1b] to-[#0b0b0b] shadow-inner" />
-              </div>
-              <div className="absolute left-4 top-4 rounded-full bg-white/6 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Recording Studio</div>
-              <div className="absolute right-4 bottom-4 flex gap-2">
-                <div className="h-3 w-24 rounded-full bg-[#F3B2AB]/60" />
-                <div className="h-3 w-16 rounded-full bg-white/10" />
-              </div>
-            </div>
+        {/* Center - BIG NACHLY headline (full-screen, low opacity) */}
+        <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.9 }} className="relative flex w-full flex-col items-center gap-6">
+          <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+            <h1 className="nachly-hero-text select-none text-center font-extrabold leading-none text-gray-300/10" aria-hidden>
+              <span className="block text-[10rem] md:text-[14rem] lg:text-[20rem]">NACHLY</span>
+            </h1>
           </div>
 
-          <div className="flex w-full items-center justify-center gap-4">
+          <div className="z-10 flex w-full flex-wrap items-center justify-center gap-4">
             <Link href="/auth?mode=signup" className="marketing-cta marketing-cta-glow rounded-full bg-[#F3B2AB] px-6 py-3 text-sm font-bold uppercase text-black shadow-sm">Start Learning</Link>
             <Link href="/creator/upload" className="marketing-cta rounded-full border border-white/10 px-5 py-3 text-sm font-semibold uppercase text-white">Become Creator</Link>
+            <Link href="#how-it-works" className="marketing-cta rounded-full border border-white/10 px-5 py-3 text-sm font-semibold uppercase text-white">
+              How it Works
+            </Link>
           </div>
 
-          <div className="w-full mt-3">
+          <div className="w-full mt-3 z-10">
             <WaveformVisualizer />
           </div>
         </motion.div>
 
-        {/* Right - Learn mode mock */}
-        <motion.div initial={{ x: 80, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.8 }} className="hidden w-1/4 shrink-0 flex-col gap-4 md:flex">
-          <div className="rounded-2xl bg-[rgba(255,255,255,0.03)] p-3 shadow-lg">
-            <div className="h-56 w-full rounded-xl bg-black/60" />
-            <div className="mt-3 space-y-2">
-              <div className="h-3 w-3/4 rounded bg-white/10" />
-              <div className="h-3 w-1/2 rounded bg-white/8" />
-            </div>
-          </div>
-        </motion.div>
+        {/* side mocks removed for minimal hero */}
       </div>
 
       <CursorTrail />

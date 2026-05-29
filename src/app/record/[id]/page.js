@@ -440,6 +440,8 @@ export default function RecordPage() {
   const goFlashTimerRef = useRef(null);
   const audioContextRef = useRef(null);
   const aiStatsRef = useRef({ frameCount: 0, totalScore: 0 });
+  const [aiFrameCount, setAiFrameCount] = useState(0);
+  const [aiAvgScore, setAiAvgScore] = useState(0);
   const instructorAngleBufferRef = useRef([]);
   const poseUiLastUpdateRef = useRef(0);
   const recordingRef = useRef(false);
@@ -478,7 +480,7 @@ export default function RecordPage() {
   }, [id]);
 
   useEffect(() => {
-    setInstructorReady(false);
+    setTimeout(() => setInstructorReady(false), 0);
   }, [choreo?.video]);
 
   useEffect(() => {
@@ -525,7 +527,7 @@ export default function RecordPage() {
 
     if (!cameraEnabled) {
       stopCurrentStream();
-      setCameraReady(false);
+      setTimeout(() => setCameraReady(false), 0);
       return () => {
         active = false;
       };
@@ -568,7 +570,7 @@ export default function RecordPage() {
       let lastError = null;
       for (const constraints of attempts) {
         try {
-          // eslint-disable-next-line no-await-in-loop
+           
           return await navigator.mediaDevices.getUserMedia(constraints);
         } catch (err) {
           lastError = err;
@@ -590,10 +592,12 @@ export default function RecordPage() {
       } catch (err) {
         console.error(err);
         if (active) {
-          setCameraEnabled(false);
-          setCameraReady(false);
-          setError("Camera access failed. On phone, allow camera permission and ensure HTTPS is enabled.");
-        }
+            setTimeout(() => {
+              setCameraEnabled(false);
+              setCameraReady(false);
+              setError("Camera access failed. On phone, allow camera permission and ensure HTTPS is enabled.");
+            }, 0);
+          }
       }
     }
 
@@ -608,8 +612,10 @@ export default function RecordPage() {
     let active = true;
 
     if (!isRemixMode) {
-      setAiStatus("ready");
-      setAiReady(false);
+      setTimeout(() => {
+        setAiStatus("ready");
+        setAiReady(false);
+      }, 0);
       poseLandmarkerRef.current?.close?.();
       return () => {
         active = false;
@@ -617,8 +623,10 @@ export default function RecordPage() {
       };
     }
 
-    setAiStatus("loading");
-    setAiReady(false);
+    setTimeout(() => {
+      setAiStatus("loading");
+      setAiReady(false);
+    }, 0);
 
     async function initPoseModel() {
       try {
@@ -746,83 +754,84 @@ export default function RecordPage() {
     return "";
   }, [cameraEnabled, cameraReady, isRemixMode, instructorReady, aiReady, recording, processing, countdown]);
 
-  const runAiScoringLoop = useMemo(
-    () => () => {
-      const poseLandmarker = poseLandmarkerRef.current;
-      const userVideo = webcamRef.current;
-      const instructorVideo = instructorRef.current;
+  function runAiScoringLoop() {
+    const poseLandmarker = poseLandmarkerRef.current;
+    const userVideo = webcamRef.current;
+    const instructorVideo = instructorRef.current;
 
-      if (!recordingRef.current || !poseLandmarker || !userVideo || !instructorVideo) return;
+    if (!recordingRef.current || !poseLandmarker || !userVideo || !instructorVideo) return;
 
-      const ts = performance.now();
-      try {
-        if (userVideo.readyState >= 2 && instructorVideo.readyState >= 2) {
-          const userResult = poseLandmarker.detectForVideo(userVideo, ts);
-          const instructorResult = poseLandmarker.detectForVideo(instructorVideo, ts);
+    const ts = performance.now();
+    try {
+      if (userVideo.readyState >= 2 && instructorVideo.readyState >= 2) {
+        const userResult = poseLandmarker.detectForVideo(userVideo, ts);
+        const instructorResult = poseLandmarker.detectForVideo(instructorVideo, ts);
 
-          const userLm = userResult?.landmarks?.[0];
-          const instructorLm = instructorResult?.landmarks?.[0];
+        const userLm = userResult?.landmarks?.[0];
+        const instructorLm = instructorResult?.landmarks?.[0];
 
-          if (userLm && instructorLm) {
-            const userAngles = extractAdaptiveAngles(userLm, 0.45, true);
-            const instructorAngles = extractAdaptiveAngles(instructorLm, 0.45, true);
+        if (userLm && instructorLm) {
+          const userAngles = extractAdaptiveAngles(userLm, 0.45, true);
+          const instructorAngles = extractAdaptiveAngles(instructorLm, 0.45, true);
 
-            instructorAngleBufferRef.current.push({ angles: instructorAngles, timestamp: ts });
-            const temporalWindowMs = 700;
-            instructorAngleBufferRef.current = instructorAngleBufferRef.current.filter(
-              (frame) => ts - frame.timestamp <= temporalWindowMs
-            );
+          instructorAngleBufferRef.current.push({ angles: instructorAngles, timestamp: ts });
+          const temporalWindowMs = 700;
+          instructorAngleBufferRef.current = instructorAngleBufferRef.current.filter(
+            (frame) => ts - frame.timestamp <= temporalWindowMs
+          );
 
-            const comparison = compareWithTemporalTolerance(
-              userAngles,
-              instructorAngleBufferRef.current,
-              12,
-              24,
-              {
-                includeLegs: false,
-                legWeight: 0.25,
-                jitterTolerance: 3,
-                minJointVisibility: 0.45,
-              }
-            );
-
-            if (comparison.activeJointCount > 0) {
-              aiStatsRef.current.frameCount += 1;
-              aiStatsRef.current.totalScore += comparison.overallScore * 100;
+          const comparison = compareWithTemporalTolerance(
+            userAngles,
+            instructorAngleBufferRef.current,
+            12,
+            24,
+            {
+              includeLegs: false,
+              legWeight: 0.25,
+              jitterTolerance: 3,
+              minJointVisibility: 0.45,
             }
+          );
 
-            if (ts - poseUiLastUpdateRef.current >= 120) {
-              poseUiLastUpdateRef.current = ts;
-              setLiveLandmarks(userLm);
-              setLiveComparison(comparison);
-              setLivePoseScore(Math.round(comparison.overallScore * 100));
-
-              if (comparison.activeJointCount === 0) {
-                setLivePoseMessage("Step into frame so I can see your joints.");
-              } else if (comparison.overallScore >= 0.8) {
-                setLivePoseMessage("Strong alignment. Keep the rhythm tight.");
-              } else if (comparison.overallScore >= 0.55) {
-                setLivePoseMessage("Good shape. Refine the lines a little more.");
-              } else {
-                setLivePoseMessage("Adjust your posture and stay centered in view.");
-              }
-            }
-          } else if (ts - poseUiLastUpdateRef.current >= 120) {
-            poseUiLastUpdateRef.current = ts;
-            setLiveLandmarks(userLm || null);
-            setLiveComparison(null);
-            setLivePoseScore(0);
-            setLivePoseMessage("Keep your full body in view for better tracking.");
+          if (comparison.activeJointCount > 0) {
+            aiStatsRef.current.frameCount += 1;
+            aiStatsRef.current.totalScore += comparison.overallScore * 100;
           }
-        }
-      } catch {
-        // Non-blocking during scoring.
-      }
 
-      scoringLoopRef.current = requestAnimationFrame(runAiScoringLoop);
-    },
-    []
-  );
+          if (ts - poseUiLastUpdateRef.current >= 120) {
+            poseUiLastUpdateRef.current = ts;
+            setLiveLandmarks(userLm);
+            setLiveComparison(comparison);
+            setLivePoseScore(Math.round(comparison.overallScore * 100));
+
+            // Update lightweight AI stats for UI (debounced by pose UI update)
+            setAiFrameCount(aiStatsRef.current.frameCount);
+            setAiAvgScore(aiStatsRef.current.frameCount > 0 ? Math.round(aiStatsRef.current.totalScore / aiStatsRef.current.frameCount) : 0);
+
+            if (comparison.activeJointCount === 0) {
+              setLivePoseMessage("Step into frame so I can see your joints.");
+            } else if (comparison.overallScore >= 0.8) {
+              setLivePoseMessage("Strong alignment. Keep the rhythm tight.");
+            } else if (comparison.overallScore >= 0.55) {
+              setLivePoseMessage("Good shape. Refine the lines a little more.");
+            } else {
+              setLivePoseMessage("Adjust your posture and stay centered in view.");
+            }
+          }
+        } else if (ts - poseUiLastUpdateRef.current >= 120) {
+          poseUiLastUpdateRef.current = ts;
+          setLiveLandmarks(userLm || null);
+          setLiveComparison(null);
+          setLivePoseScore(0);
+          setLivePoseMessage("Keep your full body in view for better tracking.");
+        }
+      }
+    } catch {
+      // Non-blocking during scoring.
+    }
+
+    scoringLoopRef.current = requestAnimationFrame(runAiScoringLoop);
+  }
 
   const beginRecordingNow = () => {
     const stream = streamRef.current;
@@ -962,9 +971,7 @@ export default function RecordPage() {
     }
 
     const aiScore =
-      aiStatsRef.current.frameCount > 0
-        ? Math.round(aiStatsRef.current.totalScore / aiStatsRef.current.frameCount)
-        : 0;
+      aiAvgScore
 
     try {
       if (!isRemixMode) {
@@ -1319,7 +1326,7 @@ export default function RecordPage() {
           </div>
           <div className="rounded-2xl border border-[#b2b2ab]/25 bg-[#f5f4ed] px-4 py-3 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#725b3f]">Detected Frames</p>
-            <p className="mt-1 text-lg font-black text-[#1f1f1b]">{aiStatsRef.current.frameCount}</p>
+            <p className="mt-1 text-lg font-black text-[#1f1f1b]">{aiFrameCount}</p>
             <p className="mt-1 text-xs text-[#5f6058]">
               {liveComparison?.activeJointCount ? `${liveComparison.activeJointCount} active joints in the last frame` : "Waiting for a clear pose."}
             </p>

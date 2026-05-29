@@ -10,7 +10,7 @@ export async function navigateWithRetry(page: Page, url: string, options: { wait
       lastErr = err
       // If page/context closed, try to recreate page if possible
       try {
-        if (page.isClosed && attempt < retries) {
+        if (page.isClosed() && attempt < retries) {
           // can't reopen same page; throw to caller — let test fixture handle new page creation
           throw err
         }

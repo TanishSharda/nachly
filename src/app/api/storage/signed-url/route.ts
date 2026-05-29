@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceRoleClient } from "@/lib/supabase/server";
+import { createServiceRoleClient, createServerSupabase } from "@/lib/supabase/server";
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 export async function POST(request: NextRequest) {
   try {
+    try {
+      const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 60, keyPrefix: 'storage:signed-url' });
+      if (maybe) return maybe;
+    } catch (e) {
+      // ignore rate limiter failures
+    }
+
+    // Require authenticated user for signed download URLs
+    const serverSupabase = await createServerSupabase();
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const path = String(body?.path || "").trim();
     const bucket = String(body?.bucket || "choreographer-uploads").trim();
@@ -33,13 +49,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const allowed = [
+      'choreographer-uploads',
+      'avatars',
+    ];
+    if (!allowed.includes(bucket)) {
+      return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 });
+    }
+
     const supabase = createServiceRoleClient();
+    try {
+      logServiceRoleUsage({ caller: 'api/storage/signed-url', note: `user:${user.id} bucket:${bucket} path:${path}` });
+    } catch (_) {}
 
     const { data, error } = await supabase.storage
       .from(bucket)
       .createSignedUrl(path, expires);
 
-    if (error || !data?.signedURL) {
+    if (error || !data?.signedUrl) {
       console.error("[/api/storage/signed-url] createSignedUrl error:", error);
 
       // Fallback: call Supabase Storage REST API directly to sign the object
@@ -75,7 +102,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, url: data.signedURL, expiresAt: data.expiration });
+    return NextResponse.json({ ok: true, url: data.signedUrl, expiresAt: null });
   } catch (err) {
     console.error("[/api/storage/signed-url] Error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

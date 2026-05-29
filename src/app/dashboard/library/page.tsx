@@ -130,7 +130,7 @@ export default function DashLibraryPage() {
   const visibleStyles = useMemo(() => {
     if (access.subscriptionActive) return styleCards;
     return styleCards.filter((style) => access.purchasedSlugs.includes(style.slug));
-  }, [access.purchasedSlugs, access.subscriptionActive]);
+  }, [access.purchasedSlugs, access.subscriptionActive, styleCards]);
 
   const hasAccess = visibleStyles.length > 0;
 

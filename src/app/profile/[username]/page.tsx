@@ -29,7 +29,9 @@ export default async function PublicProfilePage({ params }: { params: { username
   }
 
   const supabase = await createServerSupabase();
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  // Use the server-scoped client to ensure we respect request cookies and
+  // don't unintentionally expose service-role privileges for public pages.
+  const db = supabase;
 
   const { data: profiles } = await db
     .from("profiles")

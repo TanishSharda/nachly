@@ -38,7 +38,7 @@ export default function PWAInstallPrompt() {
     // Check if already dismissed
     const wasDismissed = localStorage.getItem("naachly-pwa-dismissed");
     if (wasDismissed) {
-      setDismissed(true);
+      setTimeout(() => setDismissed(true), 0);
       return;
     }
 

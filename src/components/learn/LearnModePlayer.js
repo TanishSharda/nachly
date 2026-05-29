@@ -54,8 +54,8 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
   const [hintIndex, setHintIndex] = useState(0);
   const [videoError, setVideoError] = useState("");
 
-  const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
-  const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
+  const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`, [choreo]);
+  const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo]);
   const [signedUrl, setSignedUrl] = useState(null);
   const isEmbedUrl = useMemo(() => {
     const v = String(choreo?.video || "").trim();
@@ -66,7 +66,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
     const ext = path.split('.').pop()?.toLowerCase();
     if (!ext) return false;
     return !(ext === "mp4" || ext === "webm");
-  }, [choreo?.video]);
+  }, [choreo]);
 
   const embedSrc = useMemo(() => {
     const v = String(choreo?.video || "").trim();
@@ -85,19 +85,19 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
       }
     } catch {}
     return v;
-  }, [choreo?.video]);
-  const moves = choreo?.moves || [];
+  }, [choreo]);
+  const moves = useMemo(() => (choreo?.moves || []), [choreo]);
   const isStepwiseMode = mode === "stepwise";
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const recordHref = useMemo(() => {
     if (practiceHref) return practiceHref;
     if (choreo?.id) return `/record/${encodeURIComponent(choreo.id)}?mode=remix`;
     return "/flow?style=mix";
-  }, [practiceHref, choreo?.id]);
+  }, [practiceHref, choreo]);
   const aiPracticeHref = useMemo(() => {
     if (choreo?.id) return `/practice/${encodeURIComponent(choreo.id)}`;
     return "/adaptive-pose";
-  }, [choreo?.id]);
+  }, [choreo]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -164,7 +164,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
       video.removeEventListener("pause", onPause);
       video.removeEventListener("error", onError);
     };
-  }, [resumeKey]);
+  }, [resumeKey, moves, currentMoveIndex, isStepwiseMode]);
 
   // Attempt programmatic autoplay when the source list changes.
   useEffect(() => {
@@ -205,7 +205,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
   // Debug logging to help diagnose missing sources when running locally
   useEffect(() => {
     try {
-      // eslint-disable-next-line no-console
+       
       console.debug("LearnModePlayer: choreo", choreo, "videoSources", videoSources);
     } catch {}
   }, [choreo, videoSources]);
@@ -240,11 +240,11 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
         if (res.ok && json?.url) {
           setSignedUrl(json.url);
         } else {
-          // eslint-disable-next-line no-console
+           
           console.warn("Failed to get signed url", json);
         }
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.warn("No signed URL needed or failed to parse URL", err);
       }
     }

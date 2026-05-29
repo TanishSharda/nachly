@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const updateSchema = z.object({
   action: z.enum(["submit", "resubmit", "evaluate", "moderate"]),
@@ -65,7 +66,13 @@ async function getSubmissionId(context: any) {
   return String(params?.id || "").trim();
 }
 
-export async function GET(_: Request, context: any) {
+export async function GET(request: Request, context: any) {
+  try {
+    const maybe = await enforceRateLimit(request as any as Request, { windowMs: 60_000, max: 60, keyPrefix: 'choreo:submission:get' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -80,7 +87,7 @@ export async function GET(_: Request, context: any) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
 
@@ -103,6 +110,12 @@ export async function GET(_: Request, context: any) {
 }
 
 export async function PATCH(request: Request, context: any) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 20, keyPrefix: 'choreo:submission:patch' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -129,7 +142,7 @@ export async function PATCH(request: Request, context: any) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data: profile } = await db.from("profiles").select("role").eq("id", user.id).maybeSingle();
 

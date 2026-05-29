@@ -189,7 +189,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      setAuthReady(true);
+      setTimeout(() => setAuthReady(true), 0);
       return;
     }
 
@@ -342,26 +342,33 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      <section className="section-padding mt-16">
+      <section id="how-it-works" className="section-padding mt-16">
         <motion.div {...sectionReveal()}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#F3B2AB]">How it works</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">A scroll-native learning loop</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-5">
-            {howItWorks.map((step, index) => (
-              <motion.div
-                key={step.step}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                viewport={{ once: true, amount: 0.2 }}
-              >
-                <BentoCard className="text-center">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">{step.step}</p>
-                  <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm text-[#8A8D9F]">{step.description}</p>
-                </BentoCard>
-              </motion.div>
-            ))}
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-white sm:text-5xl">For learners and creators</h2>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#8A8D9F]">
+            Learners use Nachly to find a routine, break it down, practice it, and improve. Creators use it to upload choreography, guide students, and grow an audience.
+          </p>
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            <BentoCard>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">Learner</p>
+              <h3 className="mt-3 text-xl font-semibold text-white">Find. Learn. Practice. Improve.</h3>
+              <ul className="mt-3 space-y-2 text-sm text-[#8A8D9F]">
+                <li>Scroll the feed and pick a dance you want.</li>
+                <li>Use step-by-step breakdowns, slow motion, and loops.</li>
+                <li>Practice in the camera flow, then save your progress.</li>
+              </ul>
+            </BentoCard>
+
+            <BentoCard>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F3B2AB]">Creator</p>
+              <h3 className="mt-3 text-xl font-semibold text-white">Upload. Teach. Reach. Earn.</h3>
+              <ul className="mt-3 space-y-2 text-sm text-[#8A8D9F]">
+                <li>Upload choreography, tutorials, and guided lessons.</li>
+                <li>Teach with structured sections instead of random clips.</li>
+                <li>Reach learners and grow your brand inside the platform.</li>
+              </ul>
+            </BentoCard>
           </div>
         </motion.div>
       </section>

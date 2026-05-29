@@ -21,10 +21,10 @@ export default function TestPublicPlayback({ src }: Props) {
     const tryPlay = async () => {
       try {
         await v.play()
-        // eslint-disable-next-line no-console
+         
         console.log('played', v.currentTime)
       } catch (e) {
-        // eslint-disable-next-line no-console
+         
         console.warn('autoplay failed', e)
       }
     }

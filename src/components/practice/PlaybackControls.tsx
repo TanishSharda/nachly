@@ -54,7 +54,7 @@ export default function PlaybackControls({
 
   // Auto-hide after 3s
   useEffect(() => {
-    resetHideTimer();
+    setTimeout(() => resetHideTimer(), 0);
     const handleMove = () => resetHideTimer();
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("touchstart", handleMove);

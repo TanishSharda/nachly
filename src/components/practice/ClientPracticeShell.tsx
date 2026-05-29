@@ -122,7 +122,17 @@ export default function ClientPracticeShell({ choreo }: { choreo: any }) {
     <div className="space-y-4">
       {phase === "calibration" && (
         <div>
-          <CalibrationScreen />
+          <CalibrationScreen
+            cameraReady={false}
+            videoRef={videoRef}
+            stream={null}
+            cameraStatus="idle"
+            cameraIssue={null}
+            onEnableCamera={() => {}}
+            onRetryCamera={() => {}}
+            onContinueWithoutCamera={() => {}}
+            onStart={() => startCountdown()}
+          />
           <div className="mt-4 flex justify-center">
             <button className="rounded-lg bg-white px-4 py-2 text-black" onClick={startCountdown}>
               Start Practice
@@ -131,7 +141,7 @@ export default function ClientPracticeShell({ choreo }: { choreo: any }) {
         </div>
       )}
 
-      {phase === "countdown" && <CountdownOverlay seconds={countdown} />}
+      {phase === "countdown" && <CountdownOverlay count={countdown} visible={true} />}
 
       {phase === "dancing" && (
         <div className="relative">

@@ -17,7 +17,7 @@ export default function ClientLearnShell({ choreo }: { choreo: any }) {
 
   const gotoRecord = useCallback(() => {
     router.push(`/record/${encodeURIComponent(choreo.id)}`);
-  }, [router, choreo?.id]);
+  }, [router, choreo]);
 
   return (
     <div className="space-y-4">
@@ -54,7 +54,7 @@ export default function ClientLearnShell({ choreo }: { choreo: any }) {
       </nav>
 
       <div className="mt-2">
-        {step === "teach" && <LearnModePlayer choreo={choreo} mode="stepwise" />}
+        {step === "teach" && <LearnModePlayer choreo={choreo} mode="stepwise" practiceHref={`/choreography/${choreo?.id}/practice`} />}
         {step === "practice" && <ClientPracticeShell choreo={choreo} />}
         {step === "record" && (
           <div className="rounded-lg border border-white/10 p-6 text-center text-sm text-white/80">

@@ -13,6 +13,7 @@ import CountdownOverlay from "@/components/practice/CountdownOverlay";
 import VideoStage from "@/components/practice/VideoStage";
 import PlaybackControls from "@/components/practice/PlaybackControls";
 import CameraControls from "@/components/practice/CameraControls";
+import CameraDiagnostics from "@/components/practice/CameraDiagnostics";
 import AIFeedbackPanel from "@/components/practice/AIFeedbackPanel";
 import SessionResults from "@/components/practice/SessionResults";
 import SessionHistory from "@/components/practice/SessionHistory";
@@ -340,6 +341,8 @@ export default function PracticeModePage() {
   const drillReadySinceRef = useRef<number | null>(null);
   const autoCompleteTriggeredRef = useRef(false);
   const recentDrillScoresRef = useRef<number[]>([]);
+  const [autoCompleteTriggered, setAutoCompleteTriggered] = useState(false);
+  const [recentDrillScoresState, setRecentDrillScoresState] = useState<number[]>([]);
 
   // AI Pose Detection
   const isDancing = phase === "dancing";
@@ -369,7 +372,7 @@ export default function PracticeModePage() {
   );
   const comparedFrames = poseMetrics.totalFramesCompared;
   const bodyPartSampleCount = drillPartStats?.total ?? 0;
-  const recentDrillScores = recentDrillScoresRef.current;
+  const recentDrillScores = recentDrillScoresState;
   const drillScoreStable =
     recentDrillScores.length >= drillAutoConfig.minStableSamples &&
     recentDrillScores.every((score) => score >= drillRequiredScoreForAutoComplete - 2);
@@ -393,11 +396,13 @@ export default function PracticeModePage() {
   useEffect(() => {
     if (phase !== "dancing" || !drillFocus) {
       recentDrillScoresRef.current = [];
+      setTimeout(() => setRecentDrillScoresState([]), 0);
       return;
     }
 
     const next = [...recentDrillScoresRef.current.slice(-11), liveDrillScore];
     recentDrillScoresRef.current = next;
+    setTimeout(() => setRecentDrillScoresState(next), 0);
   }, [phase, drillFocus, liveDrillScore]);
 
   // --- Camera lifecycle ---
@@ -647,8 +652,10 @@ export default function PracticeModePage() {
       }
     }
 
-    setResolvedDrillTarget(nextTarget);
-    setDrillDurationSeconds(nextDuration);
+    setTimeout(() => {
+      setResolvedDrillTarget(nextTarget);
+      setDrillDurationSeconds(nextDuration);
+    }, 0);
   }, [drillFocus, drillId, drillTarget]);
 
   // --- Phase transitions ---
@@ -678,13 +685,13 @@ export default function PracticeModePage() {
 
     if (cameraReady) {
       autoStartPhaseStartedRef.current = true;
-      setPhase("dancing");
+      setTimeout(() => setPhase("dancing"), 0);
       return;
     }
 
     if (cameraStatus === "error") {
       autoStartPhaseStartedRef.current = true;
-      setPhase("dancing");
+      setTimeout(() => setPhase("dancing"), 0);
     }
   }, [cameraReady, cameraStatus, phase, shouldAutoStart]);
 
@@ -755,7 +762,7 @@ export default function PracticeModePage() {
       };
     }
 
-    const autoCompletedDrill = Boolean(drillFocus && autoCompleteTriggeredRef.current);
+    const autoCompletedDrill = Boolean(drillFocus && autoCompleteTriggered);
 
     if (focusedDrillSummary?.hitTarget && drillId && routine?.id && isUuid(drillId) && isUuid(routine.id)) {
       const verified = await submitSignedDrillCompletion({
@@ -885,43 +892,45 @@ export default function PracticeModePage() {
     comparedFrames,
     bodyPartSampleCount,
     recentDrillScores.length,
+    autoCompleteTriggered,
     stopUserRecording,
   ]);
 
   useEffect(() => {
     if (phase !== "dancing" || !drillFocus) {
       drillReadySinceRef.current = null;
-      setDrillReadyHoldSeconds(0);
+      setTimeout(() => setDrillReadyHoldSeconds(0), 0);
       return;
     }
 
     if (!drillReady) {
       drillReadySinceRef.current = null;
-      setDrillReadyHoldSeconds(0);
+      setTimeout(() => setDrillReadyHoldSeconds(0), 0);
       return;
     }
 
-    if (autoCompleteTriggeredRef.current) return;
+    if (autoCompleteTriggered) return;
 
     if (drillReadySinceRef.current === null) {
       drillReadySinceRef.current = Date.now();
     }
 
     const interval = setInterval(() => {
-      if (drillReadySinceRef.current === null || autoCompleteTriggeredRef.current) return;
+      if (drillReadySinceRef.current === null || autoCompleteTriggered) return;
 
       const heldSeconds = (Date.now() - drillReadySinceRef.current) / 1000;
       setDrillReadyHoldSeconds(Math.min(drillAutoConfig.holdSeconds, heldSeconds));
 
       if (heldSeconds >= drillAutoConfig.holdSeconds) {
         autoCompleteTriggeredRef.current = true;
+        setTimeout(() => setAutoCompleteTriggered(true), 0);
         setDrillReadyHoldSeconds(drillAutoConfig.holdSeconds);
         finishSession();
       }
     }, 200);
 
     return () => clearInterval(interval);
-  }, [phase, drillFocus, drillReady, finishSession, drillAutoConfig.holdSeconds]);
+  }, [phase, drillFocus, drillReady, finishSession, drillAutoConfig.holdSeconds, autoCompleteTriggered]);
 
   const resetPractice = useCallback(() => {
     setPhase("calibration");
@@ -944,7 +953,9 @@ export default function PracticeModePage() {
     autoStartPhaseStartedRef.current = false;
     drillReadySinceRef.current = null;
     autoCompleteTriggeredRef.current = false;
+    setAutoCompleteTriggered(false);
     recentDrillScoresRef.current = [];
+    setRecentDrillScoresState([]);
     clearRecordedVideoUrl();
   }, [clearRecordedVideoUrl, drillTarget]);
 
@@ -971,8 +982,10 @@ export default function PracticeModePage() {
     }, 300);
 
     // Start elapsed timer
-    setElapsed(0);
-    setIsPlaying(true);
+    setTimeout(() => {
+      setElapsed(0);
+      setIsPlaying(true);
+    }, 0);
     elapsedTimerRef.current = setInterval(() => {
       setElapsed((e) => e + 1);
     }, 1000);
@@ -1098,7 +1111,7 @@ export default function PracticeModePage() {
   // Auto-finish when time is up
   useEffect(() => {
     if (phase === "dancing" && duration > 0 && currentTime >= duration) {
-      finishSession();
+      setTimeout(() => finishSession(), 0);
     }
   }, [phase, currentTime, duration, finishSession]);
 
@@ -1311,7 +1324,7 @@ export default function PracticeModePage() {
                     </span>
                   </div>
 
-                  {drillReady && !autoCompleteTriggeredRef.current && (
+                  {drillReady && !autoCompleteTriggered && (
                     <p className="text-[10px] text-emerald-200 mb-2">
                       Auto rule {drillAutoConfig.label}: score {drillRequiredScoreForAutoComplete}+ for {drillAutoConfig.holdSeconds}s
                       {" • "}
@@ -1377,6 +1390,15 @@ export default function PracticeModePage() {
               }}
               onToggleShadowMode={() => setShadowMode((value) => !value)}
             />
+
+            <CameraDiagnostics onEnableCamera={startCamera} onError={(e) => {
+              if (!e) {
+                setCameraIssue(null);
+                return;
+              }
+              setCameraIssue(mapCameraError(e));
+              setCameraStatus('error');
+            }} />
 
             {/* Playback controls (bottom bar) */}
             <PlaybackControls

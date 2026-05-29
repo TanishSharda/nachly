@@ -278,10 +278,12 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
   }, [style, difficulty]);
 
   useEffect(() => {
-    setPosts(initialPosts);
-    setOffset(initialPosts.length);
-    setHasMore(initialPosts.length > 0);
-    setError(null);
+    setTimeout(() => {
+      setPosts(initialPosts);
+      setOffset(initialPosts.length);
+      setHasMore(initialPosts.length > 0);
+      setError(null);
+    }, 0);
   }, [initialPosts]);
 
   const [newAvailable, setNewAvailable] = useState(false);
@@ -381,7 +383,7 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
     };
 
     void loadMore();
-  }, [hasMore, loadingMore, offset, queryString]);
+  }, [hasMore, loadingMore, offset, queryString, style, difficulty]);
 
   const activeFilters = [style || "all", difficulty || "all"];
 

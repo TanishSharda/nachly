@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const postSchema = z.object({
   choreoId: z.string().trim().min(1).max(160),
@@ -21,7 +22,13 @@ function missingSupabaseConfigResponse() {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as any as Request, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:saves:get' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -35,7 +42,7 @@ export async function GET() {
     return NextResponse.json({ saves: [] });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data, error } = await db
     .from("user_saved_choreos")
@@ -62,6 +69,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:saves:post' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   let body: unknown;
 
   try {
@@ -89,7 +102,7 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data: existing, error: existingError } = await db
     .from("user_saved_choreos")

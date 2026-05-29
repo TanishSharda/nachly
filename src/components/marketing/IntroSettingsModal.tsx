@@ -15,8 +15,8 @@ export default function IntroSettingsModal({ open, onClose }: Props) {
     try {
       const e = localStorage.getItem("nachly_intro_enabled");
       const v = localStorage.getItem("nachly_intro_volume");
-      if (e !== null) setEnabled(e === "true");
-      if (v !== null) setVolume(Number(v));
+      if (e !== null) setTimeout(() => setEnabled(e === "true"), 0);
+      if (v !== null) setTimeout(() => setVolume(Number(v)), 0);
     } catch (err) {
       /* ignore */
     }

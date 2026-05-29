@@ -4,9 +4,21 @@
  */
 
 import { createServerSupabase, createServiceRoleClient } from '../server';
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
 
 async function getReadOnlySupabaseClient() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : await createServerSupabase();
+  // Prefer the server-scoped Supabase client which respects the current request's
+  // authentication/cookies. Only fall back to the service-role client when an
+  // explicit environment flag allows it. This reduces accidental service-role
+  // exposure in server helpers.
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.ALLOW_SERVICE_ROLE_READONLY === '1') {
+    try {
+      logServiceRoleUsage({ caller: 'lib/supabase/queries/choreos:getReadOnlySupabaseClient', note: 'readonly-fallback' });
+    } catch (_) {}
+    return createServiceRoleClient();
+  }
+
+  return await createServerSupabase();
 }
 
 export interface ChoreographyFeedItem {

@@ -113,7 +113,7 @@ export default function RoutineDetailPage() {
     } finally {
       setSavePending(false);
     }
-  }, [performanceVideo?.video_url, routine, styleSlug]);
+  }, [performanceVideo, routine, styleSlug]);
 
   if (!style || !routine) return notFound();
 
@@ -147,7 +147,7 @@ export default function RoutineDetailPage() {
             <motion.div variants={fadeUp}>
               {performanceVideo?.video_url ? (
                 <div className="aspect-video rounded-2xl overflow-hidden app-card border-white/15">
-                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  { }
                   <video
                     src={performanceVideo.video_url}
                     controls

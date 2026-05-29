@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -458,7 +459,7 @@ export default function CreatorUploadPage() {
       subscriptionTier: "",
       publishNow,
     }),
-    [description, difficulty, draftId, performanceMedia.previewUrl, performanceMedia.uploadedUrl, songName, styleSlug, teachMedia.previewUrl, teachMedia.uploadedUrl, thumbnailUrl, title]
+    [description, difficulty, draftId, performanceMedia.uploadedUrl, songName, styleSlug, teachMedia.uploadedUrl, thumbnailUrl, title]
   );
 
   const persistDraft = useCallback(async () => {
@@ -810,9 +811,9 @@ export default function CreatorUploadPage() {
               <p className="mt-2 text-sm text-zinc-400">Thumbnail, title, and both videos are shown exactly as the learner will see them.</p>
 
               <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/30">
-                <div className="aspect-[9/10] bg-black">
+                <div className="relative aspect-[9/10] bg-black">
                   {currentThumbnail ? (
-                    <img src={currentThumbnail} alt="Thumbnail preview" className="h-full w-full object-cover" />
+                    <Image src={currentThumbnail} alt="Thumbnail preview" unoptimized fill style={{ objectFit: "cover" }} />
                   ) : previewPerformance ? (
                     <video data-testid="creator-preview-performance-video" src={previewPerformance} controls playsInline muted className="h-full w-full object-cover" />
                   ) : (

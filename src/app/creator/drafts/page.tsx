@@ -36,7 +36,8 @@ export default function CreatorDraftsPage() {
   }, []);
 
   useEffect(() => {
-    loadDrafts();
+    const t = setTimeout(() => void loadDrafts(), 0);
+    return () => clearTimeout(t);
   }, [loadDrafts]);
 
   const deleteDraft = useCallback(async (draft: DraftRecord) => {

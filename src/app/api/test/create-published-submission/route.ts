@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
 
 export async function POST(request: Request) {
   try {
+    // Only allow running this test helper in development or when explicitly enabled.
+    const enabled = process.env.NODE_ENV === 'development' || process.env.ENABLE_TEST_API === '1';
+    if (!enabled) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const body = await request.json().catch(() => ({}));
     const title = (body.title as string) || `E2E Test Submission ${Date.now()}`;
     const email = (body.email as string) || `e2e+${Date.now()}@example.com`;
     const password = (body.password as string) || `TestPass123!`;
 
     const supabase = createServiceRoleClient();
+    try {
+      logServiceRoleUsage({ caller: 'api/test/create-published-submission', note: `auto-created test submission ${title}` });
+    } catch (_) {}
 
     // create a user for the submission
     // @ts-ignore

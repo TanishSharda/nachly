@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import UploadWizard from "@/components/dashboard/UploadWizard";
@@ -86,6 +87,21 @@ const WIZARD_STEPS = [
   { label: "Preview" },
   { label: "Publish" },
 ];
+
+function NavButtons({ hideNext, goBack, goNext, step, canNext }: { hideNext?: boolean; goBack: () => void; goNext: () => void; step: number; canNext: boolean }) {
+  return (
+    <div className="mt-6 flex items-center justify-between">
+      <button data-testid="nav-back" type="button" onClick={goBack} disabled={step === 1} className="rounded-xl border border-white/20 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 disabled:opacity-30">
+        ← Back
+      </button>
+      {!hideNext && (
+        <button data-testid="nav-next" type="button" onClick={goNext} disabled={!canNext} className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-5 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
+          Next →
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function UploadChoreoPage() {
   const router = useRouter();
@@ -236,60 +252,39 @@ export default function UploadChoreoPage() {
 
   const loadLatestDraft = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
+    setDraftsLoading(true);
+    setDraftError("");
     try {
-      const drafts = await getChoreographySubmissions();
-      const latest = Array.isArray(drafts) && drafts.length ? drafts[0] : null;
-      if (latest) applyDraft(latest as DraftRecord);
+      const submissions = await getChoreographySubmissions();
+      setDrafts(submissions || []);
+      if (submissions && submissions.length > 0) {
+        const latest = submissions[0];
+        applyDraft(latest);
+        setDraftId(latest.id);
+      }
     } catch {
-      // Ignore draft load errors.
+      setDraftError("Failed to load latest draft");
+    } finally {
+      setDraftsLoading(false);
     }
   }, [applyDraft]);
 
   const loadDraftById = useCallback(async (id: string) => {
-    if (!isSupabaseConfigured()) return;
+    if (!isSupabaseConfigured() || !id) return;
+    setDraftsLoading(true);
+    setDraftError("");
     try {
       const draft = await getChoreographySubmission(id);
-      if (draft) applyDraft(draft as DraftRecord);
+      if (draft) {
+        applyDraft(draft);
+        setDraftId(draft.id);
+      }
     } catch {
-      setDraftError("Failed to load selected draft");
+      setDraftError("Failed to load draft");
+    } finally {
+      setDraftsLoading(false);
     }
   }, [applyDraft]);
-
-  const saveDraft = useCallback(async () => {
-    if (!isSupabaseConfigured()) return;
-    if (!canSaveDraft) return;
-    setSavingDraft(true);
-    setUploadWarning("");
-    try {
-      const payload = await patchChoreographySubmission({
-        id: draftId || undefined,
-        title: title.trim(),
-        description: description.trim(),
-        caption: "",
-        videoUrl: videoUrl.trim(),
-        styleSlug,
-        difficulty,
-        lessonParts,
-        hashtags,
-        musicCredit: musicCredit.trim(),
-        accessType,
-        priceInr,
-        subscriptionTier: subscriptionTier.trim(),
-        thumbnailUrl: thumbnailUrl.trim(),
-        slowMoMarkers,
-        trimStartSeconds,
-        trimEndSeconds,
-        captionOverlays,
-        videoDurationSeconds,
-      });
-      if (payload?.draft?.id) setDraftId(payload.draft.id);
-      setLastSavedAt(new Date().toISOString());
-    } catch (err: any) {
-      setUploadWarning(err?.message || "Draft save failed");
-    } finally {
-      setSavingDraft(false);
-    }
-  }, [canSaveDraft, draftId, title, description, videoUrl, styleSlug, difficulty, lessonParts, hashtags, musicCredit, accessType, priceInr, subscriptionTier, thumbnailUrl, slowMoMarkers, trimStartSeconds, trimEndSeconds, captionOverlays, videoDurationSeconds]);
 
   const startRenameDraft = useCallback((draft: DraftRecord) => {
     setEditingDraftId(draft.id);
@@ -341,37 +336,48 @@ export default function UploadChoreoPage() {
     setUploadWarning("");
     try {
       setUploadProgress(10);
-      const supabase = createClient();
 
-      // generate file path
+      // generate file path (client-side deterministic)
       const timestamp = Date.now();
       const safeFileName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = (userData?.user?.id) || 'anon';
+      const userInfo = await fetch('/api/auth/user', { cache: 'no-store' }).then((r) => r.json().catch(() => ({})));
+      const userId = (userInfo?.user?.id) || 'anon';
       const filePath = `${userId}/${draftId || 'draft'}/${timestamp}-${safeFileName}`;
 
-      setUploadProgress(25);
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('choreographer-uploads')
-        .upload(filePath, videoFile, { contentType: videoFile.type, upsert: false });
+      // Request a server-signed upload URL (server uses service role key)
+      const signRes = await fetch('/api/storage/signed-upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, bucket: 'choreographer-uploads', upsert: false }),
+      }).then((r) => r.json());
 
-      if (uploadError || !uploadData) {
-        throw new Error(String(uploadError?.message || 'Upload failed'));
+      if (!signRes?.ok || !signRes?.signedUrl) {
+        throw new Error(String(signRes?.error || 'Failed to obtain signed upload URL'));
+      }
+
+      setUploadProgress(25);
+
+      // Upload the file to the signed URL
+      const putResp = await fetch(signRes.signedUrl, {
+        method: 'PUT',
+        body: videoFile,
+        headers: { 'Content-Type': videoFile.type },
+      });
+
+      if (!putResp.ok) {
+        throw new Error('Upload failed');
       }
 
       setUploadProgress(70);
-      const { data: urlData } = supabase.storage.from('choreographer-uploads').getPublicUrl(uploadData.path);
 
-      // Optionally record metadata server-side via API (non-blocking)
-      try {
-        fetch('/api/choreographer/register-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: uploadData.path, fileName: videoFile.name, size: videoFile.size, type: videoFile.type, choreographyId: draftId || null }),
-        }).catch(() => {});
-      } catch {}
+      // Obtain a public or signed download URL for the uploaded object
+      const publicRes = await fetch('/api/storage/signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, bucket: 'choreographer-uploads', expires: 60 }),
+      }).then((r) => r.json());
 
-      const uploadedUrl = String(urlData?.publicUrl || '');
+      const uploadedUrl = String(publicRes?.url || '');
       if (uploadedUrl) {
         setVideoUrl(uploadedUrl);
         setVideoFile(null);
@@ -399,20 +405,38 @@ export default function UploadChoreoPage() {
       const blob = await res.blob();
       const file = new File([blob], `thumbnail-${Date.now()}.jpg`, { type: 'image/jpeg' });
 
-      const supabase = createClient();
       const timestamp = Date.now();
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = (userData?.user?.id) || 'anon';
+      const userInfo = await fetch('/api/auth/user', { cache: 'no-store' }).then((r) => r.json().catch(() => ({})));
+      const userId = (userInfo?.user?.id) || 'anon';
       const filePath = `${userId}/${draftId || 'draft'}/${timestamp}-thumbnail.jpg`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('choreographer-uploads')
-        .upload(filePath, file, { contentType: file.type, upsert: false });
+      const signRes = await fetch('/api/storage/signed-upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, bucket: 'choreographer-uploads', upsert: false }),
+      }).then((r) => r.json());
 
-      if (uploadError || !uploadData) throw new Error(String(uploadError?.message || 'Thumbnail upload failed'));
+      if (!signRes?.ok || !signRes?.signedUrl) {
+        throw new Error(String(signRes?.error || 'Failed to obtain signed upload URL'));
+      }
 
-      const { data: urlData } = supabase.storage.from('choreographer-uploads').getPublicUrl(uploadData.path);
-      const uploadedUrl = String(urlData?.publicUrl || '');
+      const putResp = await fetch(signRes.signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      if (!putResp.ok) {
+        throw new Error('Thumbnail upload failed');
+      }
+
+      const publicRes = await fetch('/api/storage/signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, bucket: 'choreographer-uploads', expires: 60 }),
+      }).then((r) => r.json());
+
+      const uploadedUrl = String(publicRes?.url || '');
       if (uploadedUrl) {
         setThumbnailUrl(uploadedUrl);
       } else {
@@ -427,14 +451,16 @@ export default function UploadChoreoPage() {
   }, [draftId]);
 
   useEffect(() => {
-    loadDrafts();
-    loadLatestDraft();
+    setTimeout(() => {
+      loadDrafts();
+      loadLatestDraft();
+    }, 0);
   }, [loadDrafts, loadLatestDraft]);
 
   useEffect(() => {
     const draftParam = searchParams.get("draft");
     if (draftParam) {
-      loadDraftById(draftParam);
+      setTimeout(() => loadDraftById(draftParam), 0);
     }
   }, [searchParams, loadDraftById]);
 
@@ -516,29 +542,33 @@ export default function UploadChoreoPage() {
         videoDurationSeconds?: number;
       };
       if (!payload.videoUrl) return;
-      setTitle(payload.title || "");
-      setDescription(payload.description || "");
-      setVideoUrl(payload.videoUrl || "");
-      setStyleSlug(payload.styleSlug || "hip-hop");
-      setDifficulty(payload.difficulty || "beginner");
-      setLessonParts(payload.lessonParts || []);
-      setHashtags(payload.hashtags || []);
-      setMusicCredit(payload.musicCredit || "");
-      setAccessType(payload.accessType || "free");
-      setPriceInr(payload.priceInr || 0);
-      setSubscriptionTier(payload.subscriptionTier || "");
-      setThumbnailUrl(payload.thumbnailUrl || "");
+      setTimeout(() => {
+        setTitle(payload.title || "");
+        setDescription(payload.description || "");
+        setVideoUrl(payload.videoUrl || "");
+        setStyleSlug(payload.styleSlug || "hip-hop");
+        setDifficulty(payload.difficulty || "beginner");
+        setLessonParts(payload.lessonParts || []);
+        setHashtags(payload.hashtags || []);
+        setMusicCredit(payload.musicCredit || "");
+        setAccessType(payload.accessType || "free");
+        setPriceInr(payload.priceInr || 0);
+        setSubscriptionTier(payload.subscriptionTier || "");
+        setThumbnailUrl(payload.thumbnailUrl || "");
+      }, 0);
       const normalizedMarkers = (payload.slowMoMarkers || []).map((marker) => ({
         id: marker.id || Math.random().toString(36).slice(2, 9),
         label: marker.label || "Section",
         startSeconds: Number((marker as any).startSeconds ?? (marker as any).start ?? 0),
         endSeconds: Number((marker as any).endSeconds ?? (marker as any).end ?? 0),
       }));
-      setSlowMoMarkers(normalizedMarkers);
-      setCaptionOverlays(payload.captionOverlays || []);
-      setVideoDurationSeconds(payload.videoDurationSeconds || 0);
-      setTrimStartSeconds(payload.trimStartSeconds || 0);
-      setTrimEndSeconds(payload.trimEndSeconds || payload.videoDurationSeconds || 0);
+      setTimeout(() => {
+        setSlowMoMarkers(normalizedMarkers);
+        setCaptionOverlays(payload.captionOverlays || []);
+        setVideoDurationSeconds(payload.videoDurationSeconds || 0);
+        setTrimStartSeconds(payload.trimStartSeconds || 0);
+        setTrimEndSeconds(payload.trimEndSeconds || payload.videoDurationSeconds || 0);
+      }, 0);
     } catch {
       // Ignore local draft restore failures.
     }
@@ -570,6 +600,41 @@ export default function UploadChoreoPage() {
       // Ignore localStorage failures.
     }
   }, [title, description, videoUrl, styleSlug, difficulty, lessonParts, hashtags, musicCredit, accessType, priceInr, subscriptionTier, thumbnailUrl, slowMoMarkers, trimStartSeconds, trimEndSeconds, captionOverlays, videoDurationSeconds]);
+  const saveDraft = useCallback(async () => {
+    if (!isSupabaseConfigured()) return;
+    setSavingDraft(true);
+    setDraftError("");
+    try {
+      const payload = {
+        id: draftId || undefined,
+        title: title.trim() || "Untitled draft",
+        description: description.trim() || "",
+        video_url: videoUrl.trim(),
+        style_slug: styleSlug,
+        difficulty,
+        caption_overlays: captionOverlays,
+        slow_mo_markers: slowMoMarkers,
+        trim_start_seconds: trimStartSeconds || null,
+        trim_end_seconds: trimEndSeconds || null,
+        video_duration_seconds: videoDurationSeconds || null,
+        hashtags,
+        thumbnail_url: thumbnailUrl || null,
+      } as Partial<DraftRecord>;
+
+      if (draftId) {
+        await patchChoreographySubmission(payload as DraftRecord);
+      } else {
+        const res = await postChoreographySubmission(payload as DraftRecord);
+        if (res?.submission?.id) setDraftId(res.submission.id);
+      }
+
+      setLastSavedAt(new Date().toISOString());
+    } catch (err) {
+      setDraftError("Failed to save draft");
+    } finally {
+      setSavingDraft(false);
+    }
+  }, [draftId, title, description, videoUrl, styleSlug, difficulty, captionOverlays, slowMoMarkers, trimStartSeconds, trimEndSeconds, videoDurationSeconds, hashtags, thumbnailUrl]);
 
   useEffect(() => {
     if (!canSaveDraft) return;
@@ -584,7 +649,7 @@ export default function UploadChoreoPage() {
 
   useEffect(() => {
     if (videoDurationSeconds > 0 && trimEndSeconds === 0) {
-      setTrimEndSeconds(videoDurationSeconds);
+      setTimeout(() => setTrimEndSeconds(videoDurationSeconds), 0);
     }
   }, [videoDurationSeconds, trimEndSeconds]);
 
@@ -593,9 +658,9 @@ export default function UploadChoreoPage() {
     return trimEndSeconds > trimStartSeconds + 0.5;
   }, [videoDurationSeconds, trimStartSeconds, trimEndSeconds]);
 
-  const lessonValidation = useMemo(() => {
-    if (lessonParts.length === 0) return { isValid: true, message: "" };
-    for (const part of lessonParts) {
+  function computeLessonValidation(parts: LessonPart[]) {
+    if (parts.length === 0) return { isValid: true, message: "" };
+    for (const part of parts) {
       if (part.label.trim().length < 2) {
         return { isValid: false, message: "Each lesson part needs a label (2+ characters)." };
       }
@@ -609,7 +674,8 @@ export default function UploadChoreoPage() {
       }
     }
     return { isValid: true, message: "" };
-  }, [lessonParts]);
+  }
+  const lessonValidation = computeLessonValidation(lessonParts);
 
   const monetizationValidation = useMemo(() => {
     if (accessType === "ppv") {
@@ -625,12 +691,12 @@ export default function UploadChoreoPage() {
     return { isValid: true, message: "" };
   }, [accessType, priceInr, subscriptionTier]);
 
-  const captionValidation = useMemo(() => {
-    if (captionOverlays.length === 0) return { isValid: true, message: "" };
-    if (captionOverlays.length > 20) {
+  function computeCaptionValidation(overlays: CaptionOverlay[]) {
+    if (overlays.length === 0) return { isValid: true, message: "" };
+    if (overlays.length > 20) {
       return { isValid: false, message: "Limit captions to 20 overlays." };
     }
-    for (const caption of captionOverlays) {
+    for (const caption of overlays) {
       if (caption.text.trim().length === 0) {
         return { isValid: false, message: "Caption text cannot be empty." };
       }
@@ -643,7 +709,8 @@ export default function UploadChoreoPage() {
       }
     }
     return { isValid: true, message: "" };
-  }, [captionOverlays]);
+  }
+  const captionValidation = computeCaptionValidation(captionOverlays);
 
   const canNext = useMemo(() => {
     if (step === 1) return videoUrl.trim().length > 0;
@@ -729,18 +796,7 @@ export default function UploadChoreoPage() {
     finally { setSubmitting(false); }
   }, [title, description, videoUrl, styleSlug, difficulty, fullBody, stableCam, goodLight, lessonParts, hashtags, musicCredit, accessType, priceInr, subscriptionTier, thumbnailUrl, slowMoMarkers, trimStartSeconds, trimEndSeconds, captionOverlays, videoDurationSeconds, draftId, isLocalVideo]);
 
-  const NavButtons = ({ hideNext }: { hideNext?: boolean }) => (
-    <div className="mt-6 flex items-center justify-between">
-      <button data-testid="nav-back" type="button" onClick={goBack} disabled={step === 1} className="rounded-xl border border-white/20 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 disabled:opacity-30">
-        ← Back
-      </button>
-      {!hideNext && (
-        <button data-testid="nav-next" type="button" onClick={goNext} disabled={!canNext} className="rounded-xl bg-gradient-to-r from-[#F3B2AB] to-[#D88B80] px-5 py-2.5 text-xs font-bold text-[#0a0a0a] transition hover:brightness-110 disabled:opacity-40">
-          Next →
-        </button>
-      )}
-    </div>
-  );
+  
 
   if (result) {
     return (
@@ -942,7 +998,7 @@ export default function UploadChoreoPage() {
                   Retry upload
                 </button>
               )}
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -987,7 +1043,7 @@ export default function UploadChoreoPage() {
                   Trim end must be at least 0.5s after the start.
                 </p>
               )}
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1002,7 +1058,7 @@ export default function UploadChoreoPage() {
                   {lessonValidation.message}
                 </p>
               )}
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1099,7 +1155,7 @@ export default function UploadChoreoPage() {
                   </p>
                 )}
               </div>
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1145,7 +1201,7 @@ export default function UploadChoreoPage() {
                   <input data-testid="thumbnail-url-input" value={thumbnailUrl.startsWith("data:") ? "" : thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-[#F3B2AB]/40" />
                 </div>
               </div>
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1164,7 +1220,7 @@ export default function UploadChoreoPage() {
                 <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Coming soon</p>
                 <p className="text-xs text-zinc-400">Auto-generated captions from audio will be available in a future update</p>
               </div>
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1174,7 +1230,7 @@ export default function UploadChoreoPage() {
               <h2 className="text-lg font-semibold text-white mb-1">Slow-Motion Markers</h2>
               <p className="text-sm text-zinc-400 mb-4">Mark sections where learners can practice at half speed</p>
               <SlowMoTimeline duration={videoDurationSeconds} markers={slowMoMarkers} onChange={setSlowMoMarkers} />
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 
@@ -1239,7 +1295,7 @@ export default function UploadChoreoPage() {
                   <div className="mt-3 grid gap-3">
                     <div className="relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-black">
                       {thumbnailUrl ? (
-                        <img src={thumbnailUrl} alt="Thumbnail" className="h-full w-full object-cover opacity-60" />
+                        <Image src={thumbnailUrl} alt="Thumbnail" unoptimized fill className="opacity-60" style={{ objectFit: "cover" }} />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">Preview canvas</div>
                       )}
@@ -1323,7 +1379,7 @@ export default function UploadChoreoPage() {
                   </div>
                 </div>
               )}
-              <NavButtons />
+              <NavButtons goBack={goBack} goNext={goNext} step={step} canNext={canNext} />
             </section>
           )}
 

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit'
 
 export async function POST(request: Request) {
   try {
+    // Prevent this test-only route from running in production.
+    const enabled = process.env.NODE_ENV === 'development' || process.env.ENABLE_TEST_API === '1';
+    if (!enabled) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     console.log('create-user request', { method: request.method });
     // Log headers for debugging
     try {
@@ -32,6 +38,9 @@ export async function POST(request: Request) {
     if (!email || !password) return NextResponse.json({ error: 'missing' }, { status: 400 })
 
     const supabase = createServiceRoleClient()
+    try {
+      logServiceRoleUsage({ caller: 'api/test/create-user', note: `create-user invoked` });
+    } catch (_) {}
     // @ts-ignore
     const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true })
 

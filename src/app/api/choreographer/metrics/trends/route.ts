@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 function missingSupabaseConfigResponse() {
   return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
 }
 
 export async function GET(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 30, keyPrefix: 'choreographer:metrics:trends' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   const { searchParams } = new URL(request.url);
   const routineId = (searchParams.get("routineId") || "").trim();
   const days = Number(searchParams.get("days") || "30");
@@ -17,7 +24,7 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createServerSupabase();
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    const db = supabase;
 
     const since = `${days} days`;
 

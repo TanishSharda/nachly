@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const submissionCreateSchema = z.object({
   title: z.string().trim().min(2).max(120),
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status");
@@ -143,6 +144,12 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:drafts' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limiter errors
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -169,7 +176,7 @@ export async function PATCH(request: Request) {
   }
 
   const input = parsed.data;
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const draftPayload = {
     title: input.title,
@@ -233,6 +240,12 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:drafts' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -252,7 +265,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data, error } = await db
     .from("choreo_submissions")
@@ -271,6 +284,12 @@ export async function DELETE(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 20, keyPrefix: 'choreo:submissions' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limiter failures
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -313,14 +332,14 @@ export async function POST(request: Request) {
         {
           error: "Submission blocked by quality checklist",
           message: "Your choreography is close to being featured",
-          suggestions: checklistSuggestions(input.checklist),
+          suggestions: checklistSuggestions(input.checklist ?? { fullBodyVisible: true, stableCamera: true, goodLighting: true }),
           cta: "Re-record & Improve",
         },
         { status: 422 }
       );
     }
 
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    const db = supabase;
     console.log('[/api/choreos/submissions] Service role present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
     try {
       console.log(`[/api/choreos/submissions] Using ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'service-role' : 'user'} client for user ${user.id}`);

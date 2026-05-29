@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceRoleClient, createServerSupabase } from "@/lib/supabase/server";
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const registerUploadSchema = z.object({
   path: z.string().trim().min(1),
@@ -11,6 +13,12 @@ const registerUploadSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'choreographer:register-upload' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter issues
+  }
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.json({ error: "Supabase is not configured" }, { status: 503 });
@@ -34,6 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     const db = createServiceRoleClient();
+    try {
+      logServiceRoleUsage({ caller: 'api/choreographer/register-upload', note: `user:${user.id} path:${payload.path}` });
+    } catch (_) {}
     const payload = parsed.data;
 
     const { error } = await db.from("choreography_uploads").insert({

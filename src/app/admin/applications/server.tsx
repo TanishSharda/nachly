@@ -1,12 +1,24 @@
 import { createServerSupabase, createServiceRoleClient } from '@/lib/supabase/server';
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
+import { notFound } from 'next/navigation';
 import { readApplicationsFromSheet } from '@/lib/fallbacks/googleSheets';
 import AdminApplicationsClient from './client';
 
 export default async function AdminApplicationsPage() {
   const supabase = await createServerSupabase();
+  // Verify current user is an admin before using service-role client
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return notFound();
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+  if (!profile || profile.role !== 'admin') return notFound();
 
-  // Fetch DB submissions
+  // Fetch DB submissions with service role when available
   const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      logServiceRoleUsage({ caller: 'app/admin/applications/server', note: `admin:${user.id}:fetch_applications` });
+    } catch (_) {}
+  }
   
   let dbRows: any[] = [];
   try {

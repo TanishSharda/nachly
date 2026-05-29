@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 type LeadInsert = {
   email: string;
@@ -31,6 +32,12 @@ function missingSupabaseConfigResponse() {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 10, keyPrefix: 'marketing:leads' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -53,7 +60,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const payload: LeadInsert = {
     email: input.email,

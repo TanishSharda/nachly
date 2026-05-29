@@ -260,11 +260,13 @@ export default function SessionResults({
       const raw = localStorage.getItem(REPLAY_PREFS_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { speed?: number; loops?: number };
-      if (parsed.speed === 0.75 || parsed.speed === 1) {
-        setReplaySpeed(parsed.speed);
+      const s = parsed.speed;
+      if (s === 0.75 || s === 1) {
+        setTimeout(() => setReplaySpeed(s as 0.75 | 1), 0);
       }
-      if (parsed.loops === 1 || parsed.loops === 2 || parsed.loops === 3) {
-        setReplayLoops(parsed.loops);
+      const l = parsed.loops;
+      if (l === 1 || l === 2 || l === 3) {
+        setTimeout(() => setReplayLoops(l as 1 | 2 | 3), 0);
       }
     } catch {
       // Ignore malformed stored preferences.

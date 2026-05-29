@@ -68,7 +68,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (searchParams.get("role") === "creator") {
-      setRole("creator");
+      setTimeout(() => setRole("creator"), 0);
     }
   }, [searchParams]);
 

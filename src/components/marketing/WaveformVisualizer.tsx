@@ -25,20 +25,23 @@ export default function WaveformVisualizer({ amplitude = 0.6 }: { amplitude?: nu
 
     function draw() {
       t += 0.02;
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      if (!ctx) return;
-      ctx.clearRect(0, 0, w, h);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(243,178,171,0.85)";
-      ctx.beginPath();
+      const canvasLocal = canvasRef.current;
+      if (!canvasLocal) return;
+      const w = canvasLocal.clientWidth;
+      const h = canvasLocal.clientHeight;
+      const ctxLocal = canvasLocal.getContext("2d");
+      if (!ctxLocal) return;
+      ctxLocal.clearRect(0, 0, w, h);
+      ctxLocal.lineWidth = 2;
+      ctxLocal.strokeStyle = "rgba(243,178,171,0.85)";
+      ctxLocal.beginPath();
       for (let x = 0; x <= w; x += 4) {
         const nx = x / w;
         const y = h / 2 + Math.sin(nx * 12 - t * 2) * h * 0.12 * amplitude * (0.6 + 0.4 * Math.sin(t * 0.7 + nx * 8));
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (x === 0) ctxLocal.moveTo(x, y);
+        else ctxLocal.lineTo(x, y);
       }
-      ctx.stroke();
+      ctxLocal.stroke();
       raf = requestAnimationFrame(draw);
     }
 

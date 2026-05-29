@@ -51,12 +51,14 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
 
   useEffect(() => {
     if (!videoUrl.trim()) {
-      setPreviewUrl("");
-      setFileMeta(null);
+      setTimeout(() => {
+        setPreviewUrl("");
+        setFileMeta(null);
+      }, 0);
       return;
     }
     if (!previewUrl && videoUrl.trim().startsWith("http")) {
-      setPreviewUrl(videoUrl.trim());
+      setTimeout(() => setPreviewUrl(videoUrl.trim()), 0);
     }
   }, [previewUrl, videoUrl]);
 

@@ -81,6 +81,8 @@ export default function ProfilePage() {
   const [role, setRole] = useState<"student" | "choreographer" | "admin">("student");
   const [savedCount, setSavedCount] = useState(0);
   const [likedCount, setLikedCount] = useState(0);
+  const [likedItems, setLikedItems] = useState<LikedItem[]>([]);
+  const [showLiked, setShowLiked] = useState(false);
   const [practiceSessions, setPracticeSessions] = useState<PracticeSessionItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const isCreator = role === "choreographer" || role === "admin";
@@ -89,9 +91,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      setName("Dance Enthusiast");
-      setEmail("dancer@example.com");
-      setLoading(false);
+      setTimeout(() => {
+        setName("Dance Enthusiast");
+        setEmail("dancer@example.com");
+        setLoading(false);
+      }, 0);
       return;
     }
 
@@ -163,6 +167,7 @@ export default function ProfilePage() {
         setPracticeSessions(Array.isArray(sessionsResponse?.sessions) ? (sessionsResponse.sessions as PracticeSessionItem[]) : []);
         setSavedCount(Array.isArray(saves) ? saves.length : 0);
         setLikedCount(Array.isArray(likes) ? likes.length : 0);
+        setLikedItems(Array.isArray(likes) ? (likes as LikedItem[]) : []);
       } catch {
         if (mounted) {
           setPracticeSessions([]);
@@ -393,12 +398,34 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        <Link
-          href="/liked"
+        <button
+          onClick={() => setShowLiked((s) => !s)}
           className="mb-4 block rounded-2xl border border-rose-300/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20"
         >
-          Liked Sessions
-        </Link>
+          {showLiked ? "Hide Liked Sessions" : `Liked Sessions (${likedCount})`}
+        </button>
+
+        {showLiked && (
+          <Card className="mb-4">
+            {likedItems.length ? (
+              <div className="space-y-3">
+                {likedItems.map((item) => (
+                  <Link key={item.choreoId} href={`/choreography/${encodeURIComponent(item.choreoId)}`} className="block rounded-lg border border-white/8 p-3 hover:bg-white/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-[#2d241a]">{item.title}</p>
+                        <p className="text-[11px] text-[#8a7d70]">{item.styleSlug}</p>
+                      </div>
+                      <div className="text-xs text-zinc-500">View</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-sm text-[#7e7468]">You haven&apos;t liked any sessions yet.</div>
+            )}
+          </Card>
+        )}
 
         <Card className="app-card border-white/15 tap-feedback">
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">

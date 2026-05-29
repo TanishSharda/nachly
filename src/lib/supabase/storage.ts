@@ -25,6 +25,10 @@ export async function uploadChoreographerFile(
   userId: string,
   options: UploadOptions = {}
 ): Promise<UploadResult> {
+  // Prevent accidental client-side usage: this helper must run on server only.
+  if (typeof window !== 'undefined') {
+    throw new Error('uploadChoreographerFile is server-only. Use the signed-upload URL flow from the client.');
+  }
   const { choreographyId = 'draft', isDraft = false } = options;
 
   // Validate file
@@ -90,6 +94,9 @@ export async function getSignedUrl(
   filePath: string,
   expiresIn: number = 3600
 ): Promise<string> {
+  if (typeof window !== 'undefined') {
+    throw new Error('getSignedUrl is server-only. Use the public or signed URL endpoints from the server.');
+  }
   const { data, error } = await supabase.storage
     .from(CHOREOGRAPHER_BUCKET)
     .createSignedUrl(filePath, expiresIn);
@@ -108,6 +115,9 @@ export async function deleteFile(
   supabase: SupabaseClient,
   filePath: string
 ): Promise<void> {
+  if (typeof window !== 'undefined') {
+    throw new Error('deleteFile is server-only.');
+  }
   const { error } = await supabase.storage
     .from(CHOREOGRAPHER_BUCKET)
     .remove([filePath]);

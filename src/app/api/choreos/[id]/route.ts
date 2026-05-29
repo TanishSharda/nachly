@@ -118,7 +118,7 @@ export async function GET(_: Request, context: any) {
 
   try {
     const supabase = await createServerSupabase();
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    const db = supabase;
 
     const { data: submissionRow, error: submissionError } = await db
       .from("choreo_submissions")
@@ -149,7 +149,7 @@ export async function GET(_: Request, context: any) {
   }
 
   try {
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : await createServerSupabase();
+    const db = await createServerSupabase();
     const routineSelect =
       "id,title,description,is_published,is_approved,submission_tier,ai_overall_score,ai_tags,dance_styles(slug),routine_videos(video_url,video_type,sort_order),routine_steps(id,step_number,label,start_time,end_time)";
 

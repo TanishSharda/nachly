@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const styleFilter = (searchParams.get("style") || "").trim().toLowerCase();
 
   const supabase = await createServerSupabase();
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   let query = db
     .from("choreo_submissions")

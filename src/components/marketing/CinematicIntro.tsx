@@ -15,7 +15,7 @@ export default function CinematicIntro() {
     const enabledFlag = localStorage.getItem("nachly_intro_enabled");
     const enabled = enabledFlag === null ? true : enabledFlag === "true";
     const vol = localStorage.getItem("nachly_intro_volume");
-    if (vol !== null) setVolumeOverride(Number(vol));
+    if (vol !== null) setTimeout(() => setVolumeOverride(Number(vol)), 0);
 
     if (!enabled) return; // don't auto-show if disabled in settings
 
@@ -147,7 +147,7 @@ export default function CinematicIntro() {
       setPreviewMode(false);
     }, 900);
     return () => clearTimeout(t);
-  }, [visible, previewMode]);
+  }, [visible, previewMode, volumeOverride]);
 
   if (!visible) return null;
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { getChoreographyFeed, postChoreographyEngagement, postChoreographySave, getChoreographyEngagement, getChoreographySaves } from "@/lib/api/choreos";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { ChoreographyFeedItem } from "@/lib/supabase/queries/choreos";
 import Link from "next/link";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
@@ -58,7 +59,7 @@ export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: Ch
       try {
         const saves = await getChoreographySaves();
         const map: Record<string, boolean> = {};
-        (saves || []).forEach((s) => {
+        (saves || []).forEach((s: any) => {
           if (s?.choreoId) map[s.choreoId] = true;
         });
         if (mounted) setSavedMap(map);
@@ -75,9 +76,8 @@ export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: Ch
     const container = containerRef.current;
     if (!container) return;
 
-    const sections = Array.from(container.querySelectorAll("section[snap-start]") as Element[]).length
-      ? Array.from(container.querySelectorAll("section[snap-start]"))
-      : Array.from(container.querySelectorAll("section"));
+    const snapSections = Array.from(container.querySelectorAll("section[snap-start]"));
+    const sections = snapSections.length ? snapSections : Array.from(container.querySelectorAll("section"));
 
     const io = new IntersectionObserver(
       (entries) => {
@@ -324,7 +324,7 @@ function FeedActions({
   post: ChoreographyFeedItem;
   metrics?: any;
   saved?: boolean;
-  onTrackAction?: (action: string) => Promise<void> | void;
+  onTrackAction?: (action: string) => Promise<any> | any;
   onToggleSave?: () => Promise<void> | void;
 }) {
   const [liked, setLiked] = useState(Boolean(metrics?.viewerLiked));
@@ -332,9 +332,11 @@ function FeedActions({
   const [likeCount, setLikeCount] = useState<number>(metrics?.likes || 0);
 
   useEffect(() => {
-    setLikeCount(metrics?.likes || 0);
-    setLiked(Boolean(metrics?.viewerLiked));
-    setIsSaved(Boolean(saved));
+    setTimeout(() => {
+      setLikeCount(metrics?.likes || 0);
+      setLiked(Boolean(metrics?.viewerLiked));
+      setIsSaved(Boolean(saved));
+    }, 0);
   }, [metrics, saved]);
   const [loading, setLoading] = useState(false);
 

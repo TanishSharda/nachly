@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase, createServiceRoleClient } from '@/lib/supabase/server';
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 // Route segment config for large file uploads
 export const maxDuration = 300; // 5 minutes timeout
@@ -18,8 +20,21 @@ interface UploadResponse {
 
 export async function POST(request: NextRequest): Promise<NextResponse<UploadResponse>> {
   try {
+    try {
+      const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 10, keyPrefix: 'choreographer:upload' });
+      if (maybe) return maybe;
+    } catch (e) {
+      // ignore limiter failures
+    }
     const supabase = await createServerSupabase();
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Service role key not configured' }, { status: 503 });
+    }
+
+    const db = createServiceRoleClient();
+    try {
+      logServiceRoleUsage({ caller: 'api/choreographer/upload', note: `user:${user.id} file:${filePath}` });
+    } catch (_) {}
     console.log('[/api/choreographer/upload] Service role present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
     try {
       const { data: { user } } = await supabase.auth.getUser();

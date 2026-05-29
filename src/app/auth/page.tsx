@@ -34,8 +34,10 @@ function AuthScreen() {
       if (typeof window === "undefined") return;
       const saved = localStorage.getItem("rememberedEmail");
       if (saved) {
-        setEmail(saved);
-        setRemember(true);
+        setTimeout(() => {
+          setEmail(saved);
+          setRemember(true);
+        }, 0);
       }
     } catch {
       // ignore localStorage errors

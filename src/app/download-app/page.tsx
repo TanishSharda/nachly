@@ -17,7 +17,7 @@ export default function DownloadAppPage() {
     const inStandaloneMode =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIsStandalone(inStandaloneMode);
+    setTimeout(() => setIsStandalone(inStandaloneMode), 0);
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -26,7 +26,7 @@ export default function DownloadAppPage() {
 
     const onInstalled = () => {
       setDeferredPrompt(null);
-      setIsStandalone(true);
+      setTimeout(() => setIsStandalone(true), 0);
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);

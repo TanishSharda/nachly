@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -29,6 +30,12 @@ function isUuid(value: string): boolean {
 }
 
 export async function GET(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 60, keyPrefix: 'practice:sessions:get' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -51,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   let query = db
     .from("practice_sessions")
@@ -87,6 +94,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 60, keyPrefix: 'practice:sessions' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore
+  }
   let body: unknown;
 
   try {
@@ -118,7 +131,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid routine id" }, { status: 400 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data, error } = await db
     .from("practice_sessions")

@@ -1,0 +1,14 @@
+[
+  { "file": "src/app/admin/applications/server.tsx", "line": 16, "reason": "Admin page uses service-role client after admin guard" },
+  { "file": "src/app/api/choreographer/register-upload/route.ts", "line": 44, "reason": "Server endpoint records upload metadata using service role" },
+  { "file": "src/app/api/choreographer/upload/route.ts", "line": 34, "reason": "Server endpoint performs direct storage upload with service role" },
+  { "file": "src/app/api/purchases/webhook/route.ts", "line": 70, "reason": "Webhook handler updates purchases via service role" },
+  { "file": "src/app/api/storage/signed-upload-url/route.ts", "line": 44, "reason": "Signed upload URL generation uses service role" },
+  { "file": "src/app/api/storage/signed-url/route.ts", "line": 60, "reason": "Signed download URL generation uses service role" },
+  { "file": "src/app/api/subscriptions/webhook/route.ts", "line": 69, "reason": "Webhook handler updates subscriptions via service role" },
+  { "file": "src/app/api/test/create-published-submission/route.ts", "line": 15, "reason": "Test helper (development only)" },
+  { "file": "src/app/api/test/create-user/route.ts", "line": 40, "reason": "Test helper (development only)" },
+  { "file": "src/lib/supabase/queries/choreos.ts", "line": 18, "reason": "Readonly fallback to service role if ALLOW_SERVICE_ROLE_READONLY enabled" }
+  ,{ "file": "src/lib/supabase/server.ts", "line": 33, "reason": "Service role client factory definition (expected)" }
+]
+

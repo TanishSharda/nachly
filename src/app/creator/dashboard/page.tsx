@@ -55,26 +55,21 @@ type FeedSummary = {
 };
 
 const quickActions = [
-	{ label: "Upload Choreography", href: "/creator/upload", icon: "🎬", desc: "Create a new routine" },
-	{ label: "View Analytics", href: "/creator/analytics", icon: "📊", desc: "Track performance" },
-	{ label: "Edit Profile", href: "/creator/profile", icon: "✏️", desc: "Update your bio" },
-	{ label: "Monetisation", href: "/creator/monetisation", icon: "💳", desc: "Tier and earnings" },
+	{ label: "Upload Choreography", href: "/creator/upload", icon: (
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="7" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8 3v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 3v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+	), desc: "Create a new routine" },
+	{ label: "View Analytics", href: "/creator/analytics", icon: (
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h3v7H3zM10 7h3v12h-3zM17 3h3v16h-3z" fill="currentColor"/></svg>
+	), desc: "Track performance" },
+	{ label: "Edit Profile", href: "/creator/profile", icon: (
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+	), desc: "Update your bio" },
+	{ label: "Monetisation", href: "/creator/monetisation", icon: (
+		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.2"/><path d="M10 12h4M10 8h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+	), desc: "Tier and earnings" },
 ];
 
-const recentActivity = [
-	{ type: "learn", text: "45 new learners started \"Bollywood Groove\"", time: "2h ago" },
-	{ type: "earn", text: "₹2,400 earned from premium unlocks", time: "5h ago" },
-	{ type: "score", text: "\"Hip Hop Basics\" avg AI score improved to 78%", time: "1d ago" },
-	{ type: "milestone", text: "You reached 1,000 total students! 🎉", time: "2d ago" },
-	{ type: "featured", text: "\"Bhangra Energy\" featured in Weekly Picks", time: "3d ago" },
-];
-
-const recentRoutines = [
-	{ title: "Bollywood Groove", students: 427, avgScore: 82, completion: 72, status: "published" },
-	{ title: "Hip Hop Basics", students: 289, avgScore: 78, completion: 68, status: "published" },
-	{ title: "Kathak Tatkar", students: 156, avgScore: 71, completion: 61, status: "published" },
-	{ title: "Bhangra Energy", students: 375, avgScore: 85, completion: 81, status: "published" },
-];
+// Recent activity and recent routines will be derived from API responses at runtime
 
 export default function CreatorDashboardPage() {
 	const [revenue, setRevenue] = useState<RevenuePayload | null>(null);
@@ -85,6 +80,11 @@ export default function CreatorDashboardPage() {
 	const [routineMetrics, setRoutineMetrics] = useState<any[]>([]);
 	const [routineTrends, setRoutineTrends] = useState<{ dates: string[]; likes: number[]; completions: number[] } | null>(null);
 	const [metricsUpdated, setMetricsUpdated] = useState(false);
+
+	// Derived UI state (replace mock data)
+	const [recentActivityState, setRecentActivityState] = useState<any[]>([]);
+	const [recentRoutinesState, setRecentRoutinesState] = useState<any[]>([]);
+	const [monthlyEarningsData, setMonthlyEarningsData] = useState<number[]>([]);
 
 	useEffect(() => {
 		let mounted = true;
@@ -127,6 +127,47 @@ export default function CreatorDashboardPage() {
 				);
 				setMetrics(metricsResponse?.metrics || null);
 				setRoutineMetrics(byRoutineResponse?.routines || []);
+
+				// Build recent activity from API responses
+				const activity: any[] = [];
+				if (revenueResponse?.payoutHistory && revenueResponse.payoutHistory.length) {
+					const latest = revenueResponse.payoutHistory[0];
+					activity.push({ type: "earn", text: `Latest payout: ₹${(latest.share || latest.gross || 0).toLocaleString("en-IN")} (${latest.period})`, time: latest.status || "recent" });
+				}
+				if (revenueResponse?.streams) {
+					activity.push({ type: "earn", text: `${(revenueResponse.streams.ppv || 0).toLocaleString("en-IN")} INR in PPV this cycle`, time: "live" });
+					activity.push({ type: "featured", text: `${(revenueResponse.streams.subscriptions || 0).toLocaleString("en-IN")} INR from subscriptions`, time: "live" });
+				}
+				const submissionActivity = incomingSubmissions.slice(0, 2).map((item) => ({ type: "score", text: `\"${item.title || "Untitled"}\" is ${String(item.submission_status || "in progress").replaceAll("_", " ")}`, time: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : "recent" }));
+				activity.push(...submissionActivity);
+				if (Array.isArray(feedResponse?.posts) && feedResponse.posts.length) {
+					activity.push(...(feedResponse.posts as FeedSummary[]).slice(0, 3).map((p) => ({ type: "learn", text: `${p.title || "New routine"} published`, time: p.published_at || "recent" })));
+				}
+				setRecentActivityState(activity.slice(0, 8));
+
+				// recent routines: prefer routine metrics, otherwise feed posts
+				if (byRoutineResponse?.routines && byRoutineResponse.routines.length) {
+					setRecentRoutinesState(byRoutineResponse.routines.slice(0, 4).map((r: any) => ({ title: r.title || "Untitled", students: Number(r.views || 0), avgScore: Number(r.likes || 0), completion: Number(r.practiceCompletions || 0), status: r.status || "published" })));
+				} else if (Array.isArray(feedResponse?.posts) && feedResponse.posts.length) {
+					setRecentRoutinesState((feedResponse.posts as FeedSummary[]).slice(0, 4).map((item) => ({ title: item.title || "Untitled", students: Number(item.views_count || (item as any).view_count || 0), avgScore: Number(item.like_count || 0), completion: Number(item.saves_count || 0), status: item.source || "published" })));
+				} else {
+					setRecentRoutinesState([]);
+				}
+
+				// monthly earnings: derive from payoutHistory if available
+				if (Array.isArray(revenueResponse?.payoutHistory) && revenueResponse.payoutHistory.length) {
+					const months = new Array(12).fill(0);
+					for (const p of revenueResponse.payoutHistory.slice(0, 12)) {
+						// try parse period like '2024-05' or fallback to index
+						const period = String(p?.period || "");
+						const m = period.match(/-(\d{2})$/);
+						const idx = m ? Math.max(0, Math.min(11, Number(m[1]) - 1)) : 0;
+						months[idx] = Number(p.share || p.gross || 0);
+					}
+					setMonthlyEarningsData(months);
+				} else {
+					setMonthlyEarningsData([0,0,0,0,0,0,0,0,0,0,0,0]);
+				}
 				const top = (byRoutineResponse?.routines || [])[0];
 				if (top?.id) {
 					void fetch(`/api/choreographer/metrics/trends?routineId=${encodeURIComponent(top.id)}&days=30`, { cache: "no-store" })
@@ -208,14 +249,18 @@ export default function CreatorDashboardPage() {
 				value: `₹${(revenue?.summary.totalEarned || 142500).toLocaleString("en-IN")}`,
 				sub: "lifetime",
 				color: "text-emerald-400",
-				icon: "💰",
+				icon: (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1v2M7 5h10M5 7v10a4 4 0 004 4h6a4 4 0 004-4V7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+				),
 			},
 			{
 				label: "Pending Payout",
 				value: `₹${(revenue?.summary.pendingPayout || 0).toLocaleString("en-IN")}`,
 				sub: "next payout cycle",
 				color: "text-[#F3B2AB]",
-				icon: "📈",
+				icon: (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17l6-6 4 4 8-8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+				),
 			},
 			{
 				label: metrics ? "Total Likes" : "PPV + Subscriptions",
@@ -224,14 +269,22 @@ export default function CreatorDashboardPage() {
 					: `₹${((revenue?.streams.ppv || 0) + (revenue?.streams.subscriptions || 0)).toLocaleString("en-IN")}`,
 				sub: metrics ? "all-time likes" : "live monetization",
 				color: "text-white",
-				icon: metrics ? "❤️" : "👥",
+				icon: metrics ? (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.8 4.6a5 5 0 00-7.07 0L12 6.3l-1.73-1.7a5 5 0 00-7.07 7.07L12 21.07l8.8-9.4a5 5 0 000-7.07z" stroke="currentColor" strokeWidth="0.8" fill="currentColor"/></svg>
+				) : (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+				),
 			},
 			{
 				label: metrics ? "Total Saves" : "Revenue Split",
 				value: metrics ? `${(metrics.saves || 0).toLocaleString?.("en-IN") || metrics.saves || 0}` : `${revenue?.summary.revenueSplit || 60}%`,
 				sub: metrics ? "all-time saves" : "creator share",
 				color: "text-amber-400",
-				icon: metrics ? "📌" : "🤖",
+				icon: metrics ? (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+				) : (
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.4"/></svg>
+				),
 			},
 		],
 		[revenue, metrics]
@@ -244,7 +297,7 @@ export default function CreatorDashboardPage() {
 			time: item.updated_at ? new Date(item.updated_at).toLocaleDateString() : "recent",
 		}));
 
-		if (!revenue?.payoutHistory?.length) return recentActivity;
+		if (!revenue?.payoutHistory?.length) return recentActivityState;
 
 		return [
 			{
@@ -263,9 +316,9 @@ export default function CreatorDashboardPage() {
 				time: "live",
 			},
 			...submissionActivity,
-			...recentActivity.slice(3),
+			...recentActivityState.slice(3),
 		];
-	}, [revenue, submissions]);
+	}, [revenue, submissions, recentActivityState]);
 
 	const routinePerformance = useMemo(() => {
 		if (routineMetrics && routineMetrics.length) {
@@ -278,7 +331,7 @@ export default function CreatorDashboardPage() {
 			}));
 		}
 
-		if (!feedPosts.length) return recentRoutines;
+		if (!feedPosts.length) return recentRoutinesState;
 
 		return feedPosts.slice(0, 4).map((item) => ({
 			title: item.title || "Untitled choreo",
@@ -287,7 +340,7 @@ export default function CreatorDashboardPage() {
 			completion: Number(item.saves_count || 0),
 			status: item.source || "published",
 		}));
-	}, [feedPosts, routineMetrics]);
+	}, [feedPosts, routineMetrics, recentRoutinesState]);
 
 	return (
 		<motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -311,7 +364,7 @@ export default function CreatorDashboardPage() {
 
 			<motion.div variants={fadeUp} className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
 				{stats.map((s) => (
-					<Card key={s.label} className="!p-4 relative overflow-hidden">
+					<Card key={s.label} glass className="!p-4 relative overflow-hidden">
 						<span className="absolute right-3 top-3 text-2xl opacity-20">{s.icon}</span>
 						<p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">{s.label}</p>
 						<p className={`text-2xl sm:text-3xl font-display font-bold mt-1 ${s.color}`}>{s.value}</p>
@@ -325,7 +378,7 @@ export default function CreatorDashboardPage() {
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 					{quickActions.map((a) => (
 						<Link key={a.label} href={a.href}>
-							<Card hover className="!p-4 group">
+							<Card hover glass className="!p-4 group">
 								<span className="text-2xl">{a.icon}</span>
 								<p className="text-sm font-semibold text-white mt-2 group-hover:text-[#F3B2AB] transition">{a.label}</p>
 								<p className="text-[10px] text-zinc-500 mt-0.5">{a.desc}</p>
@@ -337,7 +390,7 @@ export default function CreatorDashboardPage() {
 
 			<div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
 				<motion.div variants={fadeUp}>
-					<Card>
+					<Card glass>
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="font-display font-bold text-white">Routine Performance</h3>
 							<Link href="/creator/choreos" className="text-[10px] font-semibold uppercase tracking-wider text-[#F3B2AB] hover:underline">View All</Link>
@@ -374,7 +427,7 @@ export default function CreatorDashboardPage() {
 				</motion.div>
 
 				<motion.div variants={fadeUp}>
-					<Card>
+					<Card glass>
 						<h3 className="font-display font-bold text-white mb-4">Recent Activity</h3>
 						<div className="space-y-3">
 							{activity.map((a, i) => (
@@ -398,21 +451,24 @@ export default function CreatorDashboardPage() {
 			</div>
 
 			<motion.div variants={fadeUp} className="mt-6">
-				<Card>
+				<Card glass>
 					<div className="flex items-center justify-between mb-4">
 						<h3 className="font-display font-bold text-white">Monthly Earnings</h3>
 						<Link href="/creator/monetisation" className="text-[10px] font-semibold uppercase tracking-wider text-[#F3B2AB] hover:underline">Details</Link>
 					</div>
 					<div className="h-36 flex items-end gap-2">
-						{([35, 52, 44, 68, 82, 75, 90, 65, 78, 95, 88, 72] as number[]).map((h, i) => (
-							<motion.div
-								key={i}
-								initial={{ height: 0 }}
-								animate={{ height: `${h}%` }}
-								transition={{ delay: i * 0.04, duration: 0.5 }}
-								className="flex-1 bg-gradient-to-t from-[#344400] to-[#F3B2AB] rounded-t-md min-h-[4px]"
-							/>
-						))}
+						{(monthlyEarningsData.length ? monthlyEarningsData : new Array(12).fill(0)).map((value, i) => {
+							const pct = Math.max(3, Math.round((value / (Math.max(...monthlyEarningsData, 1) || 1)) * 100));
+							return (
+								<motion.div
+									key={i}
+									initial={{ height: 0 }}
+									animate={{ height: `${pct}%` }}
+									transition={{ delay: i * 0.04, duration: 0.5 }}
+									className="flex-1 bg-gradient-to-t from-[#344400] to-[#F3B2AB] rounded-t-md min-h-[4px]"
+								/>
+							);
+						})}
 					</div>
 					<div className="flex justify-between mt-2 text-[9px] text-zinc-600">
 						<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
