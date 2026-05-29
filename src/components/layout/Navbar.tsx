@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import BrandLogo from "@/components/shared/BrandLogo";
 import { NAV_LINKS, SITE_NAME } from "@/lib/utils/constants";
+import IntroSettingsModal from "@/components/marketing/IntroSettingsModal";
 
 interface NavbarProps {
   user?: { id: string; full_name: string; avatar_url: string | null; role: string } | null;
@@ -33,6 +34,7 @@ export default function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showIntroSettings, setShowIntroSettings] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const navLinks = NAV_LINKS as unknown as NavLink[];
   const isCreator = user?.role === "choreographer" || user?.role === "admin";
@@ -56,8 +58,23 @@ export default function Navbar({ user }: NavbarProps) {
     }
   };
 
+  const triggerIntroPreview = (preview = true) => {
+    if (typeof window === "undefined") return;
+    try {
+      if (preview) {
+        window.dispatchEvent(new CustomEvent("showCinematicIntro", { detail: { preview: true } }));
+      } else {
+        // clear seen flag and show
+        localStorage.removeItem("nachly_seen_intro");
+        window.dispatchEvent(new CustomEvent("showCinematicIntro", { detail: { preview: false } }));
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[#6c51321f] bg-[#f8f5ef]/85 backdrop-blur-2xl shadow-[0_10px_28px_-24px_rgba(58,42,26,0.65)]">
+    <header className="sticky top-0 z-40 border-b border-[#00000066] bg-[#070707]/50 backdrop-blur-2xl shadow-[0_18px_60px_-30px_rgba(0,0,0,0.7)]">
       <nav className="section-padding">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -99,6 +116,12 @@ export default function Navbar({ user }: NavbarProps) {
                 <Button href={creatorCtaHref} variant={isCreator ? "ghost" : "primary"} size="sm">
                   {creatorCtaLabel}
                 </Button>
+                <Button variant="ghost" size="sm" onClick={() => triggerIntroPreview(true)}>
+                  Preview Intro
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowIntroSettings(true)}>
+                  Intro Settings
+                </Button>
                 <button type="button" onClick={handleProfileClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Avatar src={user.avatar_url} name={user.full_name} size="sm" />
                   <span className="text-sm font-medium text-[#2d241a]">{user.full_name}</span>
@@ -109,8 +132,9 @@ export default function Navbar({ user }: NavbarProps) {
               </>
             ) : (
               <>
-                <Button href="/auth" variant="ghost" size="sm">Log in</Button>
                 <Button href="/auth?mode=signup" size="sm">Start Learning</Button>
+                <Button variant="ghost" size="sm" onClick={() => triggerIntroPreview(true)}>Preview Intro</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowIntroSettings(true)}>Intro Settings</Button>
               </>
             )}
           </div>
@@ -183,11 +207,19 @@ export default function Navbar({ user }: NavbarProps) {
                       <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut} loading={signingOut}>
                         Sign out
                       </Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); triggerIntroPreview(true); }}>
+                        Preview Intro
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); setShowIntroSettings(true); }}>
+                        Intro Settings
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <Button href="/auth" onClick={() => setMobileOpen(false)} variant="ghost" size="sm" className="w-full">Log in</Button>
                       <Button href="/auth?mode=signup" onClick={() => setMobileOpen(false)} size="sm" className="w-full">Start Learning</Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); triggerIntroPreview(true); }}>
+                        Preview Intro
+                      </Button>
                     </>
                   )}
                 </div>
@@ -195,6 +227,7 @@ export default function Navbar({ user }: NavbarProps) {
             </motion.div>
           )}
         </AnimatePresence>
+          <IntroSettingsModal open={showIntroSettings} onClose={() => setShowIntroSettings(false)} />
       </nav>
     </header>
   );

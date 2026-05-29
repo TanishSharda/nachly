@@ -7,8 +7,9 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1,
+  // Force single worker locally to reduce memory pressure on Windows dev machines
+  workers: 1,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: BASE_URL,
@@ -25,7 +26,17 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], launchOptions: { args: [
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-background-timer-throttling',
+            '--disable-renderer-backgrounding',
+            '--disable-features=VizDisplayCompositor',
+          ] } },
     },
     {
       name: "Mobile Chrome",

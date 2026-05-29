@@ -4,10 +4,10 @@ import { SITE_NAME } from "@/lib/utils/constants";
 
 const footerLinks = {
   Dance: [
-    { label: "Hip Hop", href: "/learn/feed/hip-hop" },
-    { label: "Bollywood", href: "/learn/feed/bollywood" },
-    { label: "Kathak", href: "/learn/feed/kathak" },
-    { label: "Bhangra", href: "/learn/feed/bhangra" },
+    { label: "Hip Hop", href: "/scroll?style=hip-hop" },
+    { label: "Bollywood", href: "/scroll?style=bollywood" },
+    { label: "Kathak", href: "/scroll?style=kathak" },
+    { label: "Bhangra", href: "/scroll?style=bhangra" },
   ],
   Platform: [
     { label: "How it Works", href: "/#how-it-works" },

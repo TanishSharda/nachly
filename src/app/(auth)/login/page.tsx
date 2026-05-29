@@ -1,16 +1,10 @@
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import AuthScreen from "@/components/auth/AuthScreen";
 
-export default async function LegacyLoginRedirectPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ redirect?: string; error?: string }>;
-}) {
-  const params = await searchParams;
-  const redirectTarget = params.redirect && params.redirect.startsWith("/") ? params.redirect : "/select-role";
-  const next = new URLSearchParams({ mode: "login", redirect: redirectTarget });
-  if (params.error) {
-    next.set("error", params.error);
-  }
-
-  redirect(`/auth?${next.toString()}`);
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AuthScreen />
+    </Suspense>
+  );
 }

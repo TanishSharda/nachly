@@ -18,12 +18,9 @@ export interface ChoreographyFeedItem {
   // canonical fields
   title: string;
   description?: string | null;
-  song_name?: string | null;
   video_url?: string | null;
   demo_video_url?: string | null;
   teaching_video_url?: string | null;
-  performance_video_url?: string | null;
-  teach_video_url?: string | null;
 
   // style / difficulty
   style_slug?: string | null;
@@ -97,7 +94,7 @@ export async function getChoreographyFeed(
     // Avoid embedding related `profiles` directly to prevent ambiguous relationship errors
     let submissionsQuery = supabase
       .from('choreo_submissions')
-      .select('id,user_id,title,description,song_name,caption,video_url,performance_video_url,teach_video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,published_at,created_at,updated_at')
+      .select('id,user_id,title,description,caption,video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,published_at,created_at,updated_at')
       .not('published_at', 'is', null);
 
     if (style) submissionsQuery = submissionsQuery.eq('style_slug', style);
@@ -130,13 +127,10 @@ export async function getChoreographyFeed(
       id: s.id,
       user_id: s.user_id || null,
       title: s.title,
-      description: s.description || s.song_name || s.caption || '',
-      song_name: s.song_name || null,
-      video_url: s.performance_video_url || s.video_url || null,
-      demo_video_url: s.performance_video_url || s.video_url || null,
-      teaching_video_url: s.teach_video_url || s.video_url || s.performance_video_url || null,
-      performance_video_url: s.performance_video_url || s.video_url || null,
-      teach_video_url: s.teach_video_url || s.video_url || s.performance_video_url || null,
+      description: s.description || s.caption || '',
+      video_url: s.video_url,
+      demo_video_url: s.video_url || null,
+      teaching_video_url: s.video_url || null,
       style_slug: s.style_slug,
       difficulty: s.difficulty,
       submission_status: s.submission_status,
@@ -150,7 +144,7 @@ export async function getChoreographyFeed(
       creator_avatar_url: s.profiles?.avatar_url || null,
       published_at: s.published_at || s.created_at || null,
       demo_reel: null,
-      tutorial: { video_url: s.teach_video_url || s.performance_video_url || s.video_url, duration_seconds: null },
+      tutorial: { video_url: s.video_url, duration_seconds: null },
       source: 'submission',
     }));
 
@@ -209,7 +203,6 @@ export async function getChoreographyFeed(
 export async function getChoreographyPost(id: string) {
   try {
     const supabase = await getReadOnlySupabaseClient();
-
     const { data, error } = await supabase
       .from('choreo_submissions')
       .select('*')
@@ -221,7 +214,41 @@ export async function getChoreographyPost(id: string) {
       return { post: null, error };
     }
 
-    return { post: data, error: null };
+    // Normalize the DB row into a safe post shape used by the UI.
+    const row: any = data || {};
+    const teaching = row.teach_video_url || row.performance_video_url || row.video_url || null;
+    const tutorial = { video_url: teaching, duration_seconds: null };
+
+    const post = {
+      id: row.id,
+      title: row.title || row.song_name || 'Untitled Choreo',
+      description: row.description || row.caption || '',
+      video_url: row.video_url || null,
+      demo_video_url: row.video_url || null,
+      teaching_video_url: row.teach_video_url || teaching,
+      performance_video_url: row.performance_video_url || row.video_url || null,
+      style_slug: row.style_slug || null,
+      difficulty: row.difficulty || null,
+      submission_status: row.submission_status || null,
+      tier: row.tier || 'community',
+      engagement_score: row.engagement_score || 0,
+      view_count: row.view_count || 0,
+      like_count: row.like_count || 0,
+      saves_count: row.saves_count || 0,
+      creator_name: row.creator_name || null,
+      creator_avatar_url: row.creator_avatar_url || null,
+      published_at: row.published_at || row.created_at || null,
+      demo_reel: null,
+      tutorial,
+      source: 'submission',
+      // UI expects a 'moves' array — provide an empty array when missing
+      moves: Array.isArray(row.moves) ? row.moves : [],
+      // preserve any ai fields
+      ai_overall_score: row.ai_overall_score ?? null,
+      ai_tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
+    };
+
+    return { post, error: null };
   } catch (err: any) {
     console.error('[getChoreographyPost] Unexpected error:', err);
     return { post: null, error: err?.message || 'Failed to load choreography' };

@@ -5,29 +5,24 @@ test.describe('Email signin flow', () => {
   const password = 'TestPass123!'
 
   test.beforeAll(async () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!supabaseUrl || !serviceKey) {
-      throw new Error('Missing SUPABASE env for e2e test')
-    }
+      // Create user via internal test API route that uses the service role client on the running app.
+      const base = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000'
+      const res = await fetch(`${base}/api/test/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    // Create user via internal test API route that uses the service role client
-    const res = await fetch('http://localhost:3001/api/test/create-user', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text()
-      throw new Error(`Failed to create test user: ${res.status} ${body}`)
-    }
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(`Failed to create test user: ${res.status} ${body}`)
+      }
   })
 
   test('logs in and gets session cookie', async ({ page }) => {
-    await page.goto('http://localhost:3001/')
+    await page.goto('/')
 
     // Client-side navigate to login (server may return 404 for direct GET)
     await page.evaluate(() => {

@@ -32,8 +32,6 @@
     --accent: var(--naachly-accent);
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-    --focus-ring: 0 0 0 4px rgba(243,178,171,0.12);
-    --transition-base: 220ms;
   }
 
   html {
@@ -79,7 +77,6 @@
   [role="button"] {
     -webkit-user-select: none;
     user-select: none;
-    transition: transform var(--transition-base) cubic-bezier(0.2,0.9,0.3,1), box-shadow var(--transition-base);
   }
 
   main {
@@ -133,7 +130,7 @@
     font-weight: 600;
     padding: 12px 24px;
     border-radius: 999px;
-    transition: transform var(--transition-base) cubic-bezier(0.23, 1, 0.32, 1), box-shadow var(--transition-base);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-size: 0.75rem;
@@ -142,8 +139,8 @@
   }
 
   .premium-button:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 24px 48px -18px rgba(58, 42, 26, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 20px 42px -20px rgba(58, 42, 26, 0.55);
   }
 
   .premium-glass {
@@ -166,17 +163,8 @@
   .input-field:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: var(--focus-ring);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.08);
-  }
-
-  .btn-focus {
-    position: relative;
-  }
-
-  .btn-focus:focus-visible {
-    box-shadow: var(--focus-ring);
-    outline: none;
   }
 
   .section-padding {
@@ -267,32 +255,5 @@
 
   .section-padding {
     @apply max-w-7xl mx-auto px-6 sm:px-12;
-  }
-
-  /* Accessibility helpers */
-  .sr-only {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-  }
-
-  .focus-outline:focus-visible {
-    box-shadow: var(--focus-ring) !important;
-    outline: none !important;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    * {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-      scroll-behavior: auto !important;
-    }
   }
 }

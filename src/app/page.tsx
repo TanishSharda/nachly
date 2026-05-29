@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import BrandLogo from "@/components/shared/BrandLogo";
+import HeroCinematic from "@/components/marketing/HeroCinematic";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 const HERO_VIDEO = "/videos/one-night.optimized.mp4";
@@ -280,132 +281,7 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.03),transparent_45%),radial-gradient(circle_at_85%_5%,rgba(255,255,255,0.02),transparent_55%),linear-gradient(180deg,#0a0a0a_0%,#121212_48%,#000000_100%)]" />
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.03] [background-image:radial-gradient(rgba(255,255,255,0.4)_1px,transparent_1px)] [background-size:36px_36px]" />
 
-      <section className="section-padding pt-8 sm:pt-12">
-        <motion.nav
-          {...sectionReveal()}
-          className="flex items-center justify-between rounded-full border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl sm:px-7"
-        >
-          <Link href="/" className="flex items-center gap-3">
-            <BrandLogo size={28} />
-            <span className="text-xs font-semibold uppercase tracking-[0.26em] text-[#F3B2AB]">Nachly</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/for-choreographers" className="hidden sm:inline-flex rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
-              For Creators
-            </Link>
-            <Link href="/auth" className="rounded-full border border-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10">
-              Log In
-            </Link>
-            <button
-              type="button"
-              onClick={goToFlowEntry}
-              className="rounded-full bg-[#F3B2AB] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
-            >
-              Start Learning
-            </button>
-          </div>
-        </motion.nav>
-
-        <motion.div {...sectionReveal(0.05)} className="mt-12 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#F3B2AB]">Beta waitlist open</p>
-            <h1 className="mt-4 font-display text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-white sm:text-6xl">
-              Learn Dance Like You Scroll.
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-[#8A8D9F] sm:text-lg">
-              Discover viral choreography, practice step-by-step, and level up your moves. Nachly turns short-form dances into real skills.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {heroBadges.map((badge) => (
-                <span key={badge} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8D9F]">
-                  {badge}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={goToFlowEntry}
-                className="h-12 rounded-full bg-white px-7 text-xs font-semibold uppercase tracking-[0.16em] text-black transition hover:brightness-110"
-              >
-                Start Learning
-              </button>
-              <a
-                href="#waitlist"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 bg-transparent px-7 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10"
-              >
-                Join Waitlist
-              </a>
-            </div>
-          </div>
-
-          <div className="relative grid gap-4 sm:grid-cols-2">
-            <div className="absolute -top-6 -left-4 h-24 w-24 rounded-full bg-[#f3e7d8] blur-2xl" />
-            <div className="absolute -bottom-8 right-6 h-32 w-32 rounded-full bg-[#efe0cf] blur-2xl" />
-
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              whileHover={{ y: -6 }}
-              className="relative rounded-[2.5rem] border border-white/10 bg-white/5 p-3 shadow-[0_28px_60px_-30px_rgba(0,0,0,0.6)]"
-            >
-              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-white/10 bg-black">
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  poster={HERO_POSTER}
-                  className="h-full w-full object-cover"
-                >
-                  <source src={HERO_VIDEO} type="video/mp4" />
-                </video>
-                <div className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
-                  Scroll
-                </div>
-                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur-md">
-                  <p className="text-xs font-semibold text-white">Monsoon Groove</p>
-                  <p className="text-[10px] text-[#8A8D9F]">Learn in 6 steps</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              whileHover={{ y: -6 }}
-              className="relative rounded-[2.5rem] border border-white/10 bg-white/5 p-3 shadow-[0_28px_60px_-30px_rgba(0,0,0,0.6)]"
-            >
-              <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-white/10 bg-black">
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  poster={HERO_POSTER_ALT}
-                  className="h-full w-full object-cover"
-                >
-                  <source src={HERO_VIDEO_ALT} type="video/mp4" />
-                </video>
-                <div className="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
-                  Learn
-                </div>
-                <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur-md">
-                  <p className="text-xs font-semibold text-white">Step-by-step</p>
-                  <div className="mt-2 h-1.5 rounded-full bg-white/20">
-                    <div className="h-full w-1/2 rounded-full bg-[#F3B2AB]" />
-                  </div>
-                  <p className="mt-2 text-[10px] text-[#8A8D9F]">Loop the chorus</p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
+      <HeroCinematic />
 
       <section className="section-padding mt-16">
         <motion.div {...sectionReveal()}>

@@ -136,7 +136,12 @@ export async function GET(_: Request, context: any) {
     }
 
     if (submissionRow) {
-      return NextResponse.json({ choreo: mapSubmissionToChoreo(submissionRow) });
+      try {
+        return NextResponse.json({ choreo: mapSubmissionToChoreo(submissionRow) });
+      } catch (mapErr) {
+        console.error('Error mapping submission to choreo:', mapErr, submissionRow);
+        return NextResponse.json({ choreo: buildMockChoreo(id), fallback: true, mockData: true });
+      }
     }
   } catch (err) {
     console.error("Submission fetch error:", err);

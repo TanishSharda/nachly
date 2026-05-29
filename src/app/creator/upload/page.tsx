@@ -123,6 +123,7 @@ function UploadCard({
           <p className="mt-1 text-sm text-zinc-400">{subtitle}</p>
         </div>
         <button
+          data-testid="uploadcard-browse"
           type="button"
           onClick={() => inputRef.current?.click()}
           className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/15"
@@ -147,9 +148,9 @@ function UploadCard({
       />
 
       <div className={`mt-4 rounded-[1.5rem] border border-dashed p-4 ${hasMedia ? "border-white/15 bg-black/30" : "border-white/10 bg-black/20"}`}>
-        {hasMedia ? (
+            {hasMedia ? (
           <div className="space-y-3">
-            <video src={mediaUrl} controls playsInline muted className="aspect-video w-full rounded-2xl bg-black object-cover" />
+            <video data-testid="uploadcard-video" src={mediaUrl} controls playsInline muted className="aspect-video w-full rounded-2xl bg-black object-cover" />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-white">{fileName || "Uploaded video"}</p>
@@ -157,6 +158,7 @@ function UploadCard({
               </div>
               <button
                 type="button"
+                data-testid="uploadcard-replace-button"
                 onClick={onClear}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-300 transition hover:bg-white/10"
               >
@@ -166,6 +168,7 @@ function UploadCard({
           </div>
         ) : (
           <button
+            data-testid="uploadcard-drop"
             type="button"
             onClick={() => inputRef.current?.click()}
             className="flex w-full flex-col items-center justify-center gap-3 rounded-[1.25rem] py-8 text-center transition hover:bg-white/[0.03]"
@@ -610,6 +613,7 @@ export default function CreatorUploadPage() {
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Dance Title</label>
                   <input
+                    data-testid="creator-title-input"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Midnight Monsoon"
@@ -619,6 +623,7 @@ export default function CreatorUploadPage() {
                 <div>
                   <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Song Name</label>
                   <input
+                    data-testid="creator-song-input"
                     value={songName}
                     onChange={(event) => setSongName(event.target.value)}
                     placeholder="Song title or track name"
@@ -737,6 +742,7 @@ export default function CreatorUploadPage() {
                 type="button"
                 onClick={() => setStep(2)}
                 disabled={!canContinueStep1}
+                data-testid="creator-continue-button"
                 className="mt-4 w-full rounded-2xl bg-[#F3B2AB] px-4 py-4 text-xs font-black uppercase tracking-[0.24em] text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Continue
@@ -776,6 +782,7 @@ export default function CreatorUploadPage() {
 
             <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-white/10 bg-black/25 p-4">
               <button
+                data-testid="creator-back-button"
                 type="button"
                 onClick={() => setStep(1)}
                 className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/15"
@@ -783,6 +790,7 @@ export default function CreatorUploadPage() {
                 Back
               </button>
               <button
+                data-testid="creator-continue-uploads-button"
                 type="button"
                 onClick={() => setStep(3)}
                 disabled={!canContinueStep2}
@@ -806,7 +814,7 @@ export default function CreatorUploadPage() {
                   {currentThumbnail ? (
                     <img src={currentThumbnail} alt="Thumbnail preview" className="h-full w-full object-cover" />
                   ) : previewPerformance ? (
-                    <video src={previewPerformance} controls playsInline muted className="h-full w-full object-cover" />
+                    <video data-testid="creator-preview-performance-video" src={previewPerformance} controls playsInline muted className="h-full w-full object-cover" />
                   ) : (
                     <div className="grid h-full place-items-center text-sm text-zinc-500">No thumbnail yet</div>
                   )}
@@ -821,7 +829,7 @@ export default function CreatorUploadPage() {
                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Performance preview</p>
                       {previewPerformance ? (
-                        <video src={previewPerformance} controls playsInline muted className="mt-2 aspect-video w-full rounded-xl bg-black object-cover" />
+                        <video data-testid="creator-preview-performance-video" src={previewPerformance} controls playsInline muted className="mt-2 aspect-video w-full rounded-xl bg-black object-cover" />
                       ) : (
                         <p className="mt-2 text-xs text-zinc-500">Missing</p>
                       )}
@@ -829,7 +837,7 @@ export default function CreatorUploadPage() {
                     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Teach preview</p>
                       {previewTeach ? (
-                        <video src={previewTeach} controls playsInline muted className="mt-2 aspect-video w-full rounded-xl bg-black object-cover" />
+                        <video data-testid="creator-preview-teach-video" src={previewTeach} controls playsInline muted className="mt-2 aspect-video w-full rounded-xl bg-black object-cover" />
                       ) : (
                         <p className="mt-2 text-xs text-zinc-500">Missing</p>
                       )}
@@ -866,6 +874,7 @@ export default function CreatorUploadPage() {
 
               <div className="mt-5 grid gap-3">
                 <button
+                  data-testid="creator-save-draft-button"
                   type="button"
                   onClick={() => void persistDraft()}
                   disabled={savingDraft || publishing}
@@ -874,6 +883,7 @@ export default function CreatorUploadPage() {
                   {savingDraft ? "Saving Draft..." : "Save Draft"}
                 </button>
                 <button
+                  data-testid="creator-publish-button"
                   type="button"
                   onClick={() => void publish()}
                   disabled={savingDraft || publishing || !canContinueStep2}

@@ -105,6 +105,7 @@ export async function middleware(request: NextRequest) {
     "/profile/me",
     "/profile",
     "/settings",
+    "/upload-choreo",
     "/creator",
     "/choreographer",
     "/admin",
@@ -122,7 +123,7 @@ export async function middleware(request: NextRequest) {
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth";
+    url.pathname = "/login";
     url.searchParams.set("redirect", request.nextUrl.pathname);
     return attachSupabaseCookies(NextResponse.redirect(url));
   }

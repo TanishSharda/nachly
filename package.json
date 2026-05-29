@@ -11,6 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test",
+    "test:e2e:serial": "node ./scripts/run-e2e-serial.js",
+    "test:e2e:prod": "node ./scripts/run-e2e-prod.js",
     "type-check": "tsc --noEmit",
       "test:e2e:ui": "playwright test --ui",
       "type-check:mobile": "cd mobile && npm run type-check",

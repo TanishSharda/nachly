@@ -233,7 +233,7 @@ export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: Ch
           const teachingVideo = post.teaching_video_url || performanceVideo;
           const videoUrl = performanceVideo;
           const posterUrl = post.demo_reel?.thumbnail_url || "";
-          const learnHref = `/choreography/${encodeURIComponent(post.id)}/learn`;
+          const learnHref = `/learn/${encodeURIComponent(post.id)}?mode=stepwise`;
 
           const metrics = engagementMap[post.id] || { likes: 0, comments: 0, tryThis: 0, views: 0, viewerLiked: false };
 

@@ -25,16 +25,6 @@ function formatTime(seconds) {
 function getLearnVideoSources(videoUrl) {
   if (!videoUrl || typeof videoUrl !== "string") return [];
 
-  const lower = videoUrl.toLowerCase();
-  const isEmbedProvider =
-    lower.includes("youtube.com") ||
-    lower.includes("youtu.be") ||
-    lower.includes("vimeo.com") ||
-    lower.includes("/embed/");
-
-  // Provider/embed URLs must render in an iframe, not as <video><source>.
-  if (isEmbedProvider) return [];
-
   const cleanUrl = videoUrl.split("?")[0];
   const isLocalMp4 = cleanUrl.startsWith("/videos/") && cleanUrl.endsWith(".mp4");
 
@@ -65,13 +55,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
   const [videoError, setVideoError] = useState("");
 
   const resumeKey = useMemo(() => `naachly_learn_resume_${choreo?.id || "unknown"}`,[choreo?.id]);
-  const preferredLearnVideo = useMemo(() => {
-    return (
-      choreo?.teaching_video_url || choreo?.teachingVideoUrl || choreo?.demo_video_url || choreo?.demoVideoUrl || choreo?.video
-    );
-  }, [choreo?.teaching_video_url, choreo?.teachingVideoUrl, choreo?.demo_video_url, choreo?.demoVideoUrl, choreo?.video]);
-
-  const videoSources = useMemo(() => getLearnVideoSources(preferredLearnVideo), [preferredLearnVideo]);
+  const videoSources = useMemo(() => getLearnVideoSources(choreo?.video), [choreo?.video]);
   const [signedUrl, setSignedUrl] = useState(null);
   const isEmbedUrl = useMemo(() => {
     const v = String(choreo?.video || "").trim();
@@ -83,8 +67,6 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
     if (!ext) return false;
     return !(ext === "mp4" || ext === "webm");
   }, [choreo?.video]);
-
-  const showNoSourceMessage = !isEmbedUrl && (!videoSources || videoSources.length === 0);
 
   const embedSrc = useMemo(() => {
     const v = String(choreo?.video || "").trim();
@@ -109,7 +91,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const recordHref = useMemo(() => {
     if (practiceHref) return practiceHref;
-    if (choreo?.id) return `/studio/record/${encodeURIComponent(choreo.id)}?mode=remix`;
+    if (choreo?.id) return `/record/${encodeURIComponent(choreo.id)}?mode=remix`;
     return "/flow?style=mix";
   }, [practiceHref, choreo?.id]);
   const aiPracticeHref = useMemo(() => {
@@ -410,7 +392,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
             <iframe
               src={embedSrc}
               title={choreo?.title || "Learn video"}
-              allow="autoplay; encrypted-media"
+              allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
               className="h-full w-full bg-[#1b1510] object-contain"
             />
@@ -436,7 +418,7 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
             </div>
           ) : null}
 
-          {showNoSourceMessage ? (
+          {!videoSources || videoSources.length === 0 ? (
             <div className="absolute inset-0 grid place-items-center bg-[#111111]/70 px-6 text-center text-sm text-white/80">
               <div className="max-w-[80%]">
                 <p className="mb-2 font-semibold">No playable video sources detected for this routine.</p>

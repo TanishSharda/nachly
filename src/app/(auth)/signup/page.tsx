@@ -12,5 +12,5 @@ export default async function LegacySignupRedirectPage({
     next.set("error", params.error);
   }
 
-  redirect(`/auth?${next.toString()}`);
+  redirect(`/login?${next.toString()}`);
 }
