@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const RECOMMENDED_FALLBACK = [
@@ -120,7 +121,7 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <Link href={latest ? `/explore/${latest.styleSlug}` : "/explore"} className="premium-button mt-6 inline-flex">
+            <Link href={latest ? `/explore/${latest.styleSlug}` : "/learn/feed"} className="premium-button mt-6 inline-flex">
               Resume Session
             </Link>
           </div>
@@ -141,14 +142,23 @@ export default function DashboardPage() {
               whileHover={{ y: -8 }}
               className="flex-shrink-0 w-80 premium-card p-0 overflow-hidden group border-gold/5"
             >
-              <div className="h-48 overflow-hidden bg-gradient-to-br from-[#2d3f1a] via-[#1f2937] to-[#0f172a]">
-                {item.img ? <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" /> : null}
+              <div className="h-48 overflow-hidden bg-gradient-to-br from-[#2d3f1a] via-[#1f2937] to-[#0f172a] relative">
+                {item.img ? (
+                  <Image
+                    src={item.img}
+                    alt={item.title}
+                    unoptimized
+                    fill
+                    className="transition-transform duration-700 group-hover:scale-110"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : null}
               </div>
               <div className="p-6 space-y-1">
                 <span className="text-[10px] uppercase tracking-[0.15em] text-gold/60">{item.level} • {item.duration}</span>
                 <h4 className="text-lg font-light text-[#E7E5E5]">{item.title}</h4>
                 <p className="text-[12px] text-[#E7E5E5]/30 italic">with {item.artist}</p>
-                <Link href={(item as { href?: string }).href || "/explore"} className="inline-block pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold/80 hover:text-gold">
+                <Link href={(item as { href?: string }).href || "/learn/feed"} className="inline-block pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gold/80 hover:text-gold">
                   Open
                 </Link>
               </div>

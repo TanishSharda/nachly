@@ -70,7 +70,7 @@ export default function StyleCoursePage() {
       <motion.div initial="hidden" animate="visible" variants={stagger}>
         <motion.div variants={fadeUp} className="mb-4">
           <Link
-            href="/feed"
+            href="/learn/feed"
             className="inline-flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

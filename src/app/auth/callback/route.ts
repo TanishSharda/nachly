@@ -8,8 +8,8 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const providerError = searchParams.get("error");
   const providerErrorDescription = searchParams.get("error_description");
-  const redirectParam = searchParams.get("redirect") || "/feed";
-  const redirect = redirectParam.startsWith("/") ? redirectParam : "/feed";
+  const redirectParam = searchParams.get("redirect") || "/select-role";
+  const redirect = redirectParam.startsWith("/") ? redirectParam : "/select-role";
   const requestId = crypto.randomUUID();
   const pendingCookies: Array<{ name: string; value: string; options?: Record<string, unknown> }> = [];
 
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         providerErrorDescription: providerErrorDescription || null,
       },
     });
-    return finalizeRedirect(`${origin}/login?error=auth_failed`);
+    return finalizeRedirect(`${origin}/auth?error=auth_failed`);
   }
 
   if (!code) {
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       requestId,
       details: { redirect },
     });
-    return finalizeRedirect(`${origin}/login?error=missing_code`);
+    return finalizeRedirect(`${origin}/auth?error=missing_code`);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       requestId,
       details: { redirect },
     });
-    return finalizeRedirect(`${origin}/login?error=auth_unavailable`);
+    return finalizeRedirect(`${origin}/auth?error=auth_unavailable`);
   }
 
   try {
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
         requestId,
         details: { redirect, errorName: error.name, errorMessage: error.message },
       });
-      return finalizeRedirect(`${origin}/login?error=callback_exchange_failed`);
+      return finalizeRedirect(`${origin}/auth?error=callback_exchange_failed`);
     }
 
     const { data: userData } = await supabase.auth.getUser();
@@ -138,14 +138,23 @@ export async function GET(request: Request) {
       }
 
       let resolvedRedirect = redirect;
-      if (redirect === "/feed") {
+      if (redirect === "/learn/feed") {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, created_at, preferences")
           .eq("id", user.id)
           .maybeSingle();
 
-        resolvedRedirect = profile?.role === "choreographer" || profile?.role === "admin" ? "/creator/dashboard" : "/feed";
+        const onboardingComplete = Boolean((profile?.preferences as Record<string, unknown> | null)?.onboarding_completed);
+        const authCreatedAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+        const profileCreatedAt = profile?.created_at ? new Date(profile.created_at as string).getTime() : 0;
+        const isFreshAccount = authCreatedAt > 0 && profileCreatedAt > 0 && Math.abs(authCreatedAt - profileCreatedAt) < 10 * 60 * 1000;
+
+        if (!onboardingComplete && isFreshAccount) {
+          resolvedRedirect = "/onboarding";
+        } else {
+          resolvedRedirect = profile?.role === "choreographer" || profile?.role === "admin" ? "/creator/dashboard" : "/learn/feed";
+        }
       }
 
       logAuthEvent({
@@ -166,7 +175,7 @@ export async function GET(request: Request) {
       requestId,
       details: { redirect, errorMessage: message },
     });
-    return finalizeRedirect(`${origin}/login?error=callback_exception`);
+    return finalizeRedirect(`${origin}/auth?error=callback_exception`);
   }
 
   return finalizeRedirect(`${origin}${redirect}`);

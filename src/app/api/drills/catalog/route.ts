@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 function missingSupabaseConfigResponse() {
   return NextResponse.json(
@@ -26,7 +27,7 @@ const drillSchema = z.object({
   completedAt: z.string().datetime().nullable().optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -40,7 +41,14 @@ export async function GET() {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  try {
+    const maybe = await enforceRateLimit(request as any as Request, { windowMs: 60_000, max: 60, keyPrefix: 'drills:catalog:get' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter failures
+  }
+
+  const db = supabase;
 
   const { data, error } = await db
     .from("user_drills")
@@ -100,7 +108,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  try {
+    const maybe = await enforceRateLimit(request as any as Request, { windowMs: 60_000, max: 60, keyPrefix: 'drills:catalog:post' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter failures
+  }
+
+  const db = supabase;
   const input = parsed.data;
 
   const { error } = await db.from("user_drills").upsert(

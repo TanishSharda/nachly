@@ -1,4 +1,4 @@
-const CACHE_VERSION = "naachly-v8";
+const CACHE_VERSION = "naachly-v11";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const MAX_DYNAMIC_ITEMS = 50;
@@ -55,6 +55,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Do not intercept page/document navigations. This avoids synthetic offline
+  // responses masking healthy server redirects/pages.
+  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
+    return;
+  }
+
   // Always fetch latest Next.js build assets to avoid hydration mismatches.
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(fetch(request));
@@ -72,7 +78,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((res) => res || Response.error()))
     );
     return;
   }
@@ -80,65 +86,33 @@ self.addEventListener("fetch", (event) => {
   // Strategy 1: Cache-first for non-Next static assets (images, fonts, custom JS/CSS)
   // But skip video files since they use HTTP range requests (206 responses) which Cache API doesn't support
   if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|avif|woff2?)$/)) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
-            }
-            return response;
-          })
+    const handleStatic = caches
+      .match(request)
+      .then((cached) =>
+        cached ||
+        fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
       )
-    );
+      .catch(() => caches.match(request).then((res) => res || Response.error()));
+
+    event.respondWith(handleStatic);
     return;
   }
 
   // Strategy 1b: Network-first for video files (they use range requests / 206 responses)
   if (url.pathname.match(/\.(mp4|webm)$/)) {
     event.respondWith(
-      fetch(request).catch(() => {
-        // If offline, no cached video available - that's okay for streaming
-        return new Response("Video unavailable offline", { status: 503 });
-      })
+      fetch(request).catch(() => Response.error())
     );
     return;
   }
 
-  // Strategy 2: Network-first for pages to avoid stale HTML/theme flashes
-  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, clone);
-              trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ITEMS);
-            });
-          }
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          return cached || caches.match("/");
-        })
-    );
-    return;
-  }
-
-  // Strategy 3: Network-first for API/data requests
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request))
-  );
+  // For all other requests, let the browser/network handle them directly.
+  // This avoids synthetic FetchEvent network errors for app-router prefetch traffic.
+  return;
 });

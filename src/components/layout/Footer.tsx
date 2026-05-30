@@ -4,16 +4,16 @@ import { SITE_NAME } from "@/lib/utils/constants";
 
 const footerLinks = {
   Dance: [
-    { label: "Hip Hop", href: "/explore/hip-hop" },
-    { label: "Bollywood", href: "/explore/bollywood" },
-    { label: "Kathak", href: "/explore/kathak" },
-    { label: "Bhangra", href: "/explore/bhangra" },
+    { label: "Hip Hop", href: "/scroll?style=hip-hop" },
+    { label: "Bollywood", href: "/scroll?style=bollywood" },
+    { label: "Kathak", href: "/scroll?style=kathak" },
+    { label: "Bhangra", href: "/scroll?style=bhangra" },
   ],
   Platform: [
     { label: "How it Works", href: "/#how-it-works" },
     { label: "Pricing", href: "/#pricing" },
     { label: "Subscriptions", href: "/subscribe" },
-    { label: "Creator Studio", href: "/choreographer/create" },
+    { label: "Creator Studio", href: "/creator/upload" },
   ],
   Company: [
     { label: "About", href: "/about" },

@@ -68,7 +68,7 @@ export default function LibraryPage() {
           const slug = String(choreo.styleSlug || "").trim();
           if (!slug || !choreo.routineSlug) continue;
           const gradient = STYLE_GRADIENTS[slug] || { from: "#3f3f46", to: "#71717a" };
-          const existing = styleMap.get(slug) || {
+          const existing = styleMap.get(slug) || ({
             id: slug,
             slug,
             name: choreo.styleName || slug,
@@ -76,7 +76,7 @@ export default function LibraryPage() {
             gradient_to: gradient.to,
             routines: [],
             progress: 0,
-          };
+          } as StyleLibrary);
           if (!existing.routines.some((routine) => routine.slug === choreo.routineSlug)) {
             existing.routines.push({
               id: choreo.id,
@@ -180,7 +180,7 @@ export default function LibraryPage() {
             </div>
             <h2 className="font-display text-xl font-bold text-white mb-2">No courses yet</h2>
             <p className="text-zinc-300 mb-6">Explore dance styles and unlock your first routine</p>
-            <Link href="/feed"><Button>Explore Styles</Button></Link>
+            <Link href="/learn/feed"><Button>Explore Styles</Button></Link>
           </motion.div>
         ) : (
           <div className="space-y-7">

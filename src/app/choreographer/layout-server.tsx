@@ -19,7 +19,7 @@ export default async function ChoreographerLayout({
           <p className="mb-6 text-zinc-400">
             You must be logged in to access creator tools.
           </p>
-          <Link href="/login?redirect=%2Fchoreographer" className="text-blue-400 hover:underline">
+          <Link href="/auth?redirect=%2Fcreator%2Fdashboard" className="text-blue-400 hover:underline">
             Log In
           </Link>
         </div>

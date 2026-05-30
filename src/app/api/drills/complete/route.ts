@@ -1,7 +1,8 @@
 import { createHmac } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const completionSchema = z.object({
   drillId: z.string().uuid(),
@@ -72,6 +73,12 @@ interface StoredEventRow {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 40, keyPrefix: 'drills:complete' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limiter errors
+  }
   let body: unknown;
 
   try {
@@ -110,9 +117,7 @@ export async function POST(request: Request) {
     return missingConfigResponse();
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? createServiceRoleClient()
-    : supabase;
+  const db = supabase;
 
   const timestampIso = new Date().toISOString();
   const signedPayload = buildSignedPayload({

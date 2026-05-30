@@ -13,6 +13,7 @@ import VideoStage from "@/components/practice/VideoStage";
 import WebcamOverlay from "@/components/practice/WebcamOverlay";
 import AIFeedbackPanel from "@/components/practice/AIFeedbackPanel";
 import CameraControls from "@/components/practice/CameraControls";
+import CameraDiagnostics from "@/components/practice/CameraDiagnostics";
 import PlaybackControls from "@/components/practice/PlaybackControls";
 import { usePoseDetection } from "@/components/practice/usePoseDetection";
 import { createAudioEngine } from "@/lib/ai/audio-engine";
@@ -188,7 +189,7 @@ export default function AIPracticePage() {
       let lastError = null;
       for (const constraints of attempts) {
         try {
-          // eslint-disable-next-line no-await-in-loop
+           
           mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
           break;
         } catch (error) {
@@ -426,8 +427,8 @@ export default function AIPracticePage() {
       }
     }, 300);
 
-    setElapsed(0);
-    setIsPlaying(true);
+    setTimeout(() => setElapsed(0), 0);
+    setTimeout(() => setIsPlaying(true), 0);
     elapsedTimerRef.current = setInterval(() => {
       setElapsed((value) => value + 1);
     }, 1000);
@@ -542,7 +543,7 @@ export default function AIPracticePage() {
 
   useEffect(() => {
     if (phase === PHASE.PRACTICE && duration > 0 && currentTime >= duration) {
-      finishSession();
+      setTimeout(() => finishSession(), 0);
     }
   }, [currentTime, duration, finishSession, phase]);
 
@@ -554,7 +555,7 @@ export default function AIPracticePage() {
 
   useEffect(() => {
     if (phase !== PHASE.PRACTICE) {
-      setIsPlaying(false);
+      setTimeout(() => setIsPlaying(false), 0);
       return;
     }
 
@@ -763,6 +764,15 @@ export default function AIPracticePage() {
               }}
               onToggleWebcam={() => setWebcamVisible((value) => !value)}
             />
+
+            <CameraDiagnostics onEnableCamera={enableCamera} onError={(e) => {
+              if (!e) {
+                setCameraIssue(null);
+                return;
+              }
+              setCameraIssue({ title: e?.name || 'Camera error', message: e?.message || String(e) });
+              setCameraStatus('error');
+            }} />
 
             <PlaybackControls
               isPlaying={isPlaying}

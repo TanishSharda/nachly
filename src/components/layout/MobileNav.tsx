@@ -16,52 +16,49 @@ interface MobileNavItem {
 function getBaseMobileNavItems(): MobileNavItem[] {
   return [
     {
-      label: "Home",
-      href: "/feed",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5 10v10h14V10" />
-        </svg>
-      ),
-    },
-    {
-      label: "Explore",
-      href: "/collections",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" />
-          <path d="M9 11l3 3 5-5" />
-        </svg>
-      ),
-    },
-    {
       label: "Scroll",
-      href: "/feed",
+      href: "/scroll",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="3" y="4" width="18" height="16" rx="2" />
-          <path d="m12 9 5 3-5 3V9Z" />
+          <path d="M3 6h18M3 12h18M3 18h18" />
         </svg>
       ),
     },
     {
-      label: "Stats",
-      href: "/stats",
+      label: "Saved",
+      href: "/saved",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M3 3v18h18" />
-          <path d="m19 9-5 5-4-4-3 3" />
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
       ),
     },
     {
-      label: "Profile",
-      href: "/profile/me",
+      label: "Create",
+      href: "/creator/upload",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+      ),
+    },
+    {
+      label: "History",
+      href: "/learn/profile",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="8" r="5" />
-          <path d="M20 21a8 8 0 1 0-16 0" />
+          <path d="M3 12a9 9 0 1 0 9-9" />
+          <path d="M12 7v6l4 2" />
+        </svg>
+      ),
+    },
+    {
+      label: "Settings",
+      href: "/dashboard/settings",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 0 1 2.3 18.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.2 6.3A2 2 0 0 1 7 3.47l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09c.08.6.56 1.09 1.16 1.16h.09a1.65 1.65 0 0 0 1.51-1.16L19.4 6.3a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.16 1.51H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
       ),
     },
@@ -69,53 +66,21 @@ function getBaseMobileNavItems(): MobileNavItem[] {
 }
 
 function buildMobileNavItems(userRole?: string): MobileNavItem[] {
-  const baseItems = getBaseMobileNavItems();
+  // For now, keep a single canonical set so learners see the Create CTA instantly.
+  return getBaseMobileNavItems();
+}
 
-  // Add choreographer items
-  if (userRole === "choreographer" || userRole === "admin") {
-    baseItems.splice(3, 0, {
-      label: "Create",
-      href: "/creator/upload",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
-      ),
-      minRole: "choreographer",
-    });
-
-    baseItems.push({
-      label: "Dashboard",
-      href: "/creator/dashboard",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="3" y="3" width="7" height="7" />
-          <rect x="14" y="3" width="7" height="7" />
-          <rect x="14" y="14" width="7" height="7" />
-          <rect x="3" y="14" width="7" height="7" />
-        </svg>
-      ),
-      minRole: "choreographer",
-    });
+function isActiveMobileRoute(pathname: string, href: string) {
+  if (href === "/learn/profile") {
+    return (
+      pathname === "/learn/profile" ||
+      pathname.startsWith("/learn/profile/") ||
+      pathname === "/profile/me" ||
+      pathname.startsWith("/profile/me/")
+    );
   }
 
-  // Add admin items
-  if (userRole === "admin") {
-    baseItems.push({
-      label: "Admin",
-      href: "/admin/applications",
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M12 6v12M6 12h12" />
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      ),
-      minRole: "admin",
-    });
-  }
-
-  return baseItems;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function MobileNav() {
@@ -126,11 +91,13 @@ export default function MobileNav() {
 
   const hideOnImmersiveRoute =
     pathname.startsWith("/flow") ||
-    pathname.startsWith("/learn") ||
+    pathname.startsWith("/learn/session") ||
+    pathname.startsWith("/learn/practice") ||
     pathname.startsWith("/record") ||
+    pathname.startsWith("/reels") ||
     pathname.startsWith("/scroll") ||
-    pathname.startsWith("/scrool") ||
-    pathname.startsWith("/reels");
+    pathname.startsWith("/choreography/") ||
+    pathname.startsWith("/learn/");
 
   // Fetch user role on mount
   useEffect(() => {
@@ -170,7 +137,7 @@ export default function MobileNav() {
     console.log("Profile clicked");
 
     if (!isSupabaseConfigured()) {
-      router.push("/profile/me");
+      router.push("/learn/profile");
       return;
     }
 
@@ -181,13 +148,13 @@ export default function MobileNav() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login?redirect=%2Fprofile");
+        router.push("/auth?redirect=%2Flearn%2Fprofile");
         return;
       }
 
-      router.push("/profile/me");
+      router.push("/learn/profile");
     } catch {
-      router.push("/login?redirect=%2Fprofile%2Fme");
+      router.push("/auth?redirect=%2Flearn%2Fprofile");
     }
   };
 
@@ -203,15 +170,15 @@ export default function MobileNav() {
 
   return (
     <nav className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.65rem)] left-3 right-3 z-40 md:hidden sm:left-6 sm:right-6 sm:bottom-6">
-      <div className="bg-[#f8f5ef]/92 backdrop-blur-2xl border border-[#6c513224] rounded-[28px] px-2 py-2.5 sm:rounded-[32px] sm:px-3 sm:py-3 flex items-center justify-around shadow-[0_24px_40px_-30px_rgba(58,42,26,0.75)]">
+      <div className="bg-black/40 backdrop-blur-lg border border-white/6 rounded-[28px] px-2 py-2.5 sm:rounded-[32px] sm:px-3 sm:py-3 flex items-center justify-around shadow-[0_24px_40px_-30px_rgba(0,0,0,0.6)]">
         {displayItems.map((item) => {
-          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const isActive = isActiveMobileRoute(pathname, item.href);
 
           return (
             <Link
-              key={item.href}
+              key={`${item.href}-${item.label}`}
               href={item.href}
-              onClick={item.href === "/profile" ? (e) => { e.preventDefault(); void handleProfileClick(); } : undefined}
+              onClick={item.href === "/learn/profile" ? (e) => { e.preventDefault(); void handleProfileClick(); } : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 transition-all duration-500 min-w-[52px]",
                 isActive ? "text-[#7a5c3a]" : "text-[#8d8275] hover:text-[#5f4a31]"
@@ -219,15 +186,15 @@ export default function MobileNav() {
             >
               <span
                 className={cn(
-                  "h-11 w-11 rounded-2xl flex items-center justify-center transition-all duration-500",
+                  "h-11 w-11 rounded-2xl flex items-center justify-center transition-transform duration-200",
                   isActive
-                    ? "bg-[#e9dfd2] text-[#6f5436] shadow-[0_8px_22px_-14px_rgba(58,42,26,0.65)]"
-                    : "bg-[#f1ebe3] text-inherit border border-[#6c51321a]"
+                    ? "bg-white/10 text-[#f8efe6] shadow-[0_8px_22px_-14px_rgba(0,0,0,0.6)]"
+                    : "bg-transparent text-[#d6cfc6] border border-white/6"
                 )}
               >
                 {item.icon}
               </span>
-              <span className="text-[8px] uppercase tracking-[0.14em] font-bold sm:text-[9px] sm:tracking-[0.15em]">{item.label}</span>
+              <span className="text-[8px] uppercase tracking-[0.14em] font-bold text-[#d6cfc6] sm:text-[9px] sm:tracking-[0.15em]">{item.label}</span>
             </Link>
           );
         })}

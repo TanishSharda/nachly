@@ -4,9 +4,21 @@
  */
 
 import { createServerSupabase, createServiceRoleClient } from '../server';
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
 
 async function getReadOnlySupabaseClient() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : await createServerSupabase();
+  // Prefer the server-scoped Supabase client which respects the current request's
+  // authentication/cookies. Only fall back to the service-role client when an
+  // explicit environment flag allows it. This reduces accidental service-role
+  // exposure in server helpers.
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.ALLOW_SERVICE_ROLE_READONLY === '1') {
+    try {
+      logServiceRoleUsage({ caller: 'lib/supabase/queries/choreos:getReadOnlySupabaseClient', note: 'readonly-fallback' });
+    } catch (_) {}
+    return createServiceRoleClient();
+  }
+
+  return await createServerSupabase();
 }
 
 export interface ChoreographyFeedItem {
@@ -44,7 +56,7 @@ export interface ChoreographyFeedItem {
   // timestamps
   created_at?: string | null;
   updated_at?: string | null;
-  published_at?: string | null;
+  
 
   // creator
   creator_name?: string | null;
@@ -91,9 +103,10 @@ export async function getChoreographyFeed(
   try {
     const supabase = await getReadOnlySupabaseClient();
     // Fetch approved submissions
+    // Avoid embedding related `profiles` directly to prevent ambiguous relationship errors
     let submissionsQuery = supabase
       .from('choreo_submissions')
-      .select('id,user_id,title,description,caption,video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,saves_count,creator_name,published_at,created_at,updated_at,profiles(full_name,avatar_url)')
+      .select('id,user_id,title,description,caption,video_url,style_slug,difficulty,submission_status,tier,engagement_score,view_count,like_count,published_at,created_at,updated_at')
       .not('published_at', 'is', null);
 
     if (style) submissionsQuery = submissionsQuery.eq('style_slug', style);
@@ -138,8 +151,8 @@ export async function getChoreographyFeed(
       view_count: s.view_count || 0,
       views_count: s.view_count || 0,
       like_count: s.like_count || 0,
-      saves_count: s.saves_count || 0,
-      creator_name: s.profiles?.full_name || s.creator_name || null,
+      saves_count: 0,
+      creator_name: null,
       creator_avatar_url: s.profiles?.avatar_url || null,
       published_at: s.published_at || s.created_at || null,
       demo_reel: null,
@@ -169,7 +182,7 @@ export async function getChoreographyFeed(
         view_count: r.view_count || 0,
         views_count: r.view_count || 0,
         like_count: r.like_count || 0,
-        saves_count: r.saves_count || 0,
+        saves_count: 0,
         creator_name: r.profiles?.[0]?.full_name || r.profiles?.full_name || null,
         creator_avatar_url: r.profiles?.[0]?.avatar_url || r.profiles?.avatar_url || null,
         published_at: r.created_at || null,
@@ -181,8 +194,8 @@ export async function getChoreographyFeed(
 
     // Merge and sort by engagement_score
     const combined = [...normalizedSubs, ...normalizedRoutines].sort((a, b) => {
-      const aPublished = new Date(a.published_at || a.created_at || 0).getTime();
-      const bPublished = new Date(b.published_at || b.created_at || 0).getTime();
+      const aPublished = new Date(a.published_at || 0).getTime();
+      const bPublished = new Date(b.published_at || 0).getTime();
       if (bPublished !== aPublished) return bPublished - aPublished;
       return (b.engagement_score || 0) - (a.engagement_score || 0);
     });
@@ -202,7 +215,6 @@ export async function getChoreographyFeed(
 export async function getChoreographyPost(id: string) {
   try {
     const supabase = await getReadOnlySupabaseClient();
-
     const { data, error } = await supabase
       .from('choreo_submissions')
       .select('*')
@@ -214,7 +226,41 @@ export async function getChoreographyPost(id: string) {
       return { post: null, error };
     }
 
-    return { post: data, error: null };
+    // Normalize the DB row into a safe post shape used by the UI.
+    const row: any = data || {};
+    const teaching = row.teach_video_url || row.performance_video_url || row.video_url || null;
+    const tutorial = { video_url: teaching, duration_seconds: null };
+
+    const post = {
+      id: row.id,
+      title: row.title || row.song_name || 'Untitled Choreo',
+      description: row.description || row.caption || '',
+      video_url: row.video_url || null,
+      demo_video_url: row.video_url || null,
+      teaching_video_url: row.teach_video_url || teaching,
+      performance_video_url: row.performance_video_url || row.video_url || null,
+      style_slug: row.style_slug || null,
+      difficulty: row.difficulty || null,
+      submission_status: row.submission_status || null,
+      tier: row.tier || 'community',
+      engagement_score: row.engagement_score || 0,
+      view_count: row.view_count || 0,
+      like_count: row.like_count || 0,
+      saves_count: row.saves_count || 0,
+      creator_name: row.creator_name || null,
+      creator_avatar_url: row.creator_avatar_url || null,
+      published_at: row.published_at || row.created_at || null,
+      demo_reel: null,
+      tutorial,
+      source: 'submission',
+      // UI expects a 'moves' array — provide an empty array when missing
+      moves: Array.isArray(row.moves) ? row.moves : [],
+      // preserve any ai fields
+      ai_overall_score: row.ai_overall_score ?? null,
+      ai_tags: Array.isArray(row.ai_tags) ? row.ai_tags : [],
+    };
+
+    return { post, error: null };
   } catch (err: any) {
     console.error('[getChoreographyPost] Unexpected error:', err);
     return { post: null, error: err?.message || 'Failed to load choreography' };

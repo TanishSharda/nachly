@@ -22,15 +22,14 @@ export const USER_ROLES = ["student", "choreographer", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const NAV_LINKS = [
-  { label: "Explore", href: "/explore" },
-  { label: "Scroll", href: "/scroll" },
-  { label: "My Library", href: "/library", auth: true },
-  { label: "Stats", href: "/stats", auth: true },
+  { label: "Feed", href: "/learn/feed" },
+  { label: "Practice", href: "/learn/practice" },
+  { label: "Profile", href: "/learn/profile", auth: true },
 ] as const;
 
 export const DASHBOARD_NAV_LINKS = [
   { label: "Dashboard", href: "/dashboard", icon: "home" },
-  { label: "Practice", href: "/previous-sessions", icon: "monitor" },
+  { label: "Practice", href: "/learn/practice", icon: "monitor" },
   { label: "My Drills", href: "/dashboard/drills", icon: "target" },
   { label: "AI Feedback", href: "/dashboard/feedback", icon: "bar-chart-2" },
   { label: "Send Feedback", href: "/dashboard/send-feedback", icon: "message-square" },

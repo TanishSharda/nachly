@@ -9,52 +9,40 @@ import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import BrandLogo from "@/components/shared/BrandLogo";
 import { NAV_LINKS, SITE_NAME } from "@/lib/utils/constants";
+import IntroSettingsModal from "@/components/marketing/IntroSettingsModal";
 
 interface NavbarProps {
   user?: { id: string; full_name: string; avatar_url: string | null; role: string } | null;
 }
 
-interface NavLink {
-  label: string;
-  href: string;
-  auth?: boolean;
-  minRole?: "choreographer" | "admin";
-}
+type NavLink = { label: string; href: string; auth?: boolean; minRole?: "choreographer" | "admin" };
 
-// Helper function to build nav links based on role
-function getNavLinks(user: NavbarProps["user"]): NavLink[] {
-  const baseLinks: NavLink[] = [
-    { label: "Explore", href: "/explore" },
-    { label: "Scroll", href: "/scroll" },
-    { label: "My Library", href: "/library", auth: true },
-    { label: "Stats", href: "/stats", auth: true },
-  ];
-
-  // Add choreographer-specific links
-  if (user?.role === "choreographer" || user?.role === "admin") {
-    baseLinks.push(
-      { label: "Create", href: "/creator/upload", minRole: "choreographer" },
-      { label: "Dashboard", href: "/creator/dashboard", minRole: "choreographer" }
+function isNavActive(pathname: string, href: string) {
+  if (href === "/learn/profile") {
+    return (
+      pathname === "/learn/profile" ||
+      pathname.startsWith("/learn/profile/") ||
+      pathname === "/profile/me" ||
+      pathname.startsWith("/profile/me/")
     );
   }
 
-  // Add admin-specific links
-  if (user?.role === "admin") {
-    baseLinks.push({ label: "Admin", href: "/admin/applications", minRole: "admin" });
-  }
-
-  return baseLinks;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showIntroSettings, setShowIntroSettings] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const navLinks = getNavLinks(user);
+  const navLinks = NAV_LINKS as unknown as NavLink[];
+  const isCreator = user?.role === "choreographer" || user?.role === "admin";
+  const creatorCtaHref = user ? (isCreator ? "/creator/dashboard" : "/select-role") : "/auth?mode=signup";
+  const creatorCtaLabel = isCreator ? "Upload a Dance" : "Start Teaching";
 
   const handleProfileClick = () => {
-    router.push("/profile/me");
+    router.push("/learn/profile");
     setMobileOpen(false);
   };
 
@@ -62,7 +50,7 @@ export default function Navbar({ user }: NavbarProps) {
     try {
       setSigningOut(true);
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+      router.push("/auth");
       router.refresh();
     } finally {
       setSigningOut(false);
@@ -70,8 +58,23 @@ export default function Navbar({ user }: NavbarProps) {
     }
   };
 
+  const triggerIntroPreview = (preview = true) => {
+    if (typeof window === "undefined") return;
+    try {
+      if (preview) {
+        window.dispatchEvent(new CustomEvent("showCinematicIntro", { detail: { preview: true } }));
+      } else {
+        // clear seen flag and show
+        localStorage.removeItem("nachly_seen_intro");
+        window.dispatchEvent(new CustomEvent("showCinematicIntro", { detail: { preview: false } }));
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[#6c51321f] bg-[#f8f5ef]/85 backdrop-blur-2xl shadow-[0_10px_28px_-24px_rgba(58,42,26,0.65)]">
+    <header className="sticky top-0 z-40 border-b border-[#00000066] bg-[#070707]/50 backdrop-blur-2xl shadow-[0_18px_60px_-30px_rgba(0,0,0,0.7)]">
       <nav className="section-padding">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -84,9 +87,7 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => {
               if (link.auth && !user) return null;
-              if (link.minRole === "choreographer" && user?.role !== "choreographer" && user?.role !== "admin") return null;
-              if (link.minRole === "admin" && user?.role !== "admin") return null;
-              const isActive = pathname.startsWith(link.href);
+              const isActive = isNavActive(pathname, link.href);
               return (
                 <Link
                   key={link.href}
@@ -112,15 +113,15 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                {user?.role !== "choreographer" && user?.role !== "admin" ? (
-                  <Link href="/creator/dashboard">
-                    <Button size="sm">Start Teaching</Button>
-                  </Link>
-                ) : (
-                  <Link href="/creator/dashboard">
-                    <Button variant="ghost" size="sm">Creator Dashboard</Button>
-                  </Link>
-                )}
+                <Button href={creatorCtaHref} variant={isCreator ? "ghost" : "primary"} size="sm">
+                  {creatorCtaLabel}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => triggerIntroPreview(true)}>
+                  Preview Intro
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowIntroSettings(true)}>
+                  Intro Settings
+                </Button>
                 <button type="button" onClick={handleProfileClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                   <Avatar src={user.avatar_url} name={user.full_name} size="sm" />
                   <span className="text-sm font-medium text-[#2d241a]">{user.full_name}</span>
@@ -131,12 +132,9 @@ export default function Navbar({ user }: NavbarProps) {
               </>
             ) : (
               <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Log in</Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">Start Learning</Button>
-                </Link>
+                <Button href="/auth?mode=signup" size="sm">Start Learning</Button>
+                <Button variant="ghost" size="sm" onClick={() => triggerIntroPreview(true)}>Preview Intro</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowIntroSettings(true)}>Intro Settings</Button>
               </>
             )}
           </div>
@@ -185,7 +183,7 @@ export default function Navbar({ user }: NavbarProps) {
                       onClick={() => setMobileOpen(false)}
                       className={cn(
                         "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        pathname.startsWith(link.href)
+                        isNavActive(pathname, link.href)
                           ? "bg-[#7a5c3a1a] text-[#7a5c3a]"
                           : "text-[#7e7468] hover:bg-[#6c51320f] hover:text-[#2d241a]"
                       )}
@@ -197,15 +195,7 @@ export default function Navbar({ user }: NavbarProps) {
                 <div className="pt-2 border-t border-[#6c51321f] space-y-2">
                   {user ? (
                     <>
-                      {user?.role !== "choreographer" && user?.role !== "admin" ? (
-                        <Link href="/creator/dashboard" onClick={() => setMobileOpen(false)} className="block">
-                          <Button size="sm" className="w-full">Start Teaching</Button>
-                        </Link>
-                      ) : (
-                        <Link href="/creator/dashboard" onClick={() => setMobileOpen(false)} className="block">
-                          <Button variant="ghost" size="sm" className="w-full">Creator Dashboard</Button>
-                        </Link>
-                      )}
+                      <Button href={creatorCtaHref} onClick={() => setMobileOpen(false)} variant={isCreator ? "ghost" : "primary"} size="sm" className="w-full">{creatorCtaLabel}</Button>
                       <button
                         type="button"
                         onClick={handleProfileClick}
@@ -217,15 +207,19 @@ export default function Navbar({ user }: NavbarProps) {
                       <Button variant="ghost" size="sm" className="w-full" onClick={handleSignOut} loading={signingOut}>
                         Sign out
                       </Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); triggerIntroPreview(true); }}>
+                        Preview Intro
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); setShowIntroSettings(true); }}>
+                        Intro Settings
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
-                        <Button variant="ghost" size="sm" className="w-full">Log in</Button>
-                      </Link>
-                      <Link href="/signup" onClick={() => setMobileOpen(false)} className="block">
-                        <Button size="sm" className="w-full">Start Learning</Button>
-                      </Link>
+                      <Button href="/auth?mode=signup" onClick={() => setMobileOpen(false)} size="sm" className="w-full">Start Learning</Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMobileOpen(false); triggerIntroPreview(true); }}>
+                        Preview Intro
+                      </Button>
                     </>
                   )}
                 </div>
@@ -233,6 +227,7 @@ export default function Navbar({ user }: NavbarProps) {
             </motion.div>
           )}
         </AnimatePresence>
+          <IntroSettingsModal open={showIntroSettings} onClose={() => setShowIntroSettings(false)} />
       </nav>
     </header>
   );

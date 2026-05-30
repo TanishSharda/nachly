@@ -201,8 +201,10 @@ export default function ReelsPage() {
 
   useEffect(() => {
     if (!choreos.length) {
-      setEngagementMap({});
-      setReactionMap({});
+      setTimeout(() => {
+        setEngagementMap({});
+        setReactionMap({});
+      }, 0);
       return;
     }
 

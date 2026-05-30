@@ -53,7 +53,7 @@ function TutorialPreview({
           Open player
         </Link>
         <Link
-          href={`/record/${id}?mode=remix`}
+          href={`/practice/${id}`}
           className="inline-flex items-center justify-center rounded-full border border-[#6c513220] bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] transition hover:bg-[#f9f5ef]"
         >
           Practice
@@ -64,7 +64,7 @@ function TutorialPreview({
 }
 
 export default async function LearnTabPage() {
-  const { posts } = await getChoreographyFeed({ limit: 8, offset: 0 });
+  const { posts } = await getChoreographyFeed({ limit: 8, offset: 0 }).catch(() => ({ posts: [] }));
   const items = posts || [];
 
   return (

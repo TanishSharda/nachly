@@ -1,0 +1,78 @@
+name: Playwright Public Playback CI
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  playback:
+    name: Run public playback test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Wait for signed-url endpoint and get signed URL
+        run: |
+          NODE_SCRIPT=$(cat <<'NODE'
+          const https = require('https');
+          const http = require('http');
+          const url = 'https://nachly.in/api/storage/signed-url';
+          const body = JSON.stringify({ path: 'bijuria.mp4' });
+          const maxAttempts = 30;
+          (async () => {
+            for (let i = 1; i <= maxAttempts; i++) {
+              try {
+                const parsed = new URL(url);
+                const lib = parsed.protocol === 'https:' ? https : http;
+                const opts = { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } };
+                const req = lib.request(url, opts, (res) => {
+                  let data = '';
+                  res.on('data', (c) => data += c);
+                  res.on('end', () => {
+                    try {
+                      const json = JSON.parse(data || '{}');
+                      if (res.statusCode === 200 && json?.ok && json?.url) {
+                        console.log(json.url);
+                        process.exit(0);
+                      } else {
+                        console.error('Attempt', i, 'response:', res.statusCode, data);
+                        if (i === maxAttempts) process.exit(2);
+                      }
+                    } catch (err) {
+                      console.error('Parse error', err);
+                      if (i === maxAttempts) process.exit(2);
+                    }
+                  });
+                });
+                req.on('error', (err) => {
+                  console.error('Request error', err && err.message);
+                });
+                req.write(body);
+                req.end();
+              } catch (err) {
+                console.error('Attempt', i, 'threw', err && err.message);
+              }
+              await new Promise(r => setTimeout(r, 10000));
+            }
+            process.exit(2);
+          })();
+          NODE
+          node -e "$NODE_SCRIPT" > signed_url.txt || (cat signed_url.txt || true; exit 1)
+
+      - name: Run playback test against signed URL
+        run: |
+          SIGNED_URL=$(cat signed_url.txt)
+          echo "Signed URL: $SIGNED_URL"
+          node scripts/playback-test-local.js "$SIGNED_URL"

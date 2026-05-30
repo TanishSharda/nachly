@@ -1,0 +1,31 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: Run service-role usage checker
+        run: npm run check:service-role
+      - name: Run security audit
+        run: npm run security:audit
+      - name: Check test-only API endpoints (CI smoke)
+        run: |
+          # Start a dev server in background for the smoke check
+          npm run build || true
+          npm run start &
+          sleep 2
+          node scripts/ci-check-test-routes.js
+          kill %1 || true

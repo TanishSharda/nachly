@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 import { getChoreographyFeed } from "@/lib/api/choreos";
@@ -42,7 +43,7 @@ function getFlowLearnHref(item) {
   const routineId = String(item?.id || "").trim();
   if (routineId) return `/learn/${encodeURIComponent(routineId)}`;
 
-  return "/explore";
+  return "/learn/feed";
 }
 
 function shouldAttachVideoSrc(index, activeIndex) {
@@ -138,14 +139,13 @@ export default function FlowPage() {
   const WHEEL_THRESHOLD = 28;
   const SWIPE_THRESHOLD = 42;
 
-  const stylePriceFallbacks = {
-    bollywood: 29900,
-    bhangra: 19900,
-    kathak: 19900,
-    "hip-hop": 19900,
-  };
-
   const resolveStylePriceInr = useCallback((item) => {
+    const stylePriceFallbacks = {
+      bollywood: 29900,
+      bhangra: 19900,
+      kathak: 19900,
+      "hip-hop": 19900,
+    };
     const direct = Number(item?.stylePriceInr || item?.price_inr || 0);
     if (Number.isFinite(direct) && direct >= 100) return direct;
     const slug = String(item?.styleSlug || item?.style || "").toLowerCase();
@@ -746,7 +746,7 @@ export default function FlowPage() {
         </section>
       );
     });
-  }, [activeIndex, choreos, error, loadedMap, loading, masterMuted, savedMap, shareChoreo, styleFilter, toggleSave, trackAction]);
+  }, [activeIndex, choreos, error, loadedMap, loading, masterMuted, savedMap, shareChoreo, styleFilter, toggleSave, trackAction, openLearnPrompt]);
 
   return (
     <main
@@ -863,7 +863,7 @@ export default function FlowPage() {
       <header className="fixed top-0 z-50 w-full bg-[#fbf9f4]/75 backdrop-blur-xl px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] md:px-6 md:py-4">
         <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/feed" className="text-[#725b3f] hover:opacity-80 transition-opacity active:scale-95 rounded-full p-1">
+          <Link href="/learn/feed" className="text-[#725b3f] hover:opacity-80 transition-opacity active:scale-95 rounded-full p-1">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </Link>
           <h1 className="font-black text-2xl md:text-2xl tracking-tight text-[#725b3f]">Nachly</h1>
@@ -885,8 +885,14 @@ export default function FlowPage() {
           >
             {masterMuted ? "Muted" : "Sound"}
           </button>
-          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#fdddb9] shadow-sm">
-            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-eGDaQBRyHvPVmIpH3TvjjPjI6ZcggzOs5ylihE7u_JXJ0OH5vKl7PzTnTswma3VxdWrIp-2_Aubd_v2F8j0VDO3X_DS13XoqKBM9RxQ_APKJ_FKxSNw9TogNRrOhV04-f8zwM-DtpO8_NUUslBSUe7shr4th-q2gZkxHyp3hZPsSPZHoFOZjOVJtQdUJaJRqE2vsDvczSihNXVwFz1yF3tY4mElyXVENyjH5pid5rjbUhMdeXqKAHTJt5tTVJRpcJnuURMcbGJY" alt="profile" className="h-full w-full object-cover" />
+          <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#fdddb9] shadow-sm relative">
+            <Image
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-eGDaQBRyHvPVmIpH3TvjjPjI6ZcggzOs5ylihE7u_JXJ0OH5vKl7PzTnTswma3VxdWrIp-2_Aubd_v2F8j0VDO3X_DS13XoqKBM9RxQ_APKJ_FKxSNw9TogNRrOhV04-f8zwM-DtpO8_NUUslBSUe7shr4th-q2gZkxHyp3hZPsSPZHoFOZjOVJtQdUJaJRqE2vsDvczSihNXVwFz1yF3tY4mElyXVENyjH5pid5rjbUhMdeXqKAHTJt5tTVJRpcJnuURMcbGJY"
+              alt="profile"
+              unoptimized
+              fill
+              style={{ objectFit: "cover" }}
+            />
           </div>
         </div>
         </div>

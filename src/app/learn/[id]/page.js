@@ -73,10 +73,19 @@ async function fetchLegacyChoreoById(id) {
 function mapSubmissionToChoreo(submission) {
   if (!submission) return null;
 
+  const resolvedVideo =
+    submission.video ||
+    submission.video_url ||
+    submission.demo_video_url ||
+    submission.teaching_video_url ||
+    submission?.tutorial?.video_url ||
+    submission?.demo_reel?.video_url ||
+    "";
+
   return {
     id: submission.id,
     title: submission.title || "Untitled Choreo",
-    video: submission.video_url || "",
+    video: resolvedVideo,
     caption: submission.caption || submission.description || "",
     style: submission.style_slug || "unknown",
     tier: submission.tier || "community",
@@ -93,7 +102,7 @@ async function fetchChoreoById(id) {
     try {
       // Fetch choreography (handles both submissions and routines)
       const post = await getChoreographyPost(String(id));
-      if (post) return post;
+      if (post) return mapSubmissionToChoreo(post) || post;
       supabaseRequestFailed = true;
     } catch {
       supabaseRequestFailed = true;
@@ -167,5 +176,5 @@ export default function LearnPage() {
     );
   }
 
-  return <LearnModePlayer choreo={choreo} mode={modeParam || undefined} backHref="/flow?style=mix" practiceHref={`/record/${choreo.id}?mode=remix`} />;
+  return <LearnModePlayer choreo={choreo} mode={modeParam || undefined} backHref="/learn/feed" practiceHref={`/practice/${choreo.id}`} />;
 }

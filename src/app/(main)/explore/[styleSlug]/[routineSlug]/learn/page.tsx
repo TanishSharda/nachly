@@ -157,12 +157,14 @@ export default function LearnModePage() {
   useEffect(() => {
     if (!routine) return;
 
-    setSteps(isMistakeSession ? parsedMistakeSteps : []);
-    setCurrentStep(0);
-    setCompletedSteps(new Set());
-    setReplayCount(0);
-    setPhase("watching");
-    setPlaybackSpeed(slowModeDefault ? 0.75 : 1);
+    setTimeout(() => {
+      setSteps(isMistakeSession ? parsedMistakeSteps : []);
+      setCurrentStep(0);
+      setCompletedSteps(new Set());
+      setReplayCount(0);
+      setPhase("watching");
+      setPlaybackSpeed(slowModeDefault ? 0.75 : 1);
+    }, 0);
   }, [routine, isMistakeSession, parsedMistakeSteps, slowModeDefault]);
 
   const step = steps[currentStep];
@@ -232,7 +234,7 @@ export default function LearnModePage() {
 
   // Auto-start camera on mount
   useEffect(() => {
-    startCamera();
+    setTimeout(() => startCamera(), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -470,7 +472,7 @@ export default function LearnModePage() {
         >
           {videoUrl ? (
             <>
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              { }
               <video
                 ref={videoRef}
                 src={videoUrl}
@@ -582,7 +584,7 @@ export default function LearnModePage() {
               </div>
 
               {/* No camera feed placeholder (shows briefly before stream attaches) */}
-              {!streamRef.current && (
+              {!cameraOn && (
                 <div className="absolute inset-0 bg-dark-900 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-12 h-12 mx-auto mb-2 bg-dbg-50 rounded-full flex items-center justify-center animate-pulse">

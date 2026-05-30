@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function SettingsPage() {
   const [cameraInput, setCameraInput] = useState("FaceTime HD Camera");
@@ -68,6 +69,7 @@ export default function SettingsPage() {
     <div className="animate-fade-in max-w-2xl">
       <header className="mb-8">
         <h1 className="text-gradient-red text-5xl font-extrabold tracking-tight">Settings</h1>
+        <Link href="/learn/feed" className="mt-3 inline-flex text-sm text-zinc-400 hover:text-zinc-200">← Back to feed</Link>
       </header>
 
       <div className="rounded-2xl p-8 dash-glass dash-card animate-slide-up">

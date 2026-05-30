@@ -110,6 +110,7 @@ export function usePoseDetection(
     confidence: 0,
     overall: 0,
   });
+  const [metrics, setMetrics] = useState<SessionMetrics>(() => createSessionMetrics());
 
   const metricsRef = useRef(createSessionMetrics());
   const bufferRef = useRef(new RollingBuffer(10));
@@ -165,6 +166,7 @@ export function usePoseDetection(
     (videoEl: HTMLVideoElement) => {
       videoRef.current = videoEl;
       metricsRef.current = createSessionMetrics();
+      setMetrics(metricsRef.current);
       bufferRef.current = new RollingBuffer(10);
       frameCountRef.current = 0;
       lastFeedbackTimeRef.current = Date.now();
@@ -201,7 +203,7 @@ export function usePoseDetection(
         let lastError: unknown = null;
 
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           let poseLandmarker: any = null;
 
           for (let attempt = 1; attempt <= MAX_INIT_RETRIES; attempt++) {
@@ -409,6 +411,11 @@ export function usePoseDetection(
                   setComparison(frameComparison);
                   if (frameComparison.activeJointCount > 0) {
                     updateMetrics(metricsRef.current, frameComparison);
+                    try {
+                      setMetrics({ ...metricsRef.current });
+                    } catch {
+                      // ignore
+                    }
                   }
 
                   const coach = computeCoachScores({
@@ -568,7 +575,7 @@ export function usePoseDetection(
   return {
     landmarks,
     comparison,
-    metrics: metricsRef.current,
+    metrics,
     liveScores,
     feedbackMessages,
     isReady,

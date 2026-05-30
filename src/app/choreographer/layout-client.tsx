@@ -8,49 +8,77 @@ import { SITE_NAME } from "@/lib/utils/constants";
 
 const sidebarLinks = [
   {
-    label: "Dashboard",
-    href: "/choreographer",
+    label: "Home",
+    href: "/creator/dashboard",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>,
   },
   {
-    label: "My Routines",
-    href: "/choreographer/routines",
+    label: "Upload",
+    href: "/creator/upload",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
   },
   {
-    label: "Upload",
-    href: "/choreographer/create",
+    label: "Drafts",
+    href: "/creator/drafts",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>,
   },
   {
-    label: "Drafts",
-    href: "/choreographer/drafts",
+    label: "Workshops",
+    href: "/creator/workshops",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16v16H4z" /><path d="M8 8h8M8 12h6M8 16h4" /></svg>,
   },
   {
-    label: "Workshops",
-    href: "/choreographer/workshops",
+    label: "Analytics",
+    href: "/creator/analytics",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
   },
   {
-    label: "Analytics",
-    href: "/choreographer/analytics",
+    label: "Revenue",
+    href: "/creator/monetisation",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>,
   },
   {
-    label: "Earnings",
-    href: "/choreographer/earnings",
+    label: "My Routines",
+    href: "/creator/choreos",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
   },
   {
     label: "Profile",
-    href: "/choreographer/profile",
+    href: "/creator/profile",
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /></svg>,
   },
 ];
 
 export default function ChoreographerLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  const isActiveRoute = (href: string) => {
+    if (href === "/creator/dashboard") {
+      return pathname === "/creator/dashboard";
+    }
+
+    if (href === "/creator/upload") {
+      return pathname === "/creator/upload";
+    }
+
+    if (href === "/creator/analytics") {
+      return pathname === "/creator/analytics";
+    }
+
+    if (href === "/creator/monetisation") {
+      return pathname === "/creator/monetisation";
+    }
+
+    if (href === "/creator/choreos") {
+      return pathname === "/creator/choreos";
+    }
+
+    if (href === "/creator/profile") {
+      return pathname === "/creator/profile";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -67,7 +95,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
               New Upload
             </Link>
-            <Link href="/feed" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <Link href="/learn/feed" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Back to Platform
             </Link>
           </div>
@@ -79,7 +107,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
         <aside className="hidden lg:flex flex-col w-60 border-r border-white/10 min-h-[calc(100vh-56px)] p-4">
           <nav className="space-y-1 flex-1">
             {sidebarLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/choreographer" && pathname.startsWith(link.href));
+              const isActive = isActiveRoute(link.href);
               return (
                 <Link
                   key={link.href}
@@ -97,12 +125,10 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
               );
             })}
           </nav>
-          <div className="border-t border-white/10 pt-4">
             <Link href="/creator/upload" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
               Creator Guide
             </Link>
-          </div>
         </aside>
 
         {/* Content */}
@@ -115,7 +141,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-black/90 backdrop-blur-xl safe-area-bottom">
         <div className="flex items-center justify-around py-2">
           {sidebarLinks.slice(0, 6).map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/choreographer" && pathname.startsWith(link.href));
+            const isActive = isActiveRoute(link.href);
             return (
               <Link
                 key={link.href}

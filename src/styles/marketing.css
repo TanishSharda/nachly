@@ -1,0 +1,91 @@
+/* Marketing visual styles: cursor dots, subtle gradients, waveform container */
+
+:root {
+  --nachly-gold: #F3B2AB;
+}
+
+.nachly-cursor-dot {
+  position: fixed;
+  pointer-events: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(243,178,171,0.9));
+  box-shadow: 0 8px 18px rgba(243,178,171,0.18), 0 2px 6px rgba(0,0,0,0.6) inset;
+  transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  opacity: 0.9;
+  z-index: 99999;
+}
+
+/* waveform canvas styling */
+canvas {
+  display: block;
+}
+
+/* subtle global marketing backdrop tweaks */
+.marketing-ambient-beam {
+  position: absolute;
+}
+
+/* giant background typography animation */
+.hero-giant-typo {
+  font-size: 18rem;
+  line-height: 0.78;
+  transform-origin: center;
+  animation: nachly-typo-float 10s ease-in-out infinite alternate;
+}
+
+@keyframes nachly-typo-float {
+  0% { transform: translateY(-6px) scale(1) translateX(-50%); opacity: 0.06; }
+  50% { transform: translateY(-18px) scale(1.02) translateX(-50%); opacity: 0.08; }
+  100% { transform: translateY(-2px) scale(1) translateX(-50%); opacity: 0.05; }
+}
+
+/* CTA subtle breath */
+.marketing-cta {
+  transition: box-shadow 0.25s ease, transform 0.18s ease;
+}
+.marketing-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(243,178,171,0.12);
+}
+.marketing-cta-glow {
+  animation: nachly-cta-glow 3.6s ease-in-out infinite;
+}
+@keyframes nachly-cta-glow {
+  0% { box-shadow: 0 6px 18px rgba(243,178,171,0.08); }
+  50% { box-shadow: 0 20px 60px rgba(243,178,171,0.16); }
+  100% { box-shadow: 0 6px 18px rgba(243,178,171,0.08); }
+}
+
+/* reduce cursor dots on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .nachly-cursor-dot { display: none !important; }
+}
+
+/* atmosphere color overlays */
+:root.atmosphere-hiphop {
+  --atmosphere-overlay: linear-gradient(180deg, rgba(50,8,8,0.32), rgba(0,0,0,0.6));
+}
+
+:root.atmosphere-contemporary {
+  --atmosphere-overlay: linear-gradient(180deg, rgba(240,240,245,0.03), rgba(0,0,0,0.5));
+}
+
+:root.atmosphere-afro {
+  --atmosphere-overlay: linear-gradient(180deg, rgba(60,30,6,0.28), rgba(0,0,0,0.6));
+}
+
+/* apply overlay to marketing hero & section backgrounds */
+.marketing-atmosphere-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--atmosphere-overlay, transparent);
+  mix-blend-mode: overlay;
+  transition: background 0.6s ease;
+  z-index: -5;
+}
+
+

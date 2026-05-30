@@ -27,7 +27,7 @@ export async function GET() {
   }
 
   const supabase = await createServerSupabase();
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const weekStart = startOfWeek();
   const weekEnd = new Date(weekStart);

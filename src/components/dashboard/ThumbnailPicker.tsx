@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 
 interface ThumbnailPickerProps {
   videoUrl: string;
@@ -109,7 +110,7 @@ export default function ThumbnailPicker({ videoUrl, selectedUrl, onSelect }: Thu
               selectedUrl === frame ? "border-[#F3B2AB]" : "border-white/10 hover:border-white/30"
             }`}
           >
-            <img src={frame} alt={`Frame ${index + 1}`} className="h-full w-full object-cover" />
+            <Image src={frame} alt={`Frame ${index + 1}`} unoptimized fill style={{ objectFit: "cover" }} />
             <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] text-zinc-300">
               {formatPercent(capturePoints[index] || 0)}
             </span>

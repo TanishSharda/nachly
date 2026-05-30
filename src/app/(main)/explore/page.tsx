@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const HERO_IMAGE =
@@ -30,13 +31,13 @@ export default function ExplorePage() {
               The kinetic gallery of movement. Elevate your practice through an editorial experience of Indian classical and contemporary dance.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              <Link href="/scroll?style=bollywood" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/learn/feed?style=bollywood" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Bollywood
               </Link>
-              <Link href="/scroll?style=bhangra" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/learn/feed?style=bhangra" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Bhangra
               </Link>
-              <Link href="/scroll?style=mix" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
+              <Link href="/learn/feed?style=mix" className="rounded-full border border-[#6c513228] bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#725b3f] hover:bg-white">
                 Mix
               </Link>
               <Link href="/subscribe" className="rounded-full border border-[#725b3f]/25 bg-[#725b3f] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#fff7f3] hover:brightness-110">
@@ -44,7 +45,7 @@ export default function ExplorePage() {
               </Link>
             </div>
             <Link
-              href="/scroll?style=mix"
+              href="/learn/feed?style=mix"
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#725b3f] px-7 py-3 text-sm font-semibold text-[#fff7f3] transition hover:brightness-110"
             >
               Start Today&apos;s Lesson
@@ -53,7 +54,15 @@ export default function ExplorePage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.65 }} className="relative">
-            <img src={HERO_IMAGE} alt="Flow hero" className="h-[460px] w-full rounded-[2rem] object-cover md:h-[640px]" />
+            <Image
+              src={HERO_IMAGE}
+              alt="Flow hero"
+              unoptimized
+              width={1600}
+              height={640}
+              className="w-full rounded-[2rem]"
+              style={{ objectFit: "cover" }}
+            />
             <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-r from-[#fbf9f4] via-transparent to-transparent" />
           </motion.div>
         </div>
@@ -67,14 +76,22 @@ export default function ExplorePage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#8f7f6b]">Discover</p>
             <h3 className="mt-2 text-3xl font-bold tracking-tight text-[#1f1f1b] md:text-4xl">Bollywood Flow</h3>
           </div>
-            <Link href="/scroll?style=bollywood" className="text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] hover:opacity-80">
+            <Link href="/learn/feed?style=bollywood" className="text-xs font-bold uppercase tracking-[0.14em] text-[#725b3f] hover:opacity-80">
             View Collection &gt;
           </Link>
         </div>
 
         <div className="grid gap-6 md:grid-cols-[1.8fr_1fr]">
-            <Link href="/scroll?style=bollywood" className="group relative block overflow-hidden rounded-[2rem] bg-[#e3e3db]">
-            <img src={CARD_MAIN} alt="Midnight Monsoon Ritual" className="h-[360px] w-full object-cover transition duration-700 group-hover:scale-105 md:h-[520px]" />
+            <Link href="/learn/feed?style=bollywood" className="group relative block overflow-hidden rounded-[2rem] bg-[#e3e3db]">
+            <Image
+              src={CARD_MAIN}
+              alt="Midnight Monsoon Ritual"
+              unoptimized
+              width={1200}
+              height={520}
+              className="w-full transition duration-700 group-hover:scale-105"
+              style={{ objectFit: "cover" }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 text-white md:bottom-8 md:left-8">
               <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em]">
@@ -87,7 +104,15 @@ export default function ExplorePage() {
 
           <div className="grid gap-6">
             <article className="relative overflow-hidden rounded-[1.5rem] bg-[#e3e3db]">
-              <img src={CARD_SIDE} alt="Mudra edit" className="h-[160px] w-full object-cover md:h-[220px]" />
+              <Image
+                src={CARD_SIDE}
+                alt="Mudra edit"
+                unoptimized
+                width={600}
+                height={220}
+                className="w-full"
+                style={{ objectFit: "cover" }}
+              />
               <div className="absolute inset-0 bg-black/25" />
               <div className="absolute inset-0 grid place-items-center text-center text-white">
                 <div>
@@ -126,7 +151,15 @@ export default function ExplorePage() {
         <div className="grid items-center gap-10 md:grid-cols-[1.1fr_1fr]">
           <div className="relative order-2 md:order-1">
             <Link href="/flow?style=bhangra" className="group block">
-              <img src={BHANGRA_IMAGE} alt="Bhangra flow" className="h-[420px] w-full rounded-[2rem] object-cover transition duration-700 group-hover:scale-[1.01] md:h-[620px]" />
+              <Image
+                src={BHANGRA_IMAGE}
+                alt="Bhangra flow"
+                unoptimized
+                width={1200}
+                height={620}
+                className="w-full rounded-[2rem]"
+                style={{ objectFit: "cover" }}
+              />
             </Link>
           </div>
 

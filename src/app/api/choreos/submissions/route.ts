@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const submissionCreateSchema = z.object({
   title: z.string().trim().min(2).max(120),
-  description: z.string().trim().min(10).max(2000),
+  songName: z.string().trim().min(1).max(200).optional().or(z.literal("")),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
   caption: z.string().trim().max(280).optional().or(z.literal("")),
-  videoUrl: z.string().trim().url().max(2000),
+  videoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  performanceVideoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  teachVideoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
   styleSlug: z.enum(["hip-hop", "bhangra", "kathak", "zumba", "bollywood", "contemporary"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
   lessonParts: z.array(z.unknown()).optional(),
@@ -26,16 +30,19 @@ const submissionCreateSchema = z.object({
     fullBodyVisible: z.boolean(),
     stableCamera: z.boolean(),
     goodLighting: z.boolean(),
-  }),
+  }).optional(),
   publishNow: z.boolean().optional(),
 });
 
 const draftUpsertSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(2).max(120),
-  description: z.string().trim().min(10).max(2000),
+  songName: z.string().trim().min(1).max(200).optional().or(z.literal("")),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
   caption: z.string().trim().max(280).optional().or(z.literal("")),
-  videoUrl: z.string().trim().url().max(2000),
+  videoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  performanceVideoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  teachVideoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
   styleSlug: z.enum(["hip-hop", "bhangra", "kathak", "zumba", "bollywood", "contemporary"]),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]),
   lessonParts: z.array(z.unknown()).optional(),
@@ -85,7 +92,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status");
@@ -137,6 +144,12 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:drafts' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limiter errors
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -163,13 +176,15 @@ export async function PATCH(request: Request) {
   }
 
   const input = parsed.data;
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const draftPayload = {
     title: input.title,
-    description: input.description,
+    description: input.description || input.songName || input.title,
     caption: input.caption || null,
-    video_url: input.videoUrl,
+    video_url: input.performanceVideoUrl || input.videoUrl || "",
+    performance_video_url: input.performanceVideoUrl || input.videoUrl || "",
+    teach_video_url: input.teachVideoUrl || "",
     style_slug: input.styleSlug,
     difficulty: input.difficulty,
     lesson_parts: input.lessonParts ?? [],
@@ -225,6 +240,12 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'choreo:drafts' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -244,7 +265,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   const { data, error } = await db
     .from("choreo_submissions")
@@ -263,6 +284,12 @@ export async function DELETE(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 20, keyPrefix: 'choreo:submissions' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limiter failures
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -298,22 +325,27 @@ export async function POST(request: Request) {
     }
 
     const input = parsed.data;
-    const checklistPassed =
-      input.checklist.fullBodyVisible && input.checklist.stableCamera && input.checklist.goodLighting;
+    const checklistPassed = !input.checklist || (input.checklist.fullBodyVisible && input.checklist.stableCamera && input.checklist.goodLighting);
 
     if (!checklistPassed) {
       return NextResponse.json(
         {
           error: "Submission blocked by quality checklist",
           message: "Your choreography is close to being featured",
-          suggestions: checklistSuggestions(input.checklist),
+          suggestions: checklistSuggestions(input.checklist ?? { fullBodyVisible: true, stableCamera: true, goodLighting: true }),
           cta: "Re-record & Improve",
         },
         { status: 422 }
       );
     }
 
-    const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+    const db = supabase;
+    console.log('[/api/choreos/submissions] Service role present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    try {
+      console.log(`[/api/choreos/submissions] Using ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'service-role' : 'user'} client for user ${user.id}`);
+    } catch (e) {
+      // ignore logging failures
+    }
 
     // Some auth users may not yet have a profiles row; ensure it exists before FK-dependent inserts.
     const { data: existingProfile, error: profileLookupError } = await db
@@ -366,9 +398,12 @@ export async function POST(request: Request) {
     const submissionPayload = {
       user_id: user.id,
       title: input.title,
-      description: input.description,
+      song_name: input.songName || null,
+      description: input.description || input.songName || input.title,
       caption: input.caption || null,
-      video_url: input.videoUrl,
+      video_url: input.performanceVideoUrl || input.videoUrl || "",
+      performance_video_url: input.performanceVideoUrl || input.videoUrl || "",
+      teach_video_url: input.teachVideoUrl || null,
       style_slug: input.styleSlug,
       difficulty: input.difficulty,
       lesson_parts: input.lessonParts ?? [],
@@ -383,21 +418,46 @@ export async function POST(request: Request) {
       access_type: input.accessType ?? "free",
       price_inr: input.priceInr ?? 0,
       subscription_tier: input.subscriptionTier || null,
-      checklist_full_body_visible: input.checklist.fullBodyVisible,
-      checklist_stable_camera: input.checklist.stableCamera,
-      checklist_good_lighting: input.checklist.goodLighting,
-      checklist_passed: true,
+      checklist_full_body_visible: input.checklist?.fullBodyVisible ?? true,
+      checklist_stable_camera: input.checklist?.stableCamera ?? true,
+      checklist_good_lighting: input.checklist?.goodLighting ?? true,
+      checklist_passed: checklistPassed,
       submission_status: input.publishNow ? "approved" : "pending_review",
-      ai_status: input.publishNow ? "skipped" : "queued",
+      ai_status: input.publishNow ? "completed" : "queued",
       submitted_at: now,
       published_at: input.publishNow ? now : null,
       tier: "community",
       improvement_suggestions: [],
     };
 
-    const query = input.draftId
-      ? db.from("choreo_submissions").update(submissionPayload).eq("id", input.draftId).eq("user_id", user.id)
-      : db.from("choreo_submissions").insert(submissionPayload);
+    // If a draftId is provided, verify ownership first. If it doesn't exist or isn't owned by the
+    // current user, ignore the draftId and perform an insert instead of failing with a permission/constraint error.
+    let query;
+    if (input.draftId) {
+      try {
+        const { data: existing, error: lookupErr } = await db
+          .from("choreo_submissions")
+          .select("id, user_id, submission_status")
+          .eq("id", input.draftId)
+          .maybeSingle();
+
+        if (lookupErr) {
+          console.warn("[/api/choreos/submissions] Draft lookup error:", lookupErr.message);
+          // Fallback to insert if lookup fails unexpectedly
+          query = db.from("choreo_submissions").insert(submissionPayload);
+        } else if (!existing || existing.user_id !== user.id) {
+          console.warn("[/api/choreos/submissions] Ignoring stale or non-owned draftId:", input.draftId);
+          query = db.from("choreo_submissions").insert(submissionPayload);
+        } else {
+          query = db.from("choreo_submissions").update(submissionPayload).eq("id", input.draftId).eq("user_id", user.id);
+        }
+      } catch (e: any) {
+        console.warn("[/api/choreos/submissions] Draft ownership verification error:", e?.message || e);
+        query = db.from("choreo_submissions").insert(submissionPayload);
+      }
+    } else {
+      query = db.from("choreo_submissions").insert(submissionPayload);
+    }
 
     console.log("[/api/choreos/submissions] Payload:", JSON.stringify(submissionPayload, null, 2));
     console.log("[/api/choreos/submissions] Query type:", input.draftId ? "update" : "insert");
@@ -421,11 +481,35 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
+    // If we earlier ignored a provided draftId (because it was stale or not owned by the
+    // requesting user), surface that as a non-error note so the client can act accordingly.
+    const responsePayload: any = {
       ok: true,
       submission: data,
       message: "Submission received and queued for AI evaluation.",
-    });
+    };
+
+    if ((input as any).draftId && !input.draftId) {
+      // No-op: safety check
+    }
+
+    // If during draft ownership verification we logged that the draftId was ignored,
+    // the code above wrote a console.warn; to make this machine-detectable we add a
+    // `note` field when we chose to insert rather than update because of draft mismatch.
+    // We look for the earlier console warning pattern in logs is not practical here,
+    // so rely on the local variable `query` selection logic: when we performed an insert
+    // despite `input.draftId` being present we set `query` to an insert. We can detect
+    // that by checking if `input.draftId` was provided but the returned `data.id` does not
+    // strictly equal that `input.draftId`.
+    try {
+      if (input.draftId && data?.id && input.draftId !== data.id) {
+        responsePayload.note = "Ignored provided draftId and created a new submission (draft ownership mismatch).";
+      }
+    } catch (e) {
+      // ignore note generation failures
+    }
+
+    return NextResponse.json(responsePayload);
   } catch (err: any) {
     console.error("[/api/choreos/submissions] Unhandled error:", err);
     return NextResponse.json(

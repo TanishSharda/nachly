@@ -50,6 +50,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState<"performance" | "teaching">("performance");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const performanceVideo = post.demo_video_url || post.demo_reel?.video_url || post.video_url || "";
   const teachingVideo = post.teaching_video_url || post.tutorial?.video_url || performanceVideo;
@@ -59,6 +60,36 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
   const learnHref = `/choreography/${encodeURIComponent(post.id)}/learn`;
   const practiceHref = `/choreography/${encodeURIComponent(post.id)}/practice`;
   const profileHref = creatorSlug ? `/profile/${encodeURIComponent(creatorSlug)}` : "/profile/me";
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoUrl) return;
+
+    video.load();
+    const attemptPlay = () => {
+      void video.play().catch(() => {
+        // Autoplay can still be blocked in some browsers; keep the preview visible either way.
+      });
+    };
+
+    if (video.readyState >= 2) {
+      attemptPlay();
+      return;
+    }
+
+    video.addEventListener("canplay", attemptPlay, { once: true });
+    return () => {
+      video.removeEventListener("canplay", attemptPlay);
+    };
+  }, [videoUrl]);
+
+  const rememberFeedScroll = () => {
+    try {
+      window.sessionStorage.setItem("naachly_feed_scroll_y_v1", String(window.scrollY || 0));
+    } catch {
+      // ignore session storage issues
+    }
+  };
 
   return (
     <motion.article
@@ -71,13 +102,14 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
       <div className="relative min-h-[74vh]">
         {videoUrl ? (
           <video
+            ref={videoRef}
             src={videoUrl}
             poster={posterUrl || undefined}
             autoPlay
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="auto"
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
@@ -134,7 +166,7 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
 
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-2xl text-white">
-              <Link href={profileHref} className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7] hover:text-white transition-colors">
+              <Link href={profileHref} onClick={rememberFeedScroll} className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#f7d9b7] hover:text-white transition-colors">
                 {post.creator_name || "Featured choreographer"}
               </Link>
               <h2 className="mt-3 text-3xl font-black leading-[0.92] tracking-tight sm:text-4xl md:text-5xl">
@@ -152,11 +184,19 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
             </div>
 
             <div className="flex flex-col gap-2 lg:min-w-[220px]">
-              <Link
-                href={learnHref}
+                <Link
+                  href={learnHref}
+                  onClick={rememberFeedScroll}
                 className="inline-flex items-center justify-center rounded-2xl bg-[#F3B2AB] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
               >
-                Learn Tab
+                Learn Now
+              </Link>
+              <Link
+                href={practiceHref}
+                onClick={rememberFeedScroll}
+                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
+              >
+                Practice
               </Link>
               <div className="grid grid-cols-2 gap-2">
                 {[
@@ -238,69 +278,66 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
   }, [style, difficulty]);
 
   useEffect(() => {
-    setPosts(initialPosts);
-    setOffset(initialPosts.length);
-    setHasMore(initialPosts.length > 0);
-    setError(null);
+    setTimeout(() => {
+      setPosts(initialPosts);
+      setOffset(initialPosts.length);
+      setHasMore(initialPosts.length > 0);
+      setError(null);
+    }, 0);
   }, [initialPosts]);
 
+  const [newAvailable, setNewAvailable] = useState(false);
+  const refreshTimer = useRef<number | null>(null);
+
   useEffect(() => {
-    // Subscribe to Supabase realtime events to refresh feed on publish/unpublish
     let client: any;
     try {
       client = createSupabaseClient();
     } catch (err) {
-      // supabase not configured in this environment
       return;
     }
 
+    const scheduleNew = () => {
+      if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
+      // debounce rapid events and show a single banner
+      refreshTimer.current = window.setTimeout(() => {
+        setNewAvailable(true);
+        refreshTimer.current = null;
+      }, 1500);
+    };
+
     const channel = client
       .channel("public-choreography-feed")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "routines" },
-        () => {
-          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
-            if (data?.posts && Array.isArray(data.posts)) {
-              setPosts((current) => {
-                const incoming = data.posts || [];
-                const ids = new Set(current.map((p) => p.id));
-                const merged = [...incoming.filter((p) => !ids.has(p.id)), ...current];
-                return merged.slice(0, Math.max(8, merged.length));
-              });
-            }
-          }).catch(() => undefined);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "routines" },
-        (payload: any) => {
-          // refresh when published_at toggles or approval changes
-          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
-            if (data?.posts && Array.isArray(data.posts)) setPosts(data.posts);
-          }).catch(() => undefined);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "choreo_submissions" },
-        () => {
-          void getChoreographyFeed({ limit: 8, offset: 0, style, difficulty }).then((data) => {
-            if (data?.posts && Array.isArray(data.posts)) setPosts(data.posts);
-          }).catch(() => undefined);
-        }
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "routines" }, scheduleNew)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "routines" }, scheduleNew)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "choreo_submissions" }, scheduleNew)
       .subscribe();
 
     return () => {
       try {
+        if (refreshTimer.current) window.clearTimeout(refreshTimer.current);
         channel.unsubscribe();
       } catch {
         // ignore
       }
     };
   }, [style, difficulty]);
+
+  const handleRefresh = async () => {
+    try {
+      const data = await getChoreographyFeed({ limit: 8, offset: 0, style, difficulty });
+      const incoming = data.posts || [];
+      setPosts((current) => {
+        const existing = new Set(current.map((p) => p.id));
+        const merged = [...incoming.filter((p) => !existing.has(p.id)), ...current];
+        return merged;
+      });
+    } catch {
+      // ignore
+    } finally {
+      setNewAvailable(false);
+    }
+  };
 
   useEffect(() => {
     const target = sentinelRef.current;
@@ -346,7 +383,7 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
     };
 
     void loadMore();
-  }, [hasMore, loadingMore, offset, queryString]);
+  }, [hasMore, loadingMore, offset, queryString, style, difficulty]);
 
   const activeFilters = [style || "all", difficulty || "all"];
 
@@ -366,7 +403,7 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
           return (
             <Link
               key={filter.label}
-              href={href.toString() ? `/feed?${href.toString()}` : "/feed"}
+              href={href.toString() ? `/learn/feed?${href.toString()}` : "/learn/feed"}
               className={cn(
                 "rounded-full border px-4 py-2 transition",
                 isActive ? "border-[#F3B2AB] bg-[#F3B2AB] text-black" : "border-white/10 bg-white/5 text-white hover:bg-white/10"
@@ -377,6 +414,11 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
           );
         })}
       </div>
+      {newAvailable ? (
+        <div className="mb-3 flex justify-center">
+          <button onClick={handleRefresh} className="rounded-full bg-[#c4ff00] px-4 py-2 text-sm font-bold text-black">New content available — Refresh</button>
+        </div>
+      ) : null}
 
       <div className="space-y-5">
         {posts.map((post) => (

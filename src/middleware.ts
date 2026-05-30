@@ -4,6 +4,8 @@ import { canAccessRoute } from "@/lib/auth/roles";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  let onboardingComplete = true;
+  let isFreshAccount = false;
 
   // OAuth callback links can land on '/?code=...' depending on provider settings.
   // Route those hits through our callback handler before rendering the landing page.
@@ -61,21 +63,63 @@ export async function middleware(request: NextRequest) {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, created_at, preferences")
         .eq("id", user.id)
         .maybeSingle();
       userRole = profile?.role || "student";
+
+      onboardingComplete = Boolean((profile?.preferences as Record<string, unknown> | null)?.onboarding_completed);
+      const authCreatedAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+      const profileCreatedAt = profile?.created_at ? new Date(profile.created_at as string).getTime() : 0;
+      isFreshAccount = authCreatedAt > 0 && profileCreatedAt > 0 && Math.abs(authCreatedAt - profileCreatedAt) < 10 * 60 * 1000;
     }
   } catch {
     // Supabase connection failed — skip auth checks
     return supabaseResponse;
   }
 
-  // Protected routes
-  const protectedPaths = ["/library", "/stats", "/profile", "/choreographer", "/admin"];
+  const pathname = request.nextUrl.pathname;
+
+  // Public learner routes stay accessible so guest users can enter the scroll
+  // and open a lesson player directly from shared links.
+  const publicFeedPaths = ["/feed", "/scroll", "/scrool", "/learn/feed"];
+  const learnRouteParts = pathname.split("/").filter(Boolean);
+  const isPublicLearnLesson =
+    learnRouteParts[0] === "learn" &&
+    learnRouteParts.length >= 2 &&
+    !["feed", "practice", "profile", "session", "choreo"].includes(learnRouteParts[1]);
+
+  if (publicFeedPaths.some((path) => pathname.startsWith(path)) || isPublicLearnLesson) {
+    return attachSupabaseCookies(supabaseResponse);
+  }
+
+  // Protected routes (require authentication)
+  const protectedPaths = [
+    "/select-role",
+    "/learn/practice",
+    "/learn/profile",
+    "/learn/session",
+    "/learn/choreo",
+    "/library",
+    "/stats",
+    "/profile/me",
+    "/profile",
+    "/settings",
+    "/upload-choreo",
+    "/creator",
+    "/choreographer",
+    "/admin",
+  ];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
+
+  // Normalize legacy scroll paths to the canonical learner feed.
+    if (request.nextUrl.pathname.startsWith("/scroll") || request.nextUrl.pathname.startsWith("/scrool")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/learn/feed";
+    return NextResponse.redirect(url);
+  }
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
@@ -87,20 +131,20 @@ export async function middleware(request: NextRequest) {
   // Role-based route access
   if (user && !canAccessRoute(userRole as any, request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/learn/feed";
     return attachSupabaseCookies(NextResponse.redirect(url));
   }
 
   // Redirect logged-in users away from auth pages
-  const authPaths = ["/login", "/signup"];
+  const authPaths = ["/auth", "/login", "/signup"];
   const isAuthPage = authPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
   if (isAuthPage && user) {
     const url = request.nextUrl.clone();
-    const redirectParam = request.nextUrl.searchParams.get("redirect");
-    url.pathname = redirectParam && redirectParam.startsWith("/") ? redirectParam : "/explore";
+    // Canonical post-auth entry now goes through role selection.
+    url.pathname = "/select-role";
     url.search = "";
     return attachSupabaseCookies(NextResponse.redirect(url));
   }
@@ -110,6 +154,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude Next static assets, images, favicon, service worker and manifest
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

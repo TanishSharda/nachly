@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceRoleClient } from "@/lib/supabase/server";
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const reactionTypes = ["loved_it", "hard", "practicing", "fast_moves"] as const;
 
@@ -60,6 +61,12 @@ async function countFor(
 }
 
 export async function GET(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 60, keyPrefix: 'choreo:reactions:get' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return missingSupabaseConfigResponse();
   }
@@ -80,7 +87,7 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
   const { data, error } = await db
     .from("choreo_reactions")
     .select("choreo_id,reaction_type,user_id")
@@ -115,6 +122,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as Request, { windowMs: 60_000, max: 40, keyPrefix: 'choreo:reactions:post' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore limiter errors
+  }
   let body: unknown;
 
   try {
@@ -143,7 +156,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "anonKey is required for unauthenticated reactions" }, { status: 400 });
   }
 
-  const db = process.env.SUPABASE_SERVICE_ROLE_KEY ? createServiceRoleClient() : supabase;
+  const db = supabase;
 
   let existingQuery = db
     .from("choreo_reactions")

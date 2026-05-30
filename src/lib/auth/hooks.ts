@@ -52,7 +52,9 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   useEffect(() => {
-    fetchUser();
+    setTimeout(() => {
+      void fetchUser();
+    }, 0);
   }, [fetchUser]);
 
   return {
@@ -102,7 +104,7 @@ export function useAuthRequired(): UseAuthReturn {
         // Redirect to login
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       }
-      setIsCheckingAuth(false);
+      setTimeout(() => setIsCheckingAuth(false), 0);
     }
   }, [auth.isLoading, auth.isAuthenticated]);
 
@@ -138,7 +140,7 @@ export function useRoleRequired(requiredRole: UserRole | UserRole[]): { isAuthor
         // Redirect to access denied or home
         window.location.href = '/';
       }
-      setIsCheckingRole(false);
+      setTimeout(() => setIsCheckingRole(false), 0);
     }
   }, [isLoading, user, requiredRole]);
 

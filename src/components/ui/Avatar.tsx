@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 
 interface AvatarProps {
@@ -25,12 +25,13 @@ export default function Avatar({ src, name, size = "md", className }: AvatarProp
           "h-10 w-10 text-sm": size === "md",
           "h-14 w-14 text-lg": size === "lg",
         },
+        "relative",
         !src && "bg-obsidian-100/50 text-gold border border-gold/10",
         className
       )}
     >
       {src ? (
-        <img src={src} alt={name} className="h-full w-full object-cover" />
+        <Image src={src} alt={name} unoptimized fill style={{ objectFit: "cover" }} />
       ) : (
         initials
       )}

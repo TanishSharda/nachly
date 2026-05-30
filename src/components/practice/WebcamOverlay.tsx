@@ -53,10 +53,12 @@ export default function WebcamOverlay({
   // Set default position (bottom-right) on mount
   useEffect(() => {
     if (position.x === -1) {
-      setPosition({
-        x: window.innerWidth - size.width - 24,
-        y: window.innerHeight - size.height - 100, // above playback controls
-      });
+      setTimeout(() => {
+        setPosition({
+          x: window.innerWidth - size.width - 24,
+          y: window.innerHeight - size.height - 100, // above playback controls
+        });
+      }, 0);
     }
   }, [position.x, size.width, size.height]);
 

@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 function missingRazorpayConfigResponse() {
   return NextResponse.json(
@@ -18,6 +20,12 @@ function timingSafeEquals(a: string, b: string) {
 }
 
 export async function POST(request: Request) {
+  try {
+    const maybe = await enforceRateLimit(request as unknown as NextRequest, { windowMs: 60_000, max: 30, keyPrefix: 'webhook:subscriptions' });
+    if (maybe) return maybe;
+  } catch (e) {
+    // ignore rate limit errors
+  }
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!webhookSecret || !serviceKey) {
@@ -59,6 +67,9 @@ export async function POST(request: Request) {
   }
 
   const db = createServiceRoleClient();
+  try {
+    logServiceRoleUsage({ caller: 'api/subscriptions/webhook', note: `order:${orderId} payment:${paymentId} status:${mappedStatus}` });
+  } catch (_) {}
   const { data: updatedRow, error: updateError } = await db
     .from("subscriptions")
     .update({
