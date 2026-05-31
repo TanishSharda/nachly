@@ -10,7 +10,7 @@
 
   // Minimal page with a muted video element and JS to attempt playback
   await page.setContent(`
-    <video id="v" src="${publicUrl}" muted playsinline preload="auto" style="width:320px;height:180px"></video>
+    <video id="v" src="${publicUrl}" muted playsinline preload="metadata" style="width:320px;height:180px"></video>
     <script>
       (async () => {
         const v = document.getElementById('v');

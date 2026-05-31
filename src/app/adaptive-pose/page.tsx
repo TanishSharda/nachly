@@ -1,4 +1,4 @@
-import AdaptivePoseCoach from "@/components/practice/AdaptivePoseCoach";
+import AdaptivePoseCoachClient from "@/components/practice/AdaptivePoseCoachClient";
 
 export default function AdaptivePosePage() {
   return (
@@ -8,7 +8,7 @@ export default function AdaptivePosePage() {
         <p className="mb-5 text-sm text-zinc-400">
           Works with partial body visibility and scores only the joints currently visible on camera.
         </p>
-        <AdaptivePoseCoach />
+        <AdaptivePoseCoachClient />
       </div>
     </main>
   );

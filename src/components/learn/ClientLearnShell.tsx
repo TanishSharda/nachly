@@ -21,7 +21,7 @@ export default function ClientLearnShell({ choreo }: { choreo: any }) {
 
   return (
     <div className="space-y-4">
-      <nav className="flex items-center justify-center gap-2 bg-black/60 rounded-xl p-1">
+      <nav role="navigation" className="flex items-center justify-center gap-2 bg-black/60 rounded-xl p-1">
         <button
           aria-pressed={step === "teach"}
           onClick={() => setStep("teach")}

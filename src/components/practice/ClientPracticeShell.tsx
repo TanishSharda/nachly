@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import CalibrationScreen from "./CalibrationScreen";
+import dynamic from "next/dynamic";
+const CalibrationScreen = dynamic(() => import("./CalibrationScreen"), { ssr: false });
 import CountdownOverlay from "./CountdownOverlay";
 import VideoStage from "./VideoStage";
 import PlaybackControls from "./PlaybackControls";
-import SessionResults from "./SessionResults";
+const SessionResults = dynamic(() => import("./SessionResults"), { ssr: false });
 import { saveSession, saveSessionToServer, updateStreak } from "@/lib/ai/session-storage";
 import { postChoreographyEngagement } from "@/lib/api/choreos";
 import { getOrCreateGuestId } from "@/lib/utils/guest-session";

@@ -169,7 +169,7 @@ export default function MobileNav() {
   });
 
   return (
-    <nav className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.65rem)] left-3 right-3 z-40 md:hidden sm:left-6 sm:right-6 sm:bottom-6">
+    <nav role="navigation" className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.65rem)] left-3 right-3 z-40 md:hidden sm:left-6 sm:right-6 sm:bottom-6">
       <div className="bg-black/40 backdrop-blur-lg border border-white/6 rounded-[28px] px-2 py-2.5 sm:rounded-[32px] sm:px-3 sm:py-3 flex items-center justify-around shadow-[0_24px_40px_-30px_rgba(0,0,0,0.6)]">
         {displayItems.map((item) => {
           const isActive = isActiveMobileRoute(pathname, item.href);

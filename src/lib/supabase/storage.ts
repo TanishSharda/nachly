@@ -57,26 +57,49 @@ export async function uploadChoreographerFile(
   const filePath = `${userId}/${status}/${choreographyId}/${timestamp}-${safeFileName}`;
 
   try {
-    // Upload file
-    const { data, error } = await supabase.storage
-      .from(CHOREOGRAPHER_BUCKET)
-      .upload(filePath, file, {
-        contentType: file.type,
-        upsert: false,
-        cacheControl: '3600',
-      });
+    // Upload with retry and exponential backoff
+    const maxAttempts = 3;
+    let attempt = 0;
+    let uploadData: any = null;
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      try {
+        const { data, error } = await supabase.storage
+          .from(CHOREOGRAPHER_BUCKET)
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: false,
+            cacheControl: '3600',
+          });
 
-    if (error) {
-      throw new Error(`Storage error: ${error.message}`);
+        if (error) {
+          throw error;
+        }
+
+        uploadData = data;
+        break;
+      } catch (err: any) {
+        // Final attempt -> rethrow
+        if (attempt >= maxAttempts) {
+          throw new Error(`Upload failed after ${attempt} attempts: ${String(err)}`);
+        }
+        // Exponential backoff (ms)
+        const backoff = Math.pow(2, attempt) * 200; // 400ms, 800ms, ...
+        await new Promise((res) => setTimeout(res, backoff));
+      }
+    }
+
+    if (!uploadData) {
+      throw new Error('Upload failed: no data returned');
     }
 
     // supabase client types for getPublicUrl can be narrow; access defensively
     const publicResult: any = supabase.storage
       .from(CHOREOGRAPHER_BUCKET)
-      .getPublicUrl(data?.path || filePath);
+      .getPublicUrl(uploadData?.path || filePath);
 
     return {
-      path: data.path,
+      path: uploadData.path,
       url: publicResult?.data?.publicUrl ?? null,
       size: file.size,
       type: file.type,

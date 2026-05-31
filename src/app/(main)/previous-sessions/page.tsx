@@ -43,7 +43,7 @@ async function fetchTitleByChoreoId(choreoId: string): Promise<string> {
   }
 
   try {
-    const byDoc = await getDocs(query(collection(db, "choreos"), where("id", "==", choreoId), limit(1)));
+  const byDoc = await getDocs(query(collection(db as any, "choreos"), where("id", "==", choreoId), limit(1)));
     if (!byDoc.empty) {
       const title = byDoc.docs[0].data()?.title;
       if (title) return String(title);
@@ -90,7 +90,7 @@ export default function PreviousSessionsPage() {
         const allowFallback = shouldUseFirebaseFallback();
         if (allowFallback && list.length === 0) {
           const userId = getClientUserId();
-          const snap = await getDocs(query(collection(db, "attempts"), where("userId", "==", userId), limit(300)));
+          const snap = await getDocs(query(collection(db as any, "attempts"), where("userId", "==", userId), limit(300)));
 
           list = snap.docs.map((docSnap) => {
             const data = docSnap.data();

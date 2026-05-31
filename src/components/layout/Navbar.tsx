@@ -75,7 +75,7 @@ export default function Navbar({ user }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#00000066] bg-[#070707]/50 backdrop-blur-2xl shadow-[0_18px_60px_-30px_rgba(0,0,0,0.7)]">
-      <nav className="section-padding">
+      <nav role="navigation" className="section-padding">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-4 group">

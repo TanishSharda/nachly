@@ -1,0 +1,40 @@
+name: Allowlist Guard
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  require-allowlist-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for allowlist changes
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request payload; skipping');
+              return;
+            }
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const files = await github.rest.pulls.listFiles({ owner, repo, pull_number: pr.number });
+            const changed = (files.data || []).map(f => f.filename);
+            const changedAllowlist = changed.includes('.service-role-allowed.json');
+            if (!changedAllowlist) {
+              core.info('Allowlist not modified; OK');
+              return;
+            }
+            const labels = (pr.labels || []).map(l => l.name);
+            const ok = labels.includes('service-role-allowlist') || labels.includes('allowlist-approved');
+            if (!ok) {
+              core.setFailed('Pull request modifies .service-role-allowed.json but does not have the required label: service-role-allowlist (or allowlist-approved). Add the label after approval and re-open.');
+            } else {
+              core.info('Allowlist change labeled; OK');
+            }

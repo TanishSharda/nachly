@@ -51,7 +51,30 @@
     "postgres": "^3.4.9",
     "supabase": "^2.98.2",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.2.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --experimental-build-mode=compile",
+    "e2e:publish-check": "node ./scripts/e2e/publish_and_check.js",
+    "build:full": "next build",
+    "build:compile": "next build --experimental-build-mode=compile",
+    "start": "next start",
+    "lint": "next lint",
+    "security:audit": "node scripts/security-audit.js",
+    "check:service-role": "node scripts/check-service-role-usage.js",
+    "test:e2e": "playwright test",
+    "test:e2e:serial": "node ./scripts/run-e2e-serial.js",
+    "test:e2e:prod": "node ./scripts/run-e2e-prod.js",
+    "type-check": "tsc --noEmit",
+      "test:e2e:ui": "playwright test --ui",
+      "type-check:mobile": "cd mobile && npm run type-check",
+      "type-check:all": "npm run type-check && npm run type-check:mobile",
+      "migrate:local": "node scripts/run-migrations.js",
+      "migrate:prod": "node scripts/apply-migrations.js",
+      "check-supabase-env": "node ./scripts/check-supabase-env.js",
+    "test:unit": "vitest"
   },
   "overrides": {
     "protobufjs": "^7.5.5",

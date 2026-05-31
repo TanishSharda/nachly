@@ -3,7 +3,8 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getChoreographyFeed } from "@/lib/api/choreos";
-import ImmersiveFeed from "@/components/scroll/ImmersiveFeed";
+import dynamic from "next/dynamic";
+const ImmersiveFeed = dynamic(() => import("@/components/scroll/ImmersiveFeed"), { ssr: false });
 
 export default function ScrollPage() {
   const searchParams = useSearchParams();

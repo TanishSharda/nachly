@@ -43,22 +43,23 @@ export interface RateLimitOptions {
   keyPrefix?: string;
 }
 
-export function getClientIp(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  const real = req.headers.get('x-real-ip');
-  if (real) return real;
+export function getClientIp(req: Request | NextRequest): string {
+  const headers = (req as any).headers;
+  const forwarded = headers?.get?.('x-forwarded-for');
+  if (forwarded) return String(forwarded).split(',')[0].trim();
+  const real = headers?.get?.('x-real-ip');
+  if (real) return String(real);
   // fallback to host header (not ideal)
-  return req.headers.get('host') || 'unknown';
+  return headers?.get?.('host') || 'unknown';
 }
 
-export async function rateLimit(req: NextRequest, opts: RateLimitOptions = {}) {
+export async function rateLimit(req: Request | NextRequest, opts: RateLimitOptions = {}) {
   const windowMs = opts.windowMs ?? 60_000;
   const max = opts.max ?? 60;
   const keyPrefix = opts.keyPrefix ?? 'rl';
 
   const ip = getClientIp(req);
-  const route = req.nextUrl?.pathname || 'unknown';
+  const route = (req as NextRequest).nextUrl?.pathname || new URL((req as Request).url).pathname || 'unknown';
   const key = `${keyPrefix}:${route}:${ip}`;
 
   await initRedis();
@@ -73,9 +74,9 @@ export async function rateLimit(req: NextRequest, opts: RateLimitOptions = {}) {
       const ttl = await redisClient.pttl(key);
       const allowed = count <= max;
       return { allowed, remaining: Math.max(0, max - count), resetIn: Math.max(0, ttl) };
-    } catch (e) {
+    } catch (e: any) {
       // fallback to memory store on redis errors
-      console.warn('Rate limiter: redis error, falling back to memory store', e?.message || e);
+      console.warn('Rate limiter: redis error, falling back to memory store', e?.message ?? String(e));
     }
   }
 
@@ -96,7 +97,7 @@ export async function rateLimit(req: NextRequest, opts: RateLimitOptions = {}) {
   return { allowed: true, remaining: Math.max(0, max - entry.count), resetIn: Math.max(0, windowMs - (now - entry.windowStart)) };
 }
 
-export async function enforceRateLimit(req: NextRequest, opts: RateLimitOptions = {}) {
+export async function enforceRateLimit(req: Request | NextRequest, opts: RateLimitOptions = {}) {
   const res = await rateLimit(req, opts);
   if (!res.allowed) {
     const body = { error: 'Too many requests', detail: 'Rate limit exceeded' };

@@ -1,12 +1,22 @@
-const { google } = require('googleapis');
-
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+
+function requireGoogleApis() {
+  try {
+    // Lazy require so the module is only loaded when the fallback is used.
+    // This avoids pulling googleapis into runtime unless necessary.
+    // eslint-disable-next-line global-require
+    return require('googleapis');
+  } catch (e) {
+    throw new Error('googleapis module is not installed or failed to load');
+  }
+}
 
 async function appendApplicationToSheet({ serviceAccountJson, spreadsheetId, values }) {
   if (!serviceAccountJson || !spreadsheetId) {
     throw new Error('Missing Google Sheets configuration');
   }
 
+  const { google } = requireGoogleApis();
   const credentials = JSON.parse(serviceAccountJson);
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -24,13 +34,12 @@ async function appendApplicationToSheet({ serviceAccountJson, spreadsheetId, val
   });
 }
 
-module.exports = { appendApplicationToSheet };
-
 async function readApplicationsFromSheet({ serviceAccountJson, spreadsheetId }) {
   if (!serviceAccountJson || !spreadsheetId) {
     throw new Error('Missing Google Sheets configuration');
   }
 
+  const { google } = requireGoogleApis();
   const credentials = JSON.parse(serviceAccountJson);
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -56,4 +65,4 @@ async function readApplicationsFromSheet({ serviceAccountJson, spreadsheetId }) 
   }));
 }
 
-module.exports.readApplicationsFromSheet = readApplicationsFromSheet;
+module.exports = { appendApplicationToSheet, readApplicationsFromSheet };

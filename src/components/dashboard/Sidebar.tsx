@@ -65,7 +65,7 @@ export default function Sidebar() {
   }, []);
 
   return (
-    <nav className="fixed left-0 top-0 w-[260px] h-screen p-6 flex flex-col gap-10 z-50 bg-obsidian border-r border-gold/10">
+    <nav role="navigation" className="fixed left-0 top-0 w-[260px] h-screen p-6 flex flex-col gap-10 z-50 bg-obsidian border-r border-gold/10">
       {/* Brand */}
       <Link href="/dashboard" className="flex items-center gap-3 group px-4">
         <BrandLogo size={32} className="group-hover:scale-110 transition-transform" />

@@ -94,11 +94,12 @@ export async function getChoreographyFeed(
   options: {
     limit?: number;
     offset?: number;
+    cursor?: string; // ISO timestamp paging token (returns older items before this timestamp)
     style?: string;
     difficulty?: string;
   } = {}
 ) {
-  const { limit = 20, offset = 0, style, difficulty } = options;
+  const { limit = 20, offset = 0, cursor, style, difficulty } = options;
 
   try {
     const supabase = await getReadOnlySupabaseClient();
@@ -199,6 +200,19 @@ export async function getChoreographyFeed(
       if (bPublished !== aPublished) return bPublished - aPublished;
       return (b.engagement_score || 0) - (a.engagement_score || 0);
     });
+
+    // Support cursor-based pagination: if `cursor` provided, return items with
+    // `published_at` strictly older than the cursor and use that to compute nextCursor.
+    if (cursor) {
+      const cursorTime = new Date(cursor).getTime();
+      const filtered = combined.filter((it) => {
+        const ts = new Date(it.published_at || 0).getTime();
+        return ts < cursorTime;
+      });
+      const page = filtered.slice(0, limit);
+      const nextCursor = page.length > 0 ? page[page.length - 1].published_at || null : null;
+      return { posts: page as ChoreographyFeedItem[], error: null, nextCursor };
+    }
 
     const paged = combined.slice(offset, offset + limit);
 

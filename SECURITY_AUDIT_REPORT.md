@@ -18,8 +18,22 @@ What changed (high level)
 Recommended next steps (for reviewers / ops)
 1. Configure remote audit sink:
    - Set `SERVICE_ROLE_REMOTE_LOG_URL` and optional `SERVICE_ROLE_REMOTE_LOG_TOKEN` in staging and production.
+   - To test locally, run the included receiver and sender:
+     1. Start the receiver: `node scripts/remote-log-receiver.js` (defaults to port 4000).
+     2. Send a test entry: `SERVICE_ROLE_REMOTE_LOG_URL=http://localhost:4000 node scripts/test-remote-audit.js`.
+     3. The receiver prints the JSON payload it received.
 2. Make `scripts/check-service-role-usage.js` a CI gating check that fails unless reviewed/approved.
    - The repository already includes `.github/workflows/security-audit.yml` which runs `npm run check:service-role` and `npm run security:audit` on PRs; the checker will fail the job if any `createServiceRoleClient` occurrences are present.
+
+CI protection notes
+- To enforce the checks on merges, enable branch protection on `main` and require the `security-audit` workflow to pass. In GitHub repo settings: `Settings → Branches → Branch protection rules`.
+- Recommended checks to require:
+   - `security-audit` GitHub Actions workflow (this repo's `.github/workflows/security-audit.yml`).
+   - `lint` and `type-check` pipelines.
+   - At least one approval from `security-team` before merging PRs that touch `src/lib/supabase` or `src/app/api`.
+
+Allowlist governance
+- Keep `.service-role-allowed.json` in the repo. Any additions must include a `reason` and be approved by a security reviewer. Consider enforcing a PR label (e.g., `service-role-allowlist`) to document the rationale and approvals.
 3. Consider shipping audit entries to a centralized log (Datadog, CloudWatch, or Upstash) rather than a local file.
 4. Enable Redis for the rate limiter in production (`RATE_LIMIT_REDIS_URL`) or use Upstash REST for serverless.
 5. Create a PR from these changes and set the new audit/CI checks as required for merging.

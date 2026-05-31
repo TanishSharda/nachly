@@ -1,1 +1,0 @@
-FATAL=SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are required. Set them in your terminal environment before running this script.

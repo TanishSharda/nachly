@@ -105,7 +105,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
       <div className="flex">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex flex-col w-60 border-r border-white/10 min-h-[calc(100vh-56px)] p-4">
-          <nav className="space-y-1 flex-1">
+          <nav role="navigation" className="space-y-1 flex-1">
             {sidebarLinks.map((link) => {
               const isActive = isActiveRoute(link.href);
               return (
@@ -138,7 +138,7 @@ export default function ChoreographerLayoutClient({ children }: { children: Reac
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-black/90 backdrop-blur-xl safe-area-bottom">
+      <nav role="navigation" className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-black/90 backdrop-blur-xl safe-area-bottom">
         <div className="flex items-center justify-around py-2">
           {sidebarLinks.slice(0, 6).map((link) => {
             const isActive = isActiveRoute(link.href);

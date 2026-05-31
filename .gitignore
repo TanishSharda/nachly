@@ -43,3 +43,12 @@ next-env.d.ts
 public/videos/*.mov
 public/videos/*.avi
 public/videos/*.mkv
+
+# Test and build output logs
+test-output*.log
+tsc_*.txt
+tsc_*.log
+
+# Temporary migration files
+.tmp-*.txt
+.tmp-*.ps1

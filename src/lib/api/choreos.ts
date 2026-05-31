@@ -4,6 +4,7 @@ export type FeedParams = {
   tier?: string;
   limit?: number;
   offset?: number;
+  cursor?: string | null;
 };
 
 async function safeJson(res: Response) {
@@ -15,20 +16,21 @@ async function safeJson(res: Response) {
 }
 
 export async function getChoreographyFeed(params: FeedParams = {}) {
-  const { style, difficulty, limit = 12, offset = 0 } = params;
+  const { style, difficulty, limit = 12, offset = 0, cursor = null } = params;
   const qs = new URLSearchParams();
   if (style) qs.set("style", style);
   if (difficulty) qs.set("difficulty", difficulty);
   qs.set("limit", String(limit));
   qs.set("offset", String(offset));
+  if (cursor) qs.set('cursor', String(cursor));
 
   const url = `/api/choreos/feed?${qs.toString()}`;
   const res = await fetch(url, { cache: "no-store" });
-  const json = await safeJson(res) || { posts: [], hasMore: false, nextOffset: 0 };
+  const json = await safeJson(res) || { posts: [], hasMore: false, nextOffset: 0, nextCursor: null };
   if (!res.ok) {
     throw new Error(json?.error || "Failed to fetch choreography feed");
   }
-  return json as { posts: any[]; hasMore: boolean; nextOffset: number };
+  return json as { posts: any[]; hasMore: boolean; nextOffset: number; nextCursor?: string | null };
 }
 
 export async function getChoreographyPost(id: string) {

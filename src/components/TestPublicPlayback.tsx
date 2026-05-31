@@ -56,16 +56,14 @@ export default function TestPublicPlayback({ src }: Props) {
             playsInline
             width={640}
             height={360}
-            preload="auto"
+            preload="metadata"
             style={{ background: '#000' }}
           >
             <source src={currentSrc} />
             Your browser does not support the video tag.
           </video>
         </div>
-      ) : (
-        <p style={{ marginTop: 12 }}>Pass a `src` query param or enter a URL above.</p>
-      )}
+      ) : null}
     </div>
   )
 }

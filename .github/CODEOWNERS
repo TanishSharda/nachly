@@ -1,0 +1,12 @@
+# CODEOWNERS
+# Assign ownership for security-sensitive paths. Replace the placeholders with your team or usernames.
+# Example: replace @your-org/security-team with your GitHub team or individual handle
+
+# Security reviewers for supabase server/client and allowlist
+/src/lib/supabase/ @your-org/security-team
+/.service-role-allowed.json @your-org/security-team
+.github/workflows/security-audit.yml @your-org/security-team
+
+# Owners for other critical paths
+/src/app/api/ @your-org/backend-team
+/src/lib/security/ @your-org/security-team

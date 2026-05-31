@@ -28,11 +28,76 @@ export default function VideoUploadZone({ videoUrl, onVideoUrlChange, onFileSele
       onFileError?.("File is too large. Max size is 500MB.");
       return;
     }
+    // Client-side duration check (reject videos > 5 minutes)
     const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    setFileMeta({ name: file.name, size: file.size });
-    onFileSelect?.(file);
-    onVideoUrlChange(url);
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+    probe.src = url;
+    const cleanUp = () => {
+      try {
+        probe.removeAttribute("src");
+        probe.load();
+      } catch {}
+      URL.revokeObjectURL(url);
+    };
+    probe.onloadedmetadata = () => {
+      const duration = probe.duration || 0;
+      if (duration > 300) {
+        cleanUp();
+        onFileError?.("Video duration exceeds 5 minutes (limit). Please trim the video and try again.");
+        return;
+      }
+      setPreviewUrl(url);
+      setFileMeta({ name: file.name, size: file.size });
+      onFileSelect?.(file);
+      onVideoUrlChange(url);
+
+      // If file is large (>50MB), start chunked upload automatically
+      const CHUNK_THRESHOLD = 50 * 1024 * 1024;
+      if (file.size > CHUNK_THRESHOLD) {
+        // async upload; don't block metadata UI
+        (async function uploadLarge() {
+          try {
+            const startRes = await fetch('/api/choreographer/upload/session', { method: 'POST' });
+            const startJson = await startRes.json();
+            const sessionId = startJson?.sessionId;
+            if (!sessionId) throw new Error('Failed to create upload session');
+
+            const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            for (let i = 0; i < totalChunks; i++) {
+              const start = i * CHUNK_SIZE;
+              const end = Math.min(file.size, start + CHUNK_SIZE);
+              const blob = file.slice(start, end);
+              const fd = new FormData();
+              fd.append('index', String(i));
+              fd.append('chunk', blob, file.name);
+              const chunkRes = await fetch(`/api/choreographer/upload/session/${sessionId}/chunk`, { method: 'PUT', body: fd });
+              if (!chunkRes.ok) throw new Error('Chunk upload failed');
+            }
+
+            // complete
+            const completeFd = new FormData();
+            completeFd.append('fileName', file.name);
+            const compRes = await fetch(`/api/choreographer/upload/session/${sessionId}/complete`, { method: 'POST', body: completeFd });
+            const compJson = await compRes.json();
+            if (compJson?.ok && compJson.file?.url) {
+              // replace preview with the uploaded URL
+              setPreviewUrl(compJson.file.url);
+              onVideoUrlChange(compJson.file.url);
+            } else {
+              onFileError?.(compJson?.error || 'Chunked upload failed');
+            }
+          } catch (e) {
+            onFileError?.(String(e));
+          }
+        })();
+      }
+    };
+    probe.onerror = () => {
+      cleanUp();
+      onFileError?.("Unable to read video metadata. Please try a different file.");
+    };
   }, [onFileError, onFileSelect, onVideoUrlChange]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import DeferredVideo from '@/components/video/DeferredVideo';
 import { motion } from "framer-motion";
 import { getChoreographyFeed, postChoreographyEngagement, postChoreographySave, getChoreographyEngagement, getChoreographySaves } from "@/lib/api/choreos";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -10,6 +11,14 @@ import { getOrCreateGuestId } from "@/lib/utils/guest-session";
 
 export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: ChoreographyFeedItem[] }) {
   const [posts, setPosts] = useState<ChoreographyFeedItem[]>(initialPosts || []);
+  const [nextCursor, setNextCursor] = useState<string | null>(() => {
+    try {
+      const last = (initialPosts || [])[initialPosts.length - 1];
+      return last?.published_at || null;
+    } catch {
+      return null;
+    }
+  });
   const [engagementMap, setEngagementMap] = useState<Record<string, any>>({});
   const [savedMap, setSavedMap] = useState<Record<string, boolean>>({});
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -22,7 +31,9 @@ export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: Ch
       try {
         const res = await getChoreographyFeed({ limit: 24, offset: 0 });
         if (!mounted) return;
-        setPosts(Array.isArray(res?.posts) ? res.posts : []);
+        const list = Array.isArray(res?.posts) ? res.posts : [];
+        setPosts(list);
+        try { setNextCursor(list?.[list.length - 1]?.published_at || null); } catch {}
       } catch (err) {
         console.error("ImmersiveFeed: failed to load feed", err);
         if (mounted) setPosts([]);
@@ -240,14 +251,14 @@ export default function ImmersiveFeed({ initialPosts = [] }: { initialPosts?: Ch
           return (
             <section key={post.id} data-post-id={post.id} className="snap-start min-h-screen relative">
               {videoUrl ? (
-                <video
+                <DeferredVideo
                   src={videoUrl}
                   poster={posterUrl || undefined}
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               ) : (

@@ -1,2 +1,0 @@
-AUTH_HTTP=401
-MIGRATION_FILE=supabase/migrations/008_choreo_comments.sql

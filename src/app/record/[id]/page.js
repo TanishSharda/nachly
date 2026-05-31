@@ -1225,7 +1225,7 @@ export default function RecordPage() {
                   playsInline
                   muted={false}
                   defaultMuted={false}
-                  preload="auto"
+                  preload="metadata"
                   className="h-full w-full bg-black object-contain"
                   onLoadedData={(event) => {
                     const node = event.currentTarget;

@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
     }
 
     const db = createServiceRoleClient();
+    const payload = parsed.data;
     try {
       logServiceRoleUsage({ caller: 'api/choreographer/register-upload', note: `user:${user.id} path:${payload.path}` });
     } catch (_) {}
-    const payload = parsed.data;
 
     const { error } = await db.from("choreography_uploads").insert({
       user_id: user.id,

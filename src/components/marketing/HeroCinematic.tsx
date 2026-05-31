@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import CursorTrail from "@/components/marketing/CursorTrail";
-import WaveformVisualizer from "@/components/marketing/WaveformVisualizer";
+import dynamic from "next/dynamic";
+const WaveformVisualizer = dynamic(() => import("@/components/marketing/WaveformVisualizer"), { ssr: false });
 import CinematicIntro from "@/components/marketing/CinematicIntro";
 
 export default function HeroCinematic() {

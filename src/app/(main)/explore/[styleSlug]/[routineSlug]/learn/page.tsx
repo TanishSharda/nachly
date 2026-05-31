@@ -473,12 +473,12 @@ export default function LearnModePage() {
           {videoUrl ? (
             <>
               { }
-              <video
+                <video
                 ref={videoRef}
                 src={videoUrl}
                 className="absolute inset-0 w-full h-full object-cover"
                 playsInline
-                preload="auto"
+                  preload="metadata"
                 onLoadedMetadata={handleVideoLoaded}
                 onClick={() => {
                   if (!videoRef.current) return;

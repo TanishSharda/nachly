@@ -8,6 +8,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
+import DeferredVideo from "@/components/video/DeferredVideo";
 import type { ChoreographyFeedItem } from "@/lib/supabase/queries/choreos";
 
 type FeedResponse = {
@@ -101,15 +102,14 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
     >
       <div className="relative min-h-[74vh]">
         {videoUrl ? (
-          <video
-            ref={videoRef}
+          <DeferredVideo
             src={videoUrl}
             poster={posterUrl || undefined}
             autoPlay
             muted
             loop
             playsInline
-            preload="auto"
+            preload="metadata"
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
@@ -187,14 +187,16 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
                 <Link
                   href={learnHref}
                   onClick={rememberFeedScroll}
-                className="inline-flex items-center justify-center rounded-2xl bg-[#F3B2AB] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+                  className="inline-flex items-center justify-center rounded-2xl bg-[#F3B2AB] px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+                  aria-label={`Learn ${post.title || 'this choreography'}`}
               >
                 Learn Now
               </Link>
               <Link
                 href={practiceHref}
                 onClick={rememberFeedScroll}
-                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
+                  aria-label={`Practice ${post.title || 'this choreography'}`}
               >
                 Practice
               </Link>
@@ -220,6 +222,8 @@ function FeedCard({ post }: { post: ChoreographyFeedItem }) {
                     key={action.label}
                     type="button"
                     onClick={action.onClick}
+                    aria-label={`${action.label} ${post.title || ''}`.trim()}
+                    aria-pressed={action.active}
                     className={cn(
                       "rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] backdrop-blur-md transition",
                       action.active
@@ -265,6 +269,14 @@ function FeedSkeleton() {
 export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFeedProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [offset, setOffset] = useState(initialPosts.length);
+  const [nextCursor, setNextCursor] = useState<string | null>(() => {
+    try {
+      const last = initialPosts?.[initialPosts.length - 1];
+      return last?.published_at || null;
+    } catch {
+      return null;
+    }
+  });
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -365,6 +377,9 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
         const params: any = { limit: 8, offset };
         if (style) params.style = style;
         if (difficulty) params.difficulty = difficulty;
+        if (nextCursor) {
+          params.cursor = nextCursor;
+        }
         const data = await getChoreographyFeed(params);
         const incoming = data.posts || [];
         setPosts((current) => {
@@ -372,8 +387,13 @@ export default function ChoreoFeed({ initialPosts, style, difficulty }: ChoreoFe
           const merged = [...current, ...incoming.filter((item) => !existingIds.has(item.id))];
           return merged;
         });
-        setOffset(data.nextOffset ?? offset + incoming.length);
-        setHasMore(Boolean(data.hasMore && incoming.length));
+        if (data.nextCursor) {
+          setNextCursor(data.nextCursor);
+          setHasMore(Boolean(incoming.length === 8));
+        } else {
+          setOffset(data.nextOffset ?? offset + incoming.length);
+          setHasMore(Boolean(data.hasMore && incoming.length));
+        }
         setError(null);
       } catch (err: any) {
         setError(err?.message || "Unable to load more reels right now.");

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import DeferredVideo from "@/components/video/DeferredVideo";
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -397,19 +398,16 @@ export default function LearnModePlayer({ choreo, backHref = "/learn/feed", prac
               className="h-full w-full bg-[#1b1510] object-contain"
             />
           ) : (
-            <video
+            <DeferredVideo
               ref={videoRef}
+              sources={signedUrl ? [{ src: signedUrl, type: "video/mp4" }] : videoSources}
               playsInline
               autoPlay
               muted
               loop
-              preload="auto"
+              preload="metadata"
               className="h-full w-full bg-[#1b1510] object-contain"
-            >
-                {(signedUrl ? [{ src: signedUrl, type: "video/mp4" }] : videoSources).map((source) => (
-                  <source key={source.src} src={source.src} type={source.type} />
-                ))}
-            </video>
+            />
           )}
 
           {videoError ? (

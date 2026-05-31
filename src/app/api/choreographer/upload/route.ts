@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase, createServiceRoleClient } from '@/lib/supabase/server';
 import { logServiceRoleUsage } from '@/lib/security/serviceRoleAudit';
 import { enforceRateLimit } from '@/lib/security/rateLimiter';
+import { getVideoDuration } from '@/lib/media/ffprobe';
 
 // Route segment config for large file uploads
 export const maxDuration = 300; // 5 minutes timeout
@@ -32,28 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
     }
 
     const db = createServiceRoleClient();
-    try {
-      logServiceRoleUsage({ caller: 'api/choreographer/upload', note: `user:${user.id} file:${filePath}` });
-    } catch (_) {}
     console.log('[/api/choreographer/upload] Service role present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log(`[/api/choreographer/upload] Handling upload for user: ${user?.id || 'anonymous'}`);
-    } catch (e) {
-      // ignore
-    }
-    
-    // Get authenticated user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
 
     // Get form data
     const formData = await request.formData();
@@ -94,13 +74,44 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       );
     }
 
-    // Generate unique file path: user-id/choreography-id/timestamp-filename
+    // Prepare filename and buffer for upload and optional server-side checks
     const timestamp = Date.now();
     const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    // Server-side video duration validation (optional, requires ffprobe in PATH).
+    if (file.type.startsWith('video/')) {
+      try {
+        const duration = await getVideoDuration(fileBuffer, `${timestamp}-${safeFileName}`);
+        if (duration !== null && duration > maxDuration) {
+          return NextResponse.json({ error: 'Video duration exceeds maximum allowed length' }, { status: 413 });
+        }
+      } catch (e) {
+        console.warn('Video duration check failed:', (e as any)?.message || e);
+      }
+    }
+
+    // Get authenticated user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Generate unique file path: user-id/choreography-id/timestamp-filename
     const filePath = `${user.id}/${choreographyId || 'draft'}/${timestamp}-${safeFileName}`;
 
-    // Convert file to buffer
-    const buffer = await file.arrayBuffer();
+    try {
+      logServiceRoleUsage({ caller: 'api/choreographer/upload', note: `user:${user.id} file:${filePath}` });
+    } catch (_) {}
+
+    // Use previously-read buffer
+    const buffer = fileBuffer;
 
     // Upload to Supabase Storage
     const { data, error } = await db.storage
